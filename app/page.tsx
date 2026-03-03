@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "ReWed — Every Guest. Every Moment. Every Message.",
@@ -38,12 +39,12 @@ export default function LandingPage() {
           wedding.
         </p>
         <div className="flex flex-col sm:flex-row gap-4 items-center">
-          <button className="btn-primary text-lg px-8 py-4">
+          <Link href="/dashboard/create" className="btn-primary text-lg px-8 py-4">
             Build Your Experience &rarr;
-          </button>
-          <button className="btn-ghost text-lg px-8 py-4">
-            See a demo reel &#9654;
-          </button>
+          </Link>
+          <Link href="#how-it-works" className="btn-ghost text-lg px-8 py-4">
+            See how it works &#9660;
+          </Link>
         </div>
         <p className="mt-8 text-sm" style={{ color: "var(--text-tertiary)" }}>
           Trusted by couples who want to remember everything
@@ -52,6 +53,7 @@ export default function LandingPage() {
 
       {/* How It Works */}
       <section
+        id="how-it-works"
         className="py-20 px-6"
         style={{ background: "var(--bg-pure-white)" }}
       >
@@ -116,7 +118,7 @@ export default function LandingPage() {
       </section>
 
       {/* Pricing Preview */}
-      <section className="py-20 px-6">
+      <section id="pricing" className="py-20 px-6">
         <div className="max-w-4xl mx-auto text-center">
           <h2
             className="text-3xl md:text-4xl font-medium mb-6"
@@ -141,9 +143,10 @@ export default function LandingPage() {
               { name: "Classic", guests: "200 guests", price: "$499" },
               { name: "Grand", guests: "400 guests", price: "$799" },
             ].map((pkg) => (
-              <div
+              <Link
                 key={pkg.name}
-                className="card p-8 text-center hover:shadow-md transition-shadow"
+                href="/dashboard/create"
+                className="card p-8 text-center hover:shadow-md transition-shadow block"
               >
                 <h3
                   className="text-xl font-medium mb-2"
@@ -166,12 +169,12 @@ export default function LandingPage() {
                 >
                   {pkg.price}
                 </p>
-              </div>
+              </Link>
             ))}
           </div>
-          <button className="btn-primary mt-10 text-lg px-8 py-4">
+          <Link href="/dashboard/create" className="btn-primary mt-10 text-lg px-8 py-4 inline-block">
             Build Your Package &rarr;
-          </button>
+          </Link>
         </div>
       </section>
 
@@ -192,17 +195,15 @@ export default function LandingPage() {
         >
           Ready to give your guests something unforgettable?
         </p>
-        <button className="btn-primary text-lg px-8 py-4 mb-8">
+        <Link href="/dashboard/create" className="btn-primary text-lg px-8 py-4 inline-block">
           Get Started
-        </button>
-        <div className="flex flex-wrap justify-center gap-6 text-sm mb-4">
-          <span>About</span>
-          <span>Pricing</span>
-          <span>Demo</span>
-          <span>FAQ</span>
-          <span>Contact</span>
-          <span>Privacy</span>
-          <span>Terms</span>
+        </Link>
+        <div className="flex flex-wrap justify-center gap-6 text-sm mb-4 mt-8">
+          <Link href="#how-it-works" style={{ color: "var(--text-secondary)" }}>About</Link>
+          <Link href="#pricing" style={{ color: "var(--text-secondary)" }}>Pricing</Link>
+          <Link href="/dashboard" style={{ color: "var(--text-secondary)" }}>Dashboard</Link>
+          <Link href="#how-it-works" style={{ color: "var(--text-secondary)" }}>FAQ</Link>
+          <Link href="mailto:hello@rewed.app" style={{ color: "var(--text-secondary)" }}>Contact</Link>
         </div>
         <p className="text-xs" style={{ color: "var(--text-tertiary)" }}>
           Made with love for couples who want to remember everything
