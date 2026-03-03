@@ -29,32 +29,36 @@ vi.mock('@/lib/storage/r2', () => ({
 }));
 
 // Mock OpenAI
-vi.mock('@/lib/ai/openai', () => ({
-  openaiClient: {
-    images: {
-      edit: vi.fn().mockResolvedValue({
-        data: [{ url: 'https://mock-openai.example.com/portrait.png' }],
-      }),
-    },
-    chat: {
-      completions: {
-        create: vi.fn().mockResolvedValue({
-          choices: [{ message: { content: 'Mock AI response' } }],
+vi.mock('@/lib/ai/openai', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/ai/openai')>();
+  return {
+    ...actual,
+    getOpenAIClient: vi.fn().mockReturnValue({
+      images: {
+        edit: vi.fn().mockResolvedValue({
+          data: [{ url: 'https://mock-openai.example.com/portrait.png' }],
         }),
       },
-    },
-    embeddings: {
-      create: vi.fn().mockResolvedValue({
-        data: [{ embedding: new Array(1536).fill(0.01) }],
-      }),
-    },
-    audio: {
-      transcriptions: {
-        create: vi.fn().mockResolvedValue({ text: 'Mock transcript of a wedding toast.' }),
+      chat: {
+        completions: {
+          create: vi.fn().mockResolvedValue({
+            choices: [{ message: { content: 'Mock AI response' } }],
+          }),
+        },
       },
-    },
-  },
-}));
+      embeddings: {
+        create: vi.fn().mockResolvedValue({
+          data: [{ embedding: new Array(1536).fill(0.01) }],
+        }),
+      },
+      audio: {
+        transcriptions: {
+          create: vi.fn().mockResolvedValue({ text: 'Mock transcript of a wedding toast.' }),
+        },
+      },
+    }),
+  };
+});
 
 // Mock email
 vi.mock('@/lib/email/ses', () => ({
