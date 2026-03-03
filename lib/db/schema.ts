@@ -175,6 +175,15 @@ export interface FaqEntry {
   created_at: Date;
 }
 
+export interface FaqCache {
+  id: string;
+  wedding_id: string;
+  question_hash: string;
+  answer: string;
+  hit_count: number;
+  created_at: Date;
+}
+
 export interface Notification {
   id: string;
   wedding_id: string;
