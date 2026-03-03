@@ -95,8 +95,7 @@ export default function FeedPage() {
 
       const data = await res.json();
       if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        setPostError(errData.error?.message || 'Could not create post. Please try again.');
+        setPostError(data.error?.message || 'Could not create post. Please try again.');
         return;
       }
       if (data.data?.post) {
