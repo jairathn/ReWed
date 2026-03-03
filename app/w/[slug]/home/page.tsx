@@ -155,7 +155,7 @@ export default function GuestHomePage() {
       </div>
 
       {/* Secondary Cards */}
-      <div className="grid grid-cols-3 gap-3 mb-6">
+      <div className="grid grid-cols-3 gap-3 mb-4">
         <Link href={`/w/${slug}/schedule`} className="card p-4 text-center">
           <div className="text-2xl mb-2">&#128197;</div>
           <p className="text-xs font-medium" style={{ color: 'var(--text-primary)' }}>
@@ -174,6 +174,36 @@ export default function GuestHomePage() {
             Gallery
           </p>
         </Link>
+      </div>
+
+      {/* Feed & FAQ Cards */}
+      <div className="grid grid-cols-2 gap-3 mb-6">
+        {config.features?.social_feed !== false && (
+          <Link href={`/w/${slug}/feed`} className="card p-4 flex items-center gap-3">
+            <div className="text-xl">&#128172;</div>
+            <div>
+              <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+                Social Feed
+              </p>
+              <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+                Share moments
+              </p>
+            </div>
+          </Link>
+        )}
+        {config.features?.faq_chatbot !== false && (
+          <Link href={`/w/${slug}/faq`} className="card p-4 flex items-center gap-3">
+            <div className="text-xl">&#129302;</div>
+            <div>
+              <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+                Ask Anything
+              </p>
+              <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+                FAQ & info
+              </p>
+            </div>
+          </Link>
+        )}
       </div>
 
       {/* Quick Stats */}

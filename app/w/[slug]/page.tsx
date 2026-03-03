@@ -13,6 +13,7 @@ export default function GuestRegistrationPage() {
   >([]);
   const [isSearching, setIsSearching] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
+  const [error, setError] = useState('');
 
   // If already authenticated, redirect to home
   useEffect(() => {
@@ -60,6 +61,7 @@ export default function GuestRegistrationPage() {
     last_name: string;
   }) => {
     setIsRegistering(true);
+    setError('');
     try {
       const res = await fetch(`/api/v1/w/${slug}/auth/register`, {
         method: 'POST',
@@ -68,12 +70,19 @@ export default function GuestRegistrationPage() {
       });
 
       const data = await res.json();
+      if (!res.ok) {
+        setError(data.error?.message || 'Something went wrong. Please try again.');
+        return;
+      }
       if (data.data?.guest) {
         setGuest(data.data.guest);
         router.push(`/w/${slug}/home`);
+      } else {
+        setError('Could not sign you in. Please try again.');
       }
     } catch (err) {
       console.error('Registration failed:', err);
+      setError('Network error. Please check your connection and try again.');
     } finally {
       setIsRegistering(false);
     }
@@ -192,6 +201,18 @@ export default function GuestRegistrationPage() {
                 </span>
               </button>
             ))}
+          </div>
+        )}
+
+        {error && (
+          <div
+            className="p-3 rounded-xl text-sm mb-4"
+            style={{
+              background: 'rgba(196, 112, 75, 0.08)',
+              color: 'var(--color-terracotta)',
+            }}
+          >
+            {error}
           </div>
         )}
 

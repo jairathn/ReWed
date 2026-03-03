@@ -137,10 +137,10 @@ export async function POST(
     const sanitizedContent = sanitizeText(parsed.data.content);
 
     const result = await pool.query(
-      `INSERT INTO feed_comments (post_id, guest_id, content)
-       VALUES ($1, $2, $3)
+      `INSERT INTO feed_comments (post_id, guest_id, wedding_id, content)
+       VALUES ($1, $2, $3, $4)
        RETURNING id, content, created_at`,
-      [postId, session.guestId, sanitizedContent]
+      [postId, session.guestId, session.weddingId, sanitizedContent]
     );
 
     // Increment comment count

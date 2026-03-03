@@ -58,11 +58,10 @@ export async function POST(request: NextRequest) {
         const { getPool } = await import('@/lib/db/client');
         const pool = getPool();
         await pool.query(
-          `UPDATE subscriptions SET status = $1, current_period_end = $2
-           WHERE stripe_subscription_id = $3`,
+          `UPDATE subscriptions SET status = $1
+           WHERE stripe_subscription_id = $2`,
           [
             subscription.status,
-            new Date((subscription as unknown as { current_period_end: number }).current_period_end * 1000).toISOString(),
             subscription.id,
           ]
         );

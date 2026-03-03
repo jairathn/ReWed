@@ -25,6 +25,13 @@ const createWeddingSchema = z.object({
   slug: slugSchema,
   display_name: z.string().min(1).max(200),
   wedding_date: z.string().optional(),
+  guest_count: z.string().optional(),
+  event_count: z.string().optional(),
+  features: z.object({
+    ai_portraits: z.boolean().default(true),
+    social_feed: z.boolean().default(false),
+    faq_chatbot: z.boolean().default(false),
+  }).optional(),
 });
 
 /**
@@ -65,22 +72,28 @@ export async function POST(request: NextRequest) {
       throw new AppError('WEDDING_SLUG_TAKEN');
     }
 
-    const defaultConfig = {
+    const features = parsed.features;
+    const weddingConfig = {
       theme: { preset: 'classic', primary_color: '#8B7355' },
       features: {
-        ai_portraits: true,
-        social_feed: false,
-        faq_chatbot: false,
+        ai_portraits: features?.ai_portraits ?? true,
+        social_feed: features?.social_feed ?? false,
+        faq_chatbot: features?.faq_chatbot ?? false,
         sms_notifications: false,
       },
       limits: { portraits_per_guest: 3 },
     };
 
+    const packageConfig = {
+      guest_count: parsed.guest_count || '200',
+      event_count: parsed.event_count || '1 event',
+    };
+
     const result = await pool.query(
-      `INSERT INTO weddings (couple_id, slug, display_name, wedding_date, config, status)
-       VALUES ($1, $2, $3, $4, $5, 'setup')
-       RETURNING id, slug, display_name, wedding_date, status, config, created_at`,
-      [coupleId, parsed.slug, parsed.display_name, parsed.wedding_date || null, JSON.stringify(defaultConfig)]
+      `INSERT INTO weddings (couple_id, slug, display_name, wedding_date, config, package_config, status)
+       VALUES ($1, $2, $3, $4, $5, $6, 'setup')
+       RETURNING id, slug, display_name, wedding_date, status, config, package_config, created_at`,
+      [coupleId, parsed.slug, parsed.display_name, parsed.wedding_date || null, JSON.stringify(weddingConfig), JSON.stringify(packageConfig)]
     );
 
     return Response.json({ wedding: result.rows[0] }, { status: 201 });

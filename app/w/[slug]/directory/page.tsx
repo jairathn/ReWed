@@ -96,6 +96,7 @@ export default async function DirectoryPage({
           <div key={letter}>
             {/* Letter header */}
             <div
+              id={letter}
               className="sticky top-0 z-10 py-1 px-1 text-sm font-semibold"
               style={{
                 color: 'var(--color-terracotta)',
