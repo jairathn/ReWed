@@ -1,9 +1,9 @@
 import { z } from 'zod';
 
 const envSchema = z.object({
-  // Database
-  DATABASE_URL: z.string().url().optional(),
-  DATABASE_URL_UNPOOLED: z.string().url().optional(),
+  // Database (Neon via Vercel — postgresql:// URLs don't pass url() validation)
+  DATABASE_URL: z.string().min(1).optional(),
+  DATABASE_URL_UNPOOLED: z.string().min(1).optional(),
 
   // Storage
   R2_ACCOUNT_ID: z.string().optional(),
