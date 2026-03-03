@@ -1,0 +1,199 @@
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap');
+
+:root {
+  /* ── Backgrounds ── */
+  --bg-warm-white: #FEFCF9;
+  --bg-soft-cream: #F7F3ED;
+  --bg-pure-white: #FFFFFF;
+  --bg-warm-gradient: linear-gradient(180deg, #FEF9F2 0%, #FEFCF9 40%, #FFF8F0 100%);
+
+  /* ── Primary ── */
+  --color-terracotta: #C4704B;
+  --color-terracotta-dark: #A85D3E;
+  --color-terracotta-light: #E8C4B8;
+  --color-terracotta-gradient: linear-gradient(135deg, #C4704B 0%, #E8865A 100%);
+
+  /* ── Secondary ── */
+  --color-mediterranean-blue: #2B5F8A;
+  --color-olive: #7A8B5C;
+  --color-golden: #D4A853;
+  --color-sunset-orange: #E8865A;
+  --color-blush: #E8C4B8;
+
+  /* ── Text ── */
+  --text-primary: #2C2825;
+  --text-secondary: #8A8078;
+  --text-tertiary: #B8AFA6;
+  --text-on-dark: #FEFCF9;
+
+  /* ── Borders & Shadows ── */
+  --border-light: rgba(232, 221, 211, 0.5);
+  --border-medium: rgba(232, 221, 211, 0.8);
+  --shadow-soft: 0 2px 12px rgba(44, 40, 37, 0.08);
+  --shadow-medium: 0 4px 20px rgba(44, 40, 37, 0.12);
+  --shadow-terracotta: 0 4px 20px rgba(196, 112, 75, 0.25);
+
+  /* ── Event Colors ── */
+  --event-haldi: #D4A853;
+  --event-sangeet: #E8865A;
+  --event-wedding: #2B5F8A;
+  --event-reception: #7A8B5C;
+
+  /* ── Fonts ── */
+  --font-display: 'Playfair Display', Georgia, serif;
+  --font-body: 'DM Sans', -apple-system, sans-serif;
+}
+
+@theme inline {
+  --color-background: var(--bg-warm-white);
+  --color-foreground: var(--text-primary);
+  --color-terracotta: #C4704B;
+  --color-terracotta-dark: #A85D3E;
+  --color-terracotta-light: #E8C4B8;
+  --color-golden: #D4A853;
+  --color-olive: #7A8B5C;
+  --color-blush: #E8C4B8;
+  --color-mediterranean: #2B5F8A;
+  --color-sunset: #E8865A;
+  --color-cream: #F7F3ED;
+  --color-warm-white: #FEFCF9;
+  --font-display: 'Playfair Display', Georgia, serif;
+  --font-body: 'DM Sans', -apple-system, sans-serif;
+}
+
+body {
+  background: var(--bg-warm-white);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+}
+
+/* ── Component Base Classes ── */
+.btn-primary {
+  background: var(--color-terracotta-gradient);
+  color: white;
+  border: none;
+  border-radius: 999px;
+  padding: 14px 28px;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 16px;
+  box-shadow: var(--shadow-terracotta);
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.btn-primary:active {
+  transform: scale(0.97);
+}
+
+.btn-secondary {
+  background: white;
+  color: var(--color-terracotta);
+  border: 1.5px solid var(--color-terracotta);
+  border-radius: 999px;
+  padding: 14px 28px;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 16px;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.btn-secondary:active {
+  transform: scale(0.97);
+}
+
+.btn-ghost {
+  background: rgba(196, 112, 75, 0.08);
+  color: var(--color-terracotta);
+  border: none;
+  border-radius: 999px;
+  padding: 14px 28px;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 16px;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.btn-ghost:active {
+  transform: scale(0.97);
+}
+
+.card {
+  background: white;
+  border-radius: 16px;
+  box-shadow: var(--shadow-soft);
+  border: 1px solid var(--border-light);
+  overflow: hidden;
+}
+
+.card-feature {
+  background: var(--color-terracotta-gradient);
+  border-radius: 20px;
+  box-shadow: var(--shadow-terracotta);
+  color: white;
+  position: relative;
+  overflow: hidden;
+}
+
+.card-feature::before {
+  content: '';
+  position: absolute;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  top: -20px;
+  right: -20px;
+}
+
+.glass {
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 24px;
+}
+
+/* ── Skeleton shimmer (NEVER use spinners) ── */
+.skeleton {
+  background: linear-gradient(90deg, var(--bg-soft-cream) 25%, #F0EBE4 37%, var(--bg-soft-cream) 63%);
+  background-size: 400% 100%;
+  animation: shimmer 1.4s ease infinite;
+  border-radius: 8px;
+}
+
+@keyframes shimmer {
+  0% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* ── Recording pulse ── */
+@keyframes recording-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.recording-dot {
+  animation: recording-pulse 1.2s ease-in-out infinite;
+}
+
+/* ── Respect reduced motion ── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .skeleton {
+    animation: none;
+    background: var(--bg-soft-cream);
+  }
+}
+
+/* ── Safe area for mobile ── */
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
