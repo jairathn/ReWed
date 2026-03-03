@@ -13,7 +13,7 @@ export async function GET(
 
     const parsed = guestSearchSchema.safeParse({
       q: searchParams.get('q'),
-      limit: searchParams.get('limit'),
+      limit: searchParams.get('limit') ?? undefined,
     });
 
     if (!parsed.success) {
