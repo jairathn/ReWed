@@ -83,6 +83,17 @@ export interface Guest {
   phone: string | null;
   group_label: string | null;
   rsvp_status: 'pending' | 'attending' | 'declined';
+  title: string | null;
+  suffix: string | null;
+  address_line1: string | null;
+  address_line2: string | null;
+  city: string | null;
+  state: string | null;
+  zip: string | null;
+  country: string | null;
+  party_id: string | null;
+  party_role: 'primary' | 'partner' | 'child';
+  relationship: string | null;
   created_at: Date;
 }
 

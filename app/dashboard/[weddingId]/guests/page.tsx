@@ -17,10 +17,35 @@ interface Guest {
 interface ColumnMapping {
   first_name: string | null;
   last_name: string | null;
+  title: string | null;
+  suffix: string | null;
   email: string | null;
   phone: string | null;
   group_label: string | null;
   rsvp_status: string | null;
+  relationship: string | null;
+  address_line1: string | null;
+  address_line2: string | null;
+  city: string | null;
+  state: string | null;
+  zip: string | null;
+  country: string | null;
+  partner_title: string | null;
+  partner_first_name: string | null;
+  partner_last_name: string | null;
+  partner_suffix: string | null;
+  child1_first_name: string | null;
+  child1_last_name: string | null;
+  child2_first_name: string | null;
+  child2_last_name: string | null;
+  child3_first_name: string | null;
+  child3_last_name: string | null;
+  child4_first_name: string | null;
+  child4_last_name: string | null;
+  child5_first_name: string | null;
+  child5_last_name: string | null;
+  total_definitely_invited: string | null;
+  total_maybe_invited: string | null;
 }
 
 type View = 'list' | 'add' | 'import-upload' | 'import-preview' | 'edit';
@@ -47,12 +72,22 @@ export default function GuestsPage({ params }: { params: Promise<{ weddingId: st
   const [csvText, setCsvText] = useState('');
   const [csvHeaders, setCsvHeaders] = useState<string[]>([]);
   const [csvMapping, setCsvMapping] = useState<ColumnMapping>({
-    first_name: null, last_name: null, email: null, phone: null, group_label: null, rsvp_status: null,
+    first_name: null, last_name: null, title: null, suffix: null,
+    email: null, phone: null, group_label: null, rsvp_status: null, relationship: null,
+    address_line1: null, address_line2: null, city: null, state: null, zip: null, country: null,
+    partner_title: null, partner_first_name: null, partner_last_name: null, partner_suffix: null,
+    child1_first_name: null, child1_last_name: null,
+    child2_first_name: null, child2_last_name: null,
+    child3_first_name: null, child3_last_name: null,
+    child4_first_name: null, child4_last_name: null,
+    child5_first_name: null, child5_last_name: null,
+    total_definitely_invited: null, total_maybe_invited: null,
   });
   const [csvPreview, setCsvPreview] = useState<Record<string, string>[]>([]);
   const [csvTotalRows, setCsvTotalRows] = useState(0);
   const [importLoading, setImportLoading] = useState(false);
   const [importResult, setImportResult] = useState<{ imported: number; skipped: number; errors: string[] } | null>(null);
+  const [estimatedGuests, setEstimatedGuests] = useState(0);
 
   const fetchGuests = useCallback(async () => {
     try {
@@ -204,6 +239,7 @@ export default function GuestsPage({ params }: { params: Promise<{ weddingId: st
       setCsvMapping(data.mapping);
       setCsvPreview(data.preview);
       setCsvTotalRows(data.total_rows);
+      setEstimatedGuests(data.estimated_guests || data.total_rows);
       setView('import-preview');
     } catch {
       setError('Network error');
@@ -478,32 +514,93 @@ export default function GuestsPage({ params }: { params: Promise<{ weddingId: st
           Review Column Mapping
         </h1>
         <p style={{ fontSize: 14, color: 'var(--text-secondary)', marginBottom: 24 }}>
-          {csvTotalRows} rows found. Verify the column mapping below, then import.
+          {csvTotalRows} rows found &middot; ~{estimatedGuests} guests will be created (including partners &amp; children). Verify the column mapping below, then import.
         </p>
 
-        {/* Column mapping */}
-        <div className="card" style={{ padding: 20, background: 'var(--bg-pure-white)', marginBottom: 20 }}>
-          <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 16, marginBottom: 16, color: 'var(--text-primary)' }}>
-            Column Mapping
-          </h3>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-            {(['first_name', 'last_name', 'email', 'phone', 'group_label', 'rsvp_status'] as const).map((field) => (
-              <div key={field}>
-                <label style={{ ...labelStyle, fontSize: 12 }}>{field.replace('_', ' ')}</label>
-                <select
-                  style={{ ...inputStyle, fontSize: 13 }}
-                  value={csvMapping[field] || ''}
-                  onChange={(e) => updateMapping(field, e.target.value || null)}
-                >
-                  <option value="">-- Not mapped --</option>
-                  {csvHeaders.map((h) => (
-                    <option key={h} value={h}>{h}</option>
+        {/* Column mapping - grouped */}
+        {(() => {
+          const fieldGroups: { label: string; fields: { key: keyof ColumnMapping; label: string }[] }[] = [
+            { label: 'Primary Guest', fields: [
+              { key: 'title', label: 'Title' },
+              { key: 'first_name', label: 'First Name' },
+              { key: 'last_name', label: 'Last Name' },
+              { key: 'suffix', label: 'Suffix' },
+            ]},
+            { label: 'Contact', fields: [
+              { key: 'email', label: 'Email' },
+              { key: 'phone', label: 'Phone' },
+              { key: 'relationship', label: 'Relationship to Couple' },
+              { key: 'group_label', label: 'Group / Table' },
+              { key: 'rsvp_status', label: 'RSVP Status' },
+            ]},
+            { label: 'Address', fields: [
+              { key: 'address_line1', label: 'Street Address' },
+              { key: 'address_line2', label: 'Street Address (line 2)' },
+              { key: 'city', label: 'City' },
+              { key: 'state', label: 'State / Region' },
+              { key: 'zip', label: 'Zip / Postal Code' },
+              { key: 'country', label: 'Country' },
+            ]},
+            { label: 'Partner', fields: [
+              { key: 'partner_title', label: 'Partner Title' },
+              { key: 'partner_first_name', label: 'Partner First Name' },
+              { key: 'partner_last_name', label: 'Partner Last Name' },
+              { key: 'partner_suffix', label: 'Partner Suffix' },
+            ]},
+            { label: 'Children', fields: [
+              { key: 'child1_first_name', label: 'Child 1 First Name' },
+              { key: 'child1_last_name', label: 'Child 1 Last Name' },
+              { key: 'child2_first_name', label: 'Child 2 First Name' },
+              { key: 'child2_last_name', label: 'Child 2 Last Name' },
+              { key: 'child3_first_name', label: 'Child 3 First Name' },
+              { key: 'child3_last_name', label: 'Child 3 Last Name' },
+              { key: 'child4_first_name', label: 'Child 4 First Name' },
+              { key: 'child4_last_name', label: 'Child 4 Last Name' },
+              { key: 'child5_first_name', label: 'Child 5 First Name' },
+              { key: 'child5_last_name', label: 'Child 5 Last Name' },
+            ]},
+            { label: 'Invite Counts', fields: [
+              { key: 'total_definitely_invited', label: 'Total Definitely Invited' },
+              { key: 'total_maybe_invited', label: 'Total Maybe Invited' },
+            ]},
+          ];
+
+          // Only show groups that have at least one mapped field or relevant headers
+          const hasAnyMapping = (fields: { key: keyof ColumnMapping }[]) =>
+            fields.some((f) => csvMapping[f.key]);
+
+          return fieldGroups.map((group) => {
+            // Always show Primary Guest and Contact; show others only if they have mappings
+            const alwaysShow = ['Primary Guest', 'Contact'];
+            const shouldShow = alwaysShow.includes(group.label) || hasAnyMapping(group.fields);
+            if (!shouldShow) return null;
+
+            return (
+              <div key={group.label} className="card" style={{ padding: 20, background: 'var(--bg-pure-white)', marginBottom: 12 }}>
+                <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 14, marginBottom: 12, color: 'var(--text-primary)' }}>
+                  {group.label}
+                </h3>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                  {group.fields.map((field) => (
+                    <div key={field.key}>
+                      <label style={{ ...labelStyle, fontSize: 11 }}>{field.label}</label>
+                      <select
+                        style={{ ...inputStyle, fontSize: 13 }}
+                        value={csvMapping[field.key] || ''}
+                        onChange={(e) => updateMapping(field.key, e.target.value || null)}
+                      >
+                        <option value="">-- Not mapped --</option>
+                        {csvHeaders.map((h) => (
+                          <option key={h} value={h}>{h}</option>
+                        ))}
+                      </select>
+                    </div>
                   ))}
-                </select>
+                </div>
               </div>
-            ))}
-          </div>
-        </div>
+            );
+          });
+        })()}
 
         {/* Preview table */}
         {csvPreview.length > 0 && (
@@ -540,7 +637,7 @@ export default function GuestsPage({ params }: { params: Promise<{ weddingId: st
 
         <div style={{ display: 'flex', gap: 12 }}>
           <button className="btn-primary" onClick={handleImport} disabled={importLoading} style={{ opacity: importLoading ? 0.5 : 1 }}>
-            {importLoading ? 'Importing...' : `Import ${csvTotalRows} Guests`}
+            {importLoading ? 'Importing...' : `Import ~${estimatedGuests} Guests`}
           </button>
           <button className="btn-ghost" onClick={() => setView('import-upload')}>
             Back
