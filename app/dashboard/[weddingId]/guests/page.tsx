@@ -68,6 +68,10 @@ export default function GuestsPage({ params }: { params: Promise<{ weddingId: st
   const [rsvp, setRsvp] = useState<'pending' | 'attending' | 'declined'>('pending');
   const [formLoading, setFormLoading] = useState(false);
 
+  // Batch selection
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [batchDeleting, setBatchDeleting] = useState(false);
+
   // CSV Import
   const [csvText, setCsvText] = useState('');
   const [csvHeaders, setCsvHeaders] = useState<string[]>([]);
@@ -195,6 +199,44 @@ export default function GuestsPage({ params }: { params: Promise<{ weddingId: st
       }
     } catch {
       // Silently fail
+    }
+  };
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === guests.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(guests.map((g) => g.id)));
+    }
+  };
+
+  const handleBatchDelete = async () => {
+    if (selectedIds.size === 0) return;
+    if (!confirm(`Delete ${selectedIds.size} guest${selectedIds.size !== 1 ? 's' : ''}? This cannot be undone.`)) return;
+    setBatchDeleting(true);
+    try {
+      const res = await fetch(`/api/v1/dashboard/weddings/${weddingId}/guests`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: Array.from(selectedIds) }),
+      });
+      if (res.ok) {
+        setGuests((prev) => prev.filter((g) => !selectedIds.has(g.id)));
+        setSelectedIds(new Set());
+      }
+    } catch {
+      // Silently fail
+    } finally {
+      setBatchDeleting(false);
     }
   };
 
@@ -705,11 +747,60 @@ export default function GuestsPage({ params }: { params: Promise<{ weddingId: st
         </div>
       )}
 
+      {!loading && guests.length > 0 && selectedIds.size > 0 && (
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+          padding: '10px 16px',
+          marginBottom: 12,
+          borderRadius: 10,
+          background: 'rgba(196, 112, 75, 0.08)',
+          border: '1px solid rgba(196, 112, 75, 0.2)',
+        }}>
+          <span style={{ fontSize: 13, color: 'var(--text-primary)', fontWeight: 500 }}>
+            {selectedIds.size} selected
+          </span>
+          <button
+            onClick={handleBatchDelete}
+            disabled={batchDeleting}
+            style={{
+              background: 'var(--color-terracotta)',
+              color: '#fff',
+              border: 'none',
+              borderRadius: 8,
+              padding: '6px 14px',
+              fontSize: 12,
+              fontWeight: 500,
+              cursor: batchDeleting ? 'not-allowed' : 'pointer',
+              opacity: batchDeleting ? 0.6 : 1,
+              fontFamily: 'var(--font-body)',
+            }}
+          >
+            {batchDeleting ? 'Deleting...' : 'Delete Selected'}
+          </button>
+          <button
+            onClick={() => setSelectedIds(new Set())}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: 'var(--text-tertiary)', fontFamily: 'var(--font-body)' }}
+          >
+            Clear selection
+          </button>
+        </div>
+      )}
+
       {!loading && guests.length > 0 && (
         <div className="card" style={{ background: 'var(--bg-pure-white)', overflow: 'hidden' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr>
+                <th style={{ width: 40, padding: '12px 0 12px 16px', borderBottom: '1px solid var(--border-light)' }}>
+                  <input
+                    type="checkbox"
+                    checked={guests.length > 0 && selectedIds.size === guests.length}
+                    onChange={toggleSelectAll}
+                    style={{ cursor: 'pointer', accentColor: 'var(--color-terracotta)' }}
+                  />
+                </th>
                 {['Name', 'Email', 'Phone', 'Group', 'RSVP', ''].map((h) => (
                   <th
                     key={h}
@@ -731,7 +822,15 @@ export default function GuestsPage({ params }: { params: Promise<{ weddingId: st
             </thead>
             <tbody>
               {guests.map((guest) => (
-                <tr key={guest.id} style={{ borderBottom: '1px solid var(--border-light)' }}>
+                <tr key={guest.id} style={{ borderBottom: '1px solid var(--border-light)', background: selectedIds.has(guest.id) ? 'rgba(196, 112, 75, 0.04)' : undefined }}>
+                  <td style={{ width: 40, padding: '12px 0 12px 16px' }}>
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.has(guest.id)}
+                      onChange={() => toggleSelect(guest.id)}
+                      style={{ cursor: 'pointer', accentColor: 'var(--color-terracotta)' }}
+                    />
+                  </td>
                   <td style={{ padding: '12px 16px', fontSize: 14, fontWeight: 500, color: 'var(--text-primary)' }}>
                     {guest.display_name}
                   </td>

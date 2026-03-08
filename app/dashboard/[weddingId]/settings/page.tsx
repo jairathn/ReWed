@@ -51,6 +51,10 @@ export default function SettingsPage({ params }: { params: Promise<{ weddingId: 
   const [description, setDescription] = useState('');
   const [logistics, setLogistics] = useState('');
 
+  // Batch selection
+  const [selectedEventIds, setSelectedEventIds] = useState<Set<string>>(new Set());
+  const [batchDeleting, setBatchDeleting] = useState(false);
+
   // Bulk import state
   const [importText, setImportText] = useState('');
   const [importParsed, setImportParsed] = useState<ParsedEvent[] | null>(null);
@@ -202,6 +206,44 @@ export default function SettingsPage({ params }: { params: Promise<{ weddingId: 
     setDescription(ev.description || '');
     setLogistics(ev.logistics || '');
     setView('edit');
+  };
+
+  const toggleEventSelect = (id: string) => {
+    setSelectedEventIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAllEvents = () => {
+    if (selectedEventIds.size === events.length) {
+      setSelectedEventIds(new Set());
+    } else {
+      setSelectedEventIds(new Set(events.map((e) => e.id)));
+    }
+  };
+
+  const handleBatchDeleteEvents = async () => {
+    if (selectedEventIds.size === 0) return;
+    if (!confirm(`Delete ${selectedEventIds.size} event${selectedEventIds.size !== 1 ? 's' : ''}? This cannot be undone.`)) return;
+    setBatchDeleting(true);
+    try {
+      const res = await fetch(`/api/v1/dashboard/weddings/${weddingId}/events`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: Array.from(selectedEventIds) }),
+      });
+      if (res.ok) {
+        setEvents((prev) => prev.filter((e) => !selectedEventIds.has(e.id)));
+        setSelectedEventIds(new Set());
+      }
+    } catch {
+      // Silently fail
+    } finally {
+      setBatchDeleting(false);
+    }
   };
 
   const inputStyle: React.CSSProperties = {
@@ -495,33 +537,86 @@ export default function SettingsPage({ params }: { params: Promise<{ weddingId: 
       )}
 
       {!loading && events.length > 0 && (
+        <>
+        {/* Batch controls */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 13, color: 'var(--text-secondary)', fontFamily: 'var(--font-body)' }}>
+            <input
+              type="checkbox"
+              checked={events.length > 0 && selectedEventIds.size === events.length}
+              onChange={toggleSelectAllEvents}
+              style={{ cursor: 'pointer', accentColor: 'var(--color-terracotta)' }}
+            />
+            Select all
+          </label>
+          {selectedEventIds.size > 0 && (
+            <>
+              <span style={{ fontSize: 13, color: 'var(--text-primary)', fontWeight: 500 }}>
+                {selectedEventIds.size} selected
+              </span>
+              <button
+                onClick={handleBatchDeleteEvents}
+                disabled={batchDeleting}
+                style={{
+                  background: 'var(--color-terracotta)',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: 8,
+                  padding: '6px 14px',
+                  fontSize: 12,
+                  fontWeight: 500,
+                  cursor: batchDeleting ? 'not-allowed' : 'pointer',
+                  opacity: batchDeleting ? 0.6 : 1,
+                  fontFamily: 'var(--font-body)',
+                }}
+              >
+                {batchDeleting ? 'Deleting...' : 'Delete Selected'}
+              </button>
+              <button
+                onClick={() => setSelectedEventIds(new Set())}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: 'var(--text-tertiary)', fontFamily: 'var(--font-body)' }}
+              >
+                Clear
+              </button>
+            </>
+          )}
+        </div>
+
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {events.map((ev) => (
-            <div key={ev.id} className="card" style={{ padding: 20, background: 'var(--bg-pure-white)' }}>
+            <div key={ev.id} className="card" style={{ padding: 20, background: 'var(--bg-pure-white)', border: selectedEventIds.has(ev.id) ? '1.5px solid rgba(196, 112, 75, 0.4)' : undefined }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                <div style={{ flex: 1 }}>
-                  <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 500, color: 'var(--text-primary)', margin: '0 0 6px' }}>
-                    {ev.name}
-                  </h3>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, fontSize: 13, color: 'var(--text-secondary)' }}>
-                    {ev.date && (
-                      <span>
-                        {new Date(ev.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                      </span>
-                    )}
-                    {(ev.start_time || ev.end_time) && (
-                      <span>{formatTime(ev.start_time)}{ev.end_time ? ` – ${formatTime(ev.end_time)}` : ''}</span>
-                    )}
-                    {ev.venue_name && <span>{ev.venue_name}</span>}
-                    {ev.dress_code && (
-                      <span style={{ background: 'var(--bg-soft-cream)', padding: '1px 8px', borderRadius: 999, fontSize: 11 }}>
-                        {ev.dress_code}
-                      </span>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, flex: 1 }}>
+                  <input
+                    type="checkbox"
+                    checked={selectedEventIds.has(ev.id)}
+                    onChange={() => toggleEventSelect(ev.id)}
+                    style={{ cursor: 'pointer', accentColor: 'var(--color-terracotta)', marginTop: 4, flexShrink: 0 }}
+                  />
+                  <div style={{ flex: 1 }}>
+                    <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 500, color: 'var(--text-primary)', margin: '0 0 6px' }}>
+                      {ev.name}
+                    </h3>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, fontSize: 13, color: 'var(--text-secondary)' }}>
+                      {ev.date && (
+                        <span>
+                          {new Date(ev.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                        </span>
+                      )}
+                      {(ev.start_time || ev.end_time) && (
+                        <span>{formatTime(ev.start_time)}{ev.end_time ? ` – ${formatTime(ev.end_time)}` : ''}</span>
+                      )}
+                      {ev.venue_name && <span>{ev.venue_name}</span>}
+                      {ev.dress_code && (
+                        <span style={{ background: 'var(--bg-soft-cream)', padding: '1px 8px', borderRadius: 999, fontSize: 11 }}>
+                          {ev.dress_code}
+                        </span>
+                      )}
+                    </div>
+                    {ev.description && (
+                      <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 8, lineHeight: 1.5, whiteSpace: 'pre-line' }}>{ev.description}</p>
                     )}
                   </div>
-                  {ev.description && (
-                    <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 8, lineHeight: 1.5, whiteSpace: 'pre-line' }}>{ev.description}</p>
-                  )}
                 </div>
                 <div style={{ display: 'flex', gap: 8, flexShrink: 0, marginLeft: 16 }}>
                   <button
@@ -541,6 +636,7 @@ export default function SettingsPage({ params }: { params: Promise<{ weddingId: 
             </div>
           ))}
         </div>
+        </>
       )}
     </div>
   );
