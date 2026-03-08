@@ -520,7 +520,7 @@ export default function SettingsPage({ params }: { params: Promise<{ weddingId: 
                     )}
                   </div>
                   {ev.description && (
-                    <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 8, lineHeight: 1.5 }}>{ev.description}</p>
+                    <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 8, lineHeight: 1.5, whiteSpace: 'pre-line' }}>{ev.description}</p>
                   )}
                 </div>
                 <div style={{ display: 'flex', gap: 8, flexShrink: 0, marginLeft: 16 }}>

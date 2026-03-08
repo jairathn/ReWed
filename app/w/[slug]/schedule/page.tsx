@@ -219,7 +219,7 @@ export default async function SchedulePage({
                     {event.description && (
                       <p
                         className="text-sm mt-2"
-                        style={{ color: 'var(--text-secondary)' }}
+                        style={{ color: 'var(--text-secondary)', whiteSpace: 'pre-line' }}
                       >
                         {event.description}
                       </p>
@@ -228,7 +228,7 @@ export default async function SchedulePage({
                     {event.logistics && (
                       <p
                         className="text-xs mt-2 italic"
-                        style={{ color: 'var(--text-tertiary)' }}
+                        style={{ color: 'var(--text-tertiary)', whiteSpace: 'pre-line' }}
                       >
                         {event.logistics}
                       </p>
