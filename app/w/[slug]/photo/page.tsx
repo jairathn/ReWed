@@ -40,6 +40,7 @@ export default function PhotoBoothPage() {
   const [selectedStyle, setSelectedStyle] = useState<string | null>(null);
   const [flashOn, setFlashOn] = useState(false);
   const [flashSupported, setFlashSupported] = useState(false);
+  const [screenFlashing, setScreenFlashing] = useState(false);
 
   // Auth guard
   useEffect(() => {
@@ -115,13 +116,20 @@ export default function PhotoBoothPage() {
   };
 
   const toggleFlash = async () => {
-    const track = streamRef.current?.getVideoTracks()[0];
-    if (!track) return;
-    try {
-      await track.applyConstraints({ advanced: [{ torch: !flashOn } as MediaTrackConstraintSet] });
+    if (flashSupported) {
+      // Hardware torch available — toggle it
+      const track = streamRef.current?.getVideoTracks()[0];
+      if (!track) return;
+      try {
+        await track.applyConstraints({ advanced: [{ torch: !flashOn } as MediaTrackConstraintSet] });
+        setFlashOn(!flashOn);
+      } catch {
+        // Torch failed, just toggle for screen flash fallback
+        setFlashOn(!flashOn);
+      }
+    } else {
+      // No hardware torch — toggle screen flash mode
       setFlashOn(!flashOn);
-    } catch {
-      // Torch not available on this device/browser
     }
   };
 
@@ -130,33 +138,47 @@ export default function PhotoBoothPage() {
     const canvas = canvasRef.current;
     if (!video || !canvas) return;
 
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    const doCapture = () => {
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
 
-    ctx.drawImage(video, 0, 0);
-    canvas.toBlob(
-      (blob) => {
-        if (!blob) return;
-        setCapturedBlob(blob);
-        const url = URL.createObjectURL(blob);
-        setCapturedUrl(url);
+      ctx.drawImage(video, 0, 0);
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) return;
+          setCapturedBlob(blob);
+          const url = URL.createObjectURL(blob);
+          setCapturedUrl(url);
 
-        // Stop camera stream to save battery
-        if (streamRef.current) {
-          streamRef.current.getTracks().forEach((t) => t.stop());
-        }
+          // Stop camera stream to save battery
+          if (streamRef.current) {
+            streamRef.current.getTracks().forEach((t) => t.stop());
+          }
 
-        if (mode === 'ai-portrait') {
-          setPhase('style-picker');
-        } else {
-          setPhase('review');
-        }
-      },
-      'image/jpeg',
-      0.92
-    );
+          // Hide screen flash after capture
+          setScreenFlashing(false);
+
+          if (mode === 'ai-portrait') {
+            setPhase('style-picker');
+          } else {
+            setPhase('review');
+          }
+        },
+        'image/jpeg',
+        0.92
+      );
+    };
+
+    // Screen flash: when flash is on but no hardware torch (iPhone, front camera)
+    if (flashOn && !flashSupported) {
+      setScreenFlashing(true);
+      // Wait for the screen to brighten before capturing
+      setTimeout(doCapture, 250);
+    } else {
+      doCapture();
+    }
   };
 
   const retake = () => {
@@ -371,23 +393,32 @@ export default function PhotoBoothPage() {
             </div>
           </div>
 
-          {/* Flash toggle button */}
-          {flashSupported && (
-            <button
-              onClick={toggleFlash}
-              className="absolute top-7 left-5 w-11 h-11 rounded-full flex items-center justify-center z-10"
+          {/* Screen flash overlay — full white for devices without hardware torch */}
+          {screenFlashing && (
+            <div
+              className="absolute inset-0 z-30"
               style={{
-                background: flashOn ? 'rgba(255, 214, 10, 0.3)' : 'rgba(0, 0, 0, 0.3)',
-                backdropFilter: 'blur(20px)',
-                WebkitBackdropFilter: 'blur(20px)',
+                background: 'white',
+                opacity: 1,
               }}
-              aria-label={flashOn ? 'Turn off flash' : 'Turn on flash'}
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill={flashOn ? '#FFD60A' : 'none'} stroke={flashOn ? '#FFD60A' : 'white'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-              </svg>
-            </button>
+            />
           )}
+
+          {/* Flash toggle button — always visible (uses hardware torch or screen flash) */}
+          <button
+            onClick={toggleFlash}
+            className="absolute top-7 left-5 w-11 h-11 rounded-full flex items-center justify-center z-10"
+            style={{
+              background: flashOn ? 'rgba(255, 214, 10, 0.3)' : 'rgba(0, 0, 0, 0.3)',
+              backdropFilter: 'blur(20px)',
+              WebkitBackdropFilter: 'blur(20px)',
+            }}
+            aria-label={flashOn ? 'Turn off flash' : 'Turn on flash'}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill={flashOn ? '#FFD60A' : 'none'} stroke={flashOn ? '#FFD60A' : 'white'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+            </svg>
+          </button>
 
           {/* Camera flip button */}
           <button
