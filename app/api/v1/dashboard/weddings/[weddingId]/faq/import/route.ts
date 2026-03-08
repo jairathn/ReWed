@@ -108,11 +108,13 @@ The text may have various formats:
 - Lists with headers as questions and body text as answers
 
 For each Q&A pair found, return a JSON object with:
-- question: string — the question, cleaned and deduplicated (if doubled, use just one copy)
-- answer: string — the full answer text, preserving line breaks, lists, and URLs
+- question: string — the question, deduplicated if doubled (Zola format), but otherwise using the EXACT original wording
+- answer: string — the EXACT original answer text as the user wrote it, preserving line breaks, lists, and URLs
+
+CRITICAL: Do NOT rephrase, reword, summarize, or re-interpret ANY of the text. The users wrote their FAQ content with specific wording for a reason — preserve it verbatim.
 
 Important:
-- Clean up any markdown formatting (remove **, __, etc.)
+- Remove markdown formatting characters only (**, __, etc.) but keep the underlying text exactly as written
 - Preserve URLs in answers
 - Preserve numbered lists and bullet points
 - If a question appears doubled (Zola format), deduplicate it
