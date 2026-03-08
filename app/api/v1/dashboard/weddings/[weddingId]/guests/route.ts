@@ -91,35 +91,3 @@ export async function POST(
   }
 }
 
-const batchDeleteSchema = z.object({
-  ids: z.array(z.string().uuid()).min(1).max(500),
-});
-
-/**
- * DELETE /api/v1/dashboard/weddings/[weddingId]/guests
- * Batch delete guests by IDs.
- */
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ weddingId: string }> }
-) {
-  try {
-    const { weddingId } = await params;
-    const coupleId = getCoupleId(request);
-    await verifyWeddingOwnership(coupleId, weddingId);
-
-    const body = await request.json();
-    const { ids } = batchDeleteSchema.parse(body);
-    const pool = getPool();
-
-    const placeholders = ids.map((_, i) => `$${i + 2}`).join(', ');
-    const result = await pool.query(
-      `DELETE FROM guests WHERE wedding_id = $1 AND id IN (${placeholders}) RETURNING id`,
-      [weddingId, ...ids]
-    );
-
-    return Response.json({ deleted: result.rowCount });
-  } catch (error) {
-    return handleApiError(error);
-  }
-}

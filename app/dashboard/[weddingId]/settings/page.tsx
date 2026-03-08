@@ -230,8 +230,8 @@ export default function SettingsPage({ params }: { params: Promise<{ weddingId: 
     if (!confirm(`Delete ${selectedEventIds.size} event${selectedEventIds.size !== 1 ? 's' : ''}? This cannot be undone.`)) return;
     setBatchDeleting(true);
     try {
-      const res = await fetch(`/api/v1/dashboard/weddings/${weddingId}/events`, {
-        method: 'DELETE',
+      const res = await fetch(`/api/v1/dashboard/weddings/${weddingId}/events/batch-delete`, {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ids: Array.from(selectedEventIds) }),
       });
