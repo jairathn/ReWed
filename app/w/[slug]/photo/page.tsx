@@ -223,7 +223,7 @@ export default function PhotoBoothPage() {
         const completeData = await completeRes.json();
         const sourceUploadId = completeData.data?.upload?.id || upload_id;
 
-        await fetch(`/api/v1/w/${slug}/ai-portrait`, {
+        const portraitRes = await fetch(`/api/v1/w/${slug}/ai-portrait`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -231,6 +231,9 @@ export default function PhotoBoothPage() {
             style_id: styleId,
           }),
         });
+        if (!portraitRes.ok) {
+          console.warn('AI portrait generation request failed:', await portraitRes.text());
+        }
       }
 
       setPhase('success');

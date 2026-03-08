@@ -1,0 +1,675 @@
+'use client';
+
+import { useState, useEffect, useCallback, use } from 'react';
+
+interface Guest {
+  id: string;
+  first_name: string;
+  last_name: string;
+  display_name: string;
+  email: string | null;
+  phone: string | null;
+  group_label: string | null;
+  rsvp_status: 'pending' | 'attending' | 'declined';
+  created_at: string;
+}
+
+interface ColumnMapping {
+  first_name: string | null;
+  last_name: string | null;
+  email: string | null;
+  phone: string | null;
+  group_label: string | null;
+  rsvp_status: string | null;
+}
+
+type View = 'list' | 'add' | 'import-upload' | 'import-preview' | 'edit';
+
+export default function GuestsPage({ params }: { params: Promise<{ weddingId: string }> }) {
+  const { weddingId } = use(params);
+  const [guests, setGuests] = useState<Guest[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [view, setView] = useState<View>('list');
+  const [error, setError] = useState('');
+  const [search, setSearch] = useState('');
+
+  // Add/Edit form
+  const [editGuest, setEditGuest] = useState<Guest | null>(null);
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [groupLabel, setGroupLabel] = useState('');
+  const [rsvp, setRsvp] = useState<'pending' | 'attending' | 'declined'>('pending');
+  const [formLoading, setFormLoading] = useState(false);
+
+  // CSV Import
+  const [csvText, setCsvText] = useState('');
+  const [csvHeaders, setCsvHeaders] = useState<string[]>([]);
+  const [csvMapping, setCsvMapping] = useState<ColumnMapping>({
+    first_name: null, last_name: null, email: null, phone: null, group_label: null, rsvp_status: null,
+  });
+  const [csvPreview, setCsvPreview] = useState<Record<string, string>[]>([]);
+  const [csvTotalRows, setCsvTotalRows] = useState(0);
+  const [importLoading, setImportLoading] = useState(false);
+  const [importResult, setImportResult] = useState<{ imported: number; skipped: number; errors: string[] } | null>(null);
+
+  const fetchGuests = useCallback(async () => {
+    try {
+      const url = search.length >= 2
+        ? `/api/v1/dashboard/weddings/${weddingId}/guests?q=${encodeURIComponent(search)}`
+        : `/api/v1/dashboard/weddings/${weddingId}/guests`;
+      const res = await fetch(url);
+      if (res.ok) {
+        const data = await res.json();
+        setGuests(data.guests || []);
+      }
+    } catch {
+      // Silently fail
+    } finally {
+      setLoading(false);
+    }
+  }, [weddingId, search]);
+
+  useEffect(() => { fetchGuests(); }, [fetchGuests]);
+
+  const resetForm = () => {
+    setFirstName('');
+    setLastName('');
+    setEmail('');
+    setPhone('');
+    setGroupLabel('');
+    setRsvp('pending');
+    setEditGuest(null);
+    setError('');
+  };
+
+  const handleAdd = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setFormLoading(true);
+    setError('');
+    try {
+      const res = await fetch(`/api/v1/dashboard/weddings/${weddingId}/guests`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          first_name: firstName,
+          last_name: lastName,
+          email: email || undefined,
+          phone: phone || undefined,
+          group_label: groupLabel || undefined,
+          rsvp_status: rsvp,
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        setError(data.error?.message || 'Failed to add guest');
+        return;
+      }
+      resetForm();
+      setView('list');
+      fetchGuests();
+    } catch {
+      setError('Network error');
+    } finally {
+      setFormLoading(false);
+    }
+  };
+
+  const handleUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editGuest) return;
+    setFormLoading(true);
+    setError('');
+    try {
+      const res = await fetch(`/api/v1/dashboard/weddings/${weddingId}/guests/${editGuest.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          first_name: firstName,
+          last_name: lastName,
+          email: email || null,
+          phone: phone || null,
+          group_label: groupLabel || null,
+          rsvp_status: rsvp,
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        setError(data.error?.message || 'Failed to update guest');
+        return;
+      }
+      resetForm();
+      setView('list');
+      fetchGuests();
+    } catch {
+      setError('Network error');
+    } finally {
+      setFormLoading(false);
+    }
+  };
+
+  const handleDelete = async (guestId: string) => {
+    if (!confirm('Delete this guest? This cannot be undone.')) return;
+    try {
+      const res = await fetch(`/api/v1/dashboard/weddings/${weddingId}/guests/${guestId}`, {
+        method: 'DELETE',
+      });
+      if (res.ok) {
+        setGuests((prev) => prev.filter((g) => g.id !== guestId));
+      }
+    } catch {
+      // Silently fail
+    }
+  };
+
+  const startEdit = (guest: Guest) => {
+    setEditGuest(guest);
+    setFirstName(guest.first_name);
+    setLastName(guest.last_name);
+    setEmail(guest.email || '');
+    setPhone(guest.phone || '');
+    setGroupLabel(guest.group_label || '');
+    setRsvp(guest.rsvp_status);
+    setView('edit');
+  };
+
+  // CSV Import handlers
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const text = ev.target?.result as string;
+      setCsvText(text);
+    };
+    reader.readAsText(file);
+  };
+
+  const handlePreview = async () => {
+    setImportLoading(true);
+    setError('');
+    try {
+      const res = await fetch(`/api/v1/dashboard/weddings/${weddingId}/guests/import`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ csv_text: csvText, step: 'preview' }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error?.message || 'Failed to parse CSV');
+        return;
+      }
+      setCsvHeaders(data.headers);
+      setCsvMapping(data.mapping);
+      setCsvPreview(data.preview);
+      setCsvTotalRows(data.total_rows);
+      setView('import-preview');
+    } catch {
+      setError('Network error');
+    } finally {
+      setImportLoading(false);
+    }
+  };
+
+  const handleImport = async () => {
+    setImportLoading(true);
+    setError('');
+    try {
+      const res = await fetch(`/api/v1/dashboard/weddings/${weddingId}/guests/import`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ csv_text: csvText, step: 'import', column_mapping: csvMapping }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error?.message || 'Import failed');
+        return;
+      }
+      setImportResult(data);
+      fetchGuests();
+    } catch {
+      setError('Network error');
+    } finally {
+      setImportLoading(false);
+    }
+  };
+
+  const updateMapping = (field: keyof ColumnMapping, header: string | null) => {
+    setCsvMapping((prev) => ({ ...prev, [field]: header }));
+  };
+
+  const rsvpBadge = (status: string) => {
+    const colors: Record<string, { bg: string; fg: string }> = {
+      attending: { bg: 'rgba(122, 139, 92, 0.12)', fg: 'var(--color-olive)' },
+      declined: { bg: 'rgba(196, 112, 75, 0.1)', fg: 'var(--color-terracotta)' },
+      pending: { bg: 'rgba(0, 0, 0, 0.05)', fg: 'var(--text-tertiary)' },
+    };
+    const c = colors[status] || colors.pending;
+    return (
+      <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 999, background: c.bg, color: c.fg, fontWeight: 500 }}>
+        {status}
+      </span>
+    );
+  };
+
+  const inputStyle: React.CSSProperties = {
+    width: '100%',
+    padding: '10px 14px',
+    borderRadius: 10,
+    border: '1.5px solid var(--border-medium)',
+    background: 'var(--bg-soft-cream)',
+    fontSize: 14,
+    fontFamily: 'var(--font-body)',
+    color: 'var(--text-primary)',
+    outline: 'none',
+  };
+
+  const labelStyle: React.CSSProperties = {
+    display: 'block',
+    fontSize: 13,
+    fontWeight: 500,
+    marginBottom: 4,
+    color: 'var(--text-primary)',
+    fontFamily: 'var(--font-body)',
+  };
+
+  // ─── Add/Edit Form ───
+  if (view === 'add' || view === 'edit') {
+    return (
+      <div style={{ maxWidth: 520 }}>
+        <button
+          onClick={() => { resetForm(); setView('list'); }}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, color: 'var(--text-tertiary)', marginBottom: 16, fontFamily: 'var(--font-body)' }}
+        >
+          &larr; Back to guest list
+        </button>
+        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 500, color: 'var(--text-primary)', marginBottom: 24 }}>
+          {view === 'edit' ? 'Edit Guest' : 'Add Guest'}
+        </h1>
+        <form onSubmit={view === 'edit' ? handleUpdate : handleAdd} className="card" style={{ padding: 24, background: 'var(--bg-pure-white)' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+            <div>
+              <label style={labelStyle}>First Name *</label>
+              <input style={inputStyle} value={firstName} onChange={(e) => setFirstName(e.target.value)} required />
+            </div>
+            <div>
+              <label style={labelStyle}>Last Name *</label>
+              <input style={inputStyle} value={lastName} onChange={(e) => setLastName(e.target.value)} required />
+            </div>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+            <div>
+              <label style={labelStyle}>Email</label>
+              <input style={inputStyle} type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+            </div>
+            <div>
+              <label style={labelStyle}>Phone</label>
+              <input style={inputStyle} value={phone} onChange={(e) => setPhone(e.target.value)} />
+            </div>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 20 }}>
+            <div>
+              <label style={labelStyle}>Group / Table</label>
+              <input style={inputStyle} value={groupLabel} onChange={(e) => setGroupLabel(e.target.value)} placeholder="e.g., Bride's Family" />
+            </div>
+            <div>
+              <label style={labelStyle}>RSVP Status</label>
+              <select style={inputStyle} value={rsvp} onChange={(e) => setRsvp(e.target.value as Guest['rsvp_status'])}>
+                <option value="pending">Pending</option>
+                <option value="attending">Attending</option>
+                <option value="declined">Declined</option>
+              </select>
+            </div>
+          </div>
+          {error && <p style={{ color: 'var(--color-terracotta)', fontSize: 13, marginBottom: 12 }}>{error}</p>}
+          <div style={{ display: 'flex', gap: 12 }}>
+            <button type="submit" className="btn-primary" disabled={formLoading} style={{ opacity: formLoading ? 0.7 : 1 }}>
+              {formLoading ? 'Saving...' : view === 'edit' ? 'Update Guest' : 'Add Guest'}
+            </button>
+            <button type="button" className="btn-ghost" onClick={() => { resetForm(); setView('list'); }}>
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
+    );
+  }
+
+  // ─── CSV Upload ───
+  if (view === 'import-upload') {
+    return (
+      <div style={{ maxWidth: 600 }}>
+        <button
+          onClick={() => { setCsvText(''); setError(''); setImportResult(null); setView('list'); }}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, color: 'var(--text-tertiary)', marginBottom: 16, fontFamily: 'var(--font-body)' }}
+        >
+          &larr; Back to guest list
+        </button>
+        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 500, color: 'var(--text-primary)', marginBottom: 8 }}>
+          Import Guests from CSV
+        </h1>
+        <p style={{ fontSize: 14, color: 'var(--text-secondary)', marginBottom: 24 }}>
+          Upload a CSV exported from Zola, The Knot, or any spreadsheet. We'll automatically detect the columns.
+        </p>
+
+        <div className="card" style={{ padding: 24, background: 'var(--bg-pure-white)' }}>
+          <div
+            style={{
+              border: '2px dashed var(--border-medium)',
+              borderRadius: 12,
+              padding: 32,
+              textAlign: 'center',
+              marginBottom: 16,
+            }}
+          >
+            <input
+              type="file"
+              accept=".csv,text/csv"
+              onChange={handleFileUpload}
+              style={{ display: 'none' }}
+              id="csv-upload"
+            />
+            <label
+              htmlFor="csv-upload"
+              style={{
+                cursor: 'pointer',
+                display: 'block',
+              }}
+            >
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--color-terracotta)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ margin: '0 auto 12px' }}>
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="17 8 12 3 7 8" />
+                <line x1="12" y1="3" x2="12" y2="15" />
+              </svg>
+              <p style={{ fontSize: 14, color: 'var(--text-primary)', fontWeight: 500, margin: '0 0 4px' }}>
+                Click to upload CSV file
+              </p>
+              <p style={{ fontSize: 12, color: 'var(--text-tertiary)', margin: 0 }}>
+                Supports Zola, The Knot, and standard CSV formats
+              </p>
+            </label>
+          </div>
+
+          {csvText && (
+            <div style={{ marginBottom: 16 }}>
+              <p style={{ fontSize: 13, color: 'var(--color-olive)', fontWeight: 500 }}>
+                File loaded ({csvText.split('\n').length - 1} rows detected)
+              </p>
+            </div>
+          )}
+
+          <p style={{ fontSize: 13, color: 'var(--text-tertiary)', margin: '0 0 12px' }}>
+            Or paste CSV data directly:
+          </p>
+          <textarea
+            style={{
+              ...inputStyle,
+              minHeight: 120,
+              resize: 'vertical',
+            }}
+            value={csvText}
+            onChange={(e) => setCsvText(e.target.value)}
+            placeholder={'First Name,Last Name,Email,Phone,Group\nJohn,Doe,john@example.com,555-1234,Groom\'s Side'}
+          />
+
+          {error && <p style={{ color: 'var(--color-terracotta)', fontSize: 13, marginTop: 12 }}>{error}</p>}
+
+          <button
+            className="btn-primary"
+            onClick={handlePreview}
+            disabled={!csvText.trim() || importLoading}
+            style={{ marginTop: 16, opacity: !csvText.trim() || importLoading ? 0.5 : 1 }}
+          >
+            {importLoading ? 'Analyzing...' : 'Preview Import'}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ─── CSV Preview + Mapping ───
+  if (view === 'import-preview') {
+    if (importResult) {
+      return (
+        <div style={{ maxWidth: 600 }}>
+          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 500, color: 'var(--text-primary)', marginBottom: 24 }}>
+            Import Complete
+          </h1>
+          <div className="card" style={{ padding: 24, background: 'var(--bg-pure-white)' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 20 }}>
+              <div style={{ textAlign: 'center', padding: 16, borderRadius: 12, background: 'rgba(122, 139, 92, 0.08)' }}>
+                <p style={{ fontSize: 28, fontWeight: 600, color: 'var(--color-olive)', margin: 0 }}>{importResult.imported}</p>
+                <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: 0 }}>imported</p>
+              </div>
+              <div style={{ textAlign: 'center', padding: 16, borderRadius: 12, background: 'rgba(0, 0, 0, 0.04)' }}>
+                <p style={{ fontSize: 28, fontWeight: 600, color: 'var(--text-tertiary)', margin: 0 }}>{importResult.skipped}</p>
+                <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: 0 }}>skipped</p>
+              </div>
+            </div>
+            {importResult.errors.length > 0 && (
+              <div style={{ marginBottom: 16 }}>
+                <p style={{ fontSize: 13, fontWeight: 500, color: 'var(--color-terracotta)', marginBottom: 8 }}>Errors:</p>
+                {importResult.errors.map((err, i) => (
+                  <p key={i} style={{ fontSize: 12, color: 'var(--text-secondary)', margin: '2px 0' }}>{err}</p>
+                ))}
+              </div>
+            )}
+            <button
+              className="btn-primary"
+              onClick={() => { setView('list'); setCsvText(''); setImportResult(null); }}
+            >
+              View Guest List
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div style={{ maxWidth: 800 }}>
+        <button
+          onClick={() => setView('import-upload')}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, color: 'var(--text-tertiary)', marginBottom: 16, fontFamily: 'var(--font-body)' }}
+        >
+          &larr; Back
+        </button>
+        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 500, color: 'var(--text-primary)', marginBottom: 8 }}>
+          Review Column Mapping
+        </h1>
+        <p style={{ fontSize: 14, color: 'var(--text-secondary)', marginBottom: 24 }}>
+          {csvTotalRows} rows found. Verify the column mapping below, then import.
+        </p>
+
+        {/* Column mapping */}
+        <div className="card" style={{ padding: 20, background: 'var(--bg-pure-white)', marginBottom: 20 }}>
+          <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 16, marginBottom: 16, color: 'var(--text-primary)' }}>
+            Column Mapping
+          </h3>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            {(['first_name', 'last_name', 'email', 'phone', 'group_label', 'rsvp_status'] as const).map((field) => (
+              <div key={field}>
+                <label style={{ ...labelStyle, fontSize: 12 }}>{field.replace('_', ' ')}</label>
+                <select
+                  style={{ ...inputStyle, fontSize: 13 }}
+                  value={csvMapping[field] || ''}
+                  onChange={(e) => updateMapping(field, e.target.value || null)}
+                >
+                  <option value="">-- Not mapped --</option>
+                  {csvHeaders.map((h) => (
+                    <option key={h} value={h}>{h}</option>
+                  ))}
+                </select>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Preview table */}
+        {csvPreview.length > 0 && (
+          <div className="card" style={{ padding: 20, background: 'var(--bg-pure-white)', marginBottom: 20, overflowX: 'auto' }}>
+            <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 16, marginBottom: 12, color: 'var(--text-primary)' }}>
+              Preview (first {csvPreview.length} rows)
+            </h3>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+              <thead>
+                <tr>
+                  {csvHeaders.map((h) => (
+                    <th key={h} style={{ textAlign: 'left', padding: '8px 10px', borderBottom: '1px solid var(--border-light)', color: 'var(--text-tertiary)', fontSize: 11, textTransform: 'uppercase' }}>
+                      {h}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {csvPreview.map((row, i) => (
+                  <tr key={i}>
+                    {csvHeaders.map((h) => (
+                      <td key={h} style={{ padding: '8px 10px', borderBottom: '1px solid var(--border-light)', color: 'var(--text-primary)' }}>
+                        {row[h] || ''}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {error && <p style={{ color: 'var(--color-terracotta)', fontSize: 13, marginBottom: 12 }}>{error}</p>}
+
+        <div style={{ display: 'flex', gap: 12 }}>
+          <button className="btn-primary" onClick={handleImport} disabled={importLoading} style={{ opacity: importLoading ? 0.5 : 1 }}>
+            {importLoading ? 'Importing...' : `Import ${csvTotalRows} Guests`}
+          </button>
+          <button className="btn-ghost" onClick={() => setView('import-upload')}>
+            Back
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ─── Guest List ───
+  return (
+    <div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
+        <div>
+          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 500, color: 'var(--text-primary)', margin: 0 }}>
+            Guests
+          </h1>
+          <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 4 }}>
+            {guests.length} guest{guests.length !== 1 ? 's' : ''}
+          </p>
+        </div>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button className="btn-secondary" onClick={() => { setView('import-upload'); setCsvText(''); setImportResult(null); setError(''); }} style={{ fontSize: 13, padding: '8px 16px' }}>
+            Import CSV
+          </button>
+          <button className="btn-primary" onClick={() => { resetForm(); setView('add'); }} style={{ fontSize: 13, padding: '8px 16px' }}>
+            + Add Guest
+          </button>
+        </div>
+      </div>
+
+      {/* Search */}
+      <div style={{ marginBottom: 16 }}>
+        <input
+          style={{ ...inputStyle, maxWidth: 320 }}
+          placeholder="Search guests..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+      </div>
+
+      {loading && (
+        <div className="card p-6">
+          <div className="skeleton" style={{ width: '100%', height: 200 }} />
+        </div>
+      )}
+
+      {!loading && guests.length === 0 && (
+        <div className="card" style={{ padding: 48, textAlign: 'center', background: 'var(--bg-pure-white)' }}>
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" style={{ margin: '0 auto 16px' }}>
+            <path d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197" />
+          </svg>
+          <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 18, color: 'var(--text-primary)', marginBottom: 8 }}>No guests yet</h3>
+          <p style={{ fontSize: 14, color: 'var(--text-secondary)', marginBottom: 16, maxWidth: 400, margin: '0 auto 16px' }}>
+            Import a guest list from Zola or The Knot, or add guests manually.
+          </p>
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
+            <button className="btn-secondary" onClick={() => { setView('import-upload'); setCsvText(''); setError(''); }} style={{ fontSize: 13 }}>
+              Import CSV
+            </button>
+            <button className="btn-primary" onClick={() => { resetForm(); setView('add'); }} style={{ fontSize: 13 }}>
+              + Add Guest
+            </button>
+          </div>
+        </div>
+      )}
+
+      {!loading && guests.length > 0 && (
+        <div className="card" style={{ background: 'var(--bg-pure-white)', overflow: 'hidden' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr>
+                {['Name', 'Email', 'Phone', 'Group', 'RSVP', ''].map((h) => (
+                  <th
+                    key={h}
+                    style={{
+                      textAlign: 'left',
+                      padding: '12px 16px',
+                      fontSize: 11,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px',
+                      color: 'var(--text-tertiary)',
+                      borderBottom: '1px solid var(--border-light)',
+                      fontWeight: 500,
+                    }}
+                  >
+                    {h}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {guests.map((guest) => (
+                <tr key={guest.id} style={{ borderBottom: '1px solid var(--border-light)' }}>
+                  <td style={{ padding: '12px 16px', fontSize: 14, fontWeight: 500, color: 'var(--text-primary)' }}>
+                    {guest.display_name}
+                  </td>
+                  <td style={{ padding: '12px 16px', fontSize: 13, color: 'var(--text-secondary)' }}>
+                    {guest.email || '—'}
+                  </td>
+                  <td style={{ padding: '12px 16px', fontSize: 13, color: 'var(--text-secondary)' }}>
+                    {guest.phone || '—'}
+                  </td>
+                  <td style={{ padding: '12px 16px', fontSize: 13, color: 'var(--text-secondary)' }}>
+                    {guest.group_label || '—'}
+                  </td>
+                  <td style={{ padding: '12px 16px' }}>
+                    {rsvpBadge(guest.rsvp_status)}
+                  </td>
+                  <td style={{ padding: '12px 16px', textAlign: 'right' }}>
+                    <button
+                      onClick={() => startEdit(guest)}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: 'var(--color-terracotta)', marginRight: 12 }}
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => handleDelete(guest.id)}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: 'var(--text-tertiary)' }}
+                    >
+                      Delete
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}

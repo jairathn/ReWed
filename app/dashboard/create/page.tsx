@@ -81,6 +81,13 @@ export default function CreateWeddingPage() {
           slug,
           display_name: displayName,
           wedding_date: weddingDate || undefined,
+          guest_count: guestCount,
+          event_count: eventCount,
+          features: {
+            ai_portraits: portraits,
+            social_feed: socialFeed,
+            faq_chatbot: faqChatbot,
+          },
         }),
       });
 

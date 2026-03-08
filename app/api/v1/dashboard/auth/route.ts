@@ -54,8 +54,8 @@ export async function POST(request: NextRequest) {
 
       const passwordHash = await bcrypt.hash(parsed.password, 12);
       const result = await pool.query(
-        `INSERT INTO couples (email, password_hash) VALUES ($1, $2) RETURNING id, email`,
-        [parsed.email.toLowerCase(), passwordHash]
+        `INSERT INTO couples (email, password_hash, name) VALUES ($1, $2, $3) RETURNING id, email, name`,
+        [parsed.email.toLowerCase(), passwordHash, parsed.display_name]
       );
 
       const couple = result.rows[0];

@@ -491,13 +491,22 @@ export default function DashboardHomePage() {
                       </p>
                     </div>
                   </div>
-                  <Link
-                    href={`/w/${wedding.slug}`}
-                    className="btn-secondary shrink-0"
-                    style={{ padding: '8px 20px', fontSize: 14 }}
-                  >
-                    View Guest App
-                  </Link>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <Link
+                      href={`/dashboard/${wedding.id}/guests`}
+                      className="btn-primary"
+                      style={{ padding: '8px 20px', fontSize: 14 }}
+                    >
+                      Manage
+                    </Link>
+                    <Link
+                      href={`/w/${wedding.slug}`}
+                      className="btn-secondary"
+                      style={{ padding: '8px 20px', fontSize: 14 }}
+                    >
+                      Guest App
+                    </Link>
+                  </div>
                 </div>
               </div>
             );

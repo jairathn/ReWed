@@ -59,8 +59,8 @@ export async function POST(
     } else {
       // Like
       await pool.query(
-        `INSERT INTO feed_likes (post_id, guest_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
-        [postId, session.guestId]
+        `INSERT INTO feed_likes (post_id, guest_id, wedding_id) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING`,
+        [postId, session.guestId, session.weddingId]
       );
       const updated = await pool.query(
         `UPDATE feed_posts SET like_count = like_count + 1 WHERE id = $1 RETURNING like_count`,

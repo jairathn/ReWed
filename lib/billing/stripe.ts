@@ -149,7 +149,7 @@ export async function getSubscriptionStatus(weddingId: string): Promise<Subscrip
   return {
     id: sub.stripe_subscription_id || sub.id,
     status: sub.status,
-    current_period_end: sub.current_period_end,
+    current_period_end: sub.updated_at,
     package_config: packageConfig,
     price,
     mode: sub.stripe_subscription_id?.startsWith('mock_') ? 'test' : 'live',
@@ -174,16 +174,12 @@ export async function activateSubscription(params: {
   await pool.query(
     `INSERT INTO subscriptions (
        wedding_id, stripe_subscription_id, stripe_checkout_session_id,
-       status, current_period_start, current_period_end,
-       amount_cents, package_snapshot
-     ) VALUES ($1, $2, $3, $4, NOW(), NOW() + INTERVAL '1 year', $5, $6)
-     ON CONFLICT (wedding_id) DO UPDATE SET
-       stripe_subscription_id = EXCLUDED.stripe_subscription_id,
+       status, price_cents, package_snapshot
+     ) VALUES ($1, $2, $3, $4, $5, $6)
+     ON CONFLICT (stripe_subscription_id) DO UPDATE SET
        stripe_checkout_session_id = EXCLUDED.stripe_checkout_session_id,
        status = EXCLUDED.status,
-       current_period_start = EXCLUDED.current_period_start,
-       current_period_end = EXCLUDED.current_period_end,
-       amount_cents = EXCLUDED.amount_cents,
+       price_cents = EXCLUDED.price_cents,
        package_snapshot = EXCLUDED.package_snapshot`,
     [
       params.weddingId,

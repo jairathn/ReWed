@@ -62,9 +62,23 @@ export function handleApiError(error: unknown): Response {
     return error.toResponse();
   }
 
+  // Handle Zod validation errors
+  if (error && typeof error === 'object' && 'issues' in error) {
+    const zodError = error as { issues: Array<{ path: (string | number)[]; message: string }> };
+    const firstIssue = zodError.issues[0];
+    const field = firstIssue?.path?.join('.') || 'input';
+    const message = firstIssue?.message || 'Invalid input';
+    return Response.json(
+      { error: { code: 'VALIDATION_ERROR', message: `${field}: ${message}` } },
+      { status: 400 }
+    );
+  }
+
   console.error('Unhandled error:', error);
+  const isDev = process.env.NODE_ENV !== 'production';
+  const detail = isDev && error instanceof Error ? error.message : undefined;
   return Response.json(
-    { error: { code: 'INTERNAL_ERROR', message: ErrorCodes.INTERNAL_ERROR.message } },
+    { error: { code: 'INTERNAL_ERROR', message: detail || ErrorCodes.INTERNAL_ERROR.message } },
     { status: 500 }
   );
 }

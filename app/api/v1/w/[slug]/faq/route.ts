@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server';
 import { z } from 'zod';
 import { getPool } from '@/lib/db/client';
 import { validateSession } from '@/lib/session';
-import { getOpenAIClient, CHAT_MODEL_MINI, EMBEDDING_MODEL } from '@/lib/ai/openai';
+import { getOpenAIClient, CHAT_MODEL_MINI } from '@/lib/ai/openai';
 import { sanitizeText } from '@/lib/validation';
 import { AppError, handleApiError } from '@/lib/errors';
 import { isTestMode } from '@/lib/env';
@@ -97,60 +97,36 @@ export async function POST(
     } else if (faqResult.rows.length === 0) {
       answer = `I don't have specific information about that yet. The couple hasn't added FAQ entries. You might want to reach out to them directly!`;
     } else {
-      // Use embeddings to find the most relevant FAQ entries
+      // Use GPT to answer from the FAQ context
       const openai = getOpenAIClient();
 
-      // Generate embedding for the question
-      const embeddingResponse = await openai.embeddings.create({
-        model: EMBEDDING_MODEL,
-        input: question,
-      });
-      const questionEmbedding = embeddingResponse.data[0].embedding;
-
-      // Search for similar FAQ entries using pgvector
-      const embeddingStr = `[${questionEmbedding.join(',')}]`;
-      const similarResult = await pool.query(
-        `SELECT question, answer, 1 - (embedding <=> $1::vector) as similarity
-         FROM faq_entries
-         WHERE wedding_id = $2 AND embedding IS NOT NULL
-         ORDER BY embedding <=> $1::vector
-         LIMIT 3`,
-        [embeddingStr, session.weddingId]
-      );
-
-      sources = similarResult.rows.map((r) => ({
+      // Use all FAQ entries as context for the AI
+      sources = faqResult.rows.slice(0, 3).map((r) => ({
         question: r.question,
         answer: r.answer,
       }));
 
-      // If we have similar entries, use them as context
-      if (similarResult.rows.length > 0 && similarResult.rows[0].similarity > 0.7) {
-        // High similarity — return FAQ answer directly
-        answer = similarResult.rows[0].answer;
-      } else {
-        // Use GPT to generate a conversational answer from context
-        const context = faqResult.rows
-          .map((r) => `Q: ${r.question}\nA: ${r.answer}`)
-          .join('\n\n');
+      const context = faqResult.rows
+        .map((r) => `Q: ${r.question}\nA: ${r.answer}`)
+        .join('\n\n');
 
-        const chatResponse = await openai.chat.completions.create({
-          model: CHAT_MODEL_MINI,
-          messages: [
-            {
-              role: 'system',
-              content: `You are a friendly, helpful FAQ assistant for ${weddingName}. Answer guest questions based on the provided FAQ context. Be warm, concise, and conversational. If you're not sure, say so honestly and suggest they ask the couple directly. Never make up specific details like times, addresses, or dress codes that aren't in the context.`,
-            },
-            {
-              role: 'user',
-              content: `FAQ Context:\n${context}\n\nGuest Question: ${question}`,
-            },
-          ],
-          max_tokens: 300,
-          temperature: 0.7,
-        });
+      const chatResponse = await openai.chat.completions.create({
+        model: CHAT_MODEL_MINI,
+        messages: [
+          {
+            role: 'system',
+            content: `You are a friendly, helpful FAQ assistant for ${weddingName}. Answer guest questions based on the provided FAQ context. Be warm, concise, and conversational. If you're not sure, say so honestly and suggest they ask the couple directly. Never make up specific details like times, addresses, or dress codes that aren't in the context.`,
+          },
+          {
+            role: 'user',
+            content: `FAQ Context:\n${context}\n\nGuest Question: ${question}`,
+          },
+        ],
+        max_tokens: 300,
+        temperature: 0.7,
+      });
 
-        answer = chatResponse.choices[0]?.message?.content || "I'm not sure about that. You might want to ask the couple directly!";
-      }
+      answer = chatResponse.choices[0]?.message?.content || "I'm not sure about that. You might want to ask the couple directly!";
     }
 
     // Cache the answer

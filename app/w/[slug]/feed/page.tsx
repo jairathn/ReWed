@@ -34,6 +34,13 @@ export default function FeedPage() {
   const [composeText, setComposeText] = useState('');
   const [composeType, setComposeType] = useState<'text' | 'memory'>('text');
   const [posting, setPosting] = useState(false);
+  const [postError, setPostError] = useState('');
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [expandedComments, setExpandedComments] = useState<string | null>(null);
+  const [comments, setComments] = useState<Record<string, { id: string; content: string; guest: { display_name: string }; created_at: string }[]>>({});
+  const [commentText, setCommentText] = useState('');
+  const [postingComment, setPostingComment] = useState(false);
+  const [fetchError, setFetchError] = useState('');
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -60,6 +67,7 @@ export default function FeedPage() {
         }
       } catch (err) {
         console.error('Failed to fetch feed:', err);
+        if (!cursor) setFetchError('Could not load feed. Pull down to retry.');
       }
     },
     [slug]
@@ -86,13 +94,19 @@ export default function FeedPage() {
       });
 
       const data = await res.json();
+      if (!res.ok) {
+        setPostError(data.error?.message || 'Could not create post. Please try again.');
+        return;
+      }
       if (data.data?.post) {
         setPosts((prev) => [data.data.post, ...prev]);
         setComposeText('');
         setShowCompose(false);
+        setPostError('');
       }
     } catch (err) {
       console.error('Failed to create post:', err);
+      setPostError('Network error. Please check your connection.');
     } finally {
       setPosting(false);
     }
@@ -117,6 +131,60 @@ export default function FeedPage() {
     } catch (err) {
       console.error('Failed to toggle like:', err);
     }
+  };
+
+  const toggleComments = async (postId: string) => {
+    if (expandedComments === postId) {
+      setExpandedComments(null);
+      return;
+    }
+    setExpandedComments(postId);
+    setCommentText('');
+    if (!comments[postId]) {
+      try {
+        const res = await fetch(`/api/v1/w/${slug}/feed/${postId}/comments`);
+        const data = await res.json();
+        if (data.data?.comments) {
+          setComments((prev) => ({ ...prev, [postId]: data.data.comments }));
+        }
+      } catch (err) {
+        console.error('Failed to fetch comments:', err);
+      }
+    }
+  };
+
+  const handleComment = async (postId: string) => {
+    if (!commentText.trim() || postingComment) return;
+    setPostingComment(true);
+    try {
+      const res = await fetch(`/api/v1/w/${slug}/feed/${postId}/comments`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: commentText.trim() }),
+      });
+      const data = await res.json();
+      if (data.data?.comment) {
+        setComments((prev) => ({
+          ...prev,
+          [postId]: [...(prev[postId] || []), data.data.comment],
+        }));
+        setCommentText('');
+        setPosts((prev) =>
+          prev.map((p) => p.id === postId ? { ...p, comment_count: p.comment_count + 1 } : p)
+        );
+      }
+    } catch (err) {
+      console.error('Failed to post comment:', err);
+    } finally {
+      setPostingComment(false);
+    }
+  };
+
+  const handleLoadMore = async () => {
+    if (!nextCursor || loadingMore) return;
+    setLoadingMore(true);
+    await fetchPosts(nextCursor);
+    setLoadingMore(false);
   };
 
   if (isLoading || !guest) {
@@ -219,6 +287,11 @@ export default function FeedPage() {
             }}
             maxLength={500}
           />
+          {postError && (
+            <p className="text-xs mt-1" style={{ color: 'var(--color-terracotta)' }}>
+              {postError}
+            </p>
+          )}
           <div className="flex justify-between items-center mt-2">
             <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
               {composeText.length}/500
@@ -245,6 +318,22 @@ export default function FeedPage() {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Error */}
+      {fetchError && (
+        <div
+          className="p-3 rounded-xl text-sm mb-4 text-center"
+          style={{ background: 'rgba(196, 112, 75, 0.08)', color: 'var(--color-terracotta)' }}
+        >
+          {fetchError}
+          <button
+            onClick={() => { setFetchError(''); setLoadingPosts(true); fetchPosts().finally(() => setLoadingPosts(false)); }}
+            className="block mx-auto mt-2 underline text-xs"
+          >
+            Retry
+          </button>
         </div>
       )}
 
@@ -327,24 +416,82 @@ export default function FeedPage() {
                   </svg>
                   {post.like_count > 0 && post.like_count}
                 </button>
-                <button className="flex items-center gap-1.5 text-sm" style={{ color: 'var(--text-tertiary)' }}>
+                <button
+                  onClick={() => toggleComments(post.id)}
+                  className="flex items-center gap-1.5 text-sm"
+                  style={{ color: expandedComments === post.id ? 'var(--color-terracotta)' : 'var(--text-tertiary)' }}
+                >
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
                   </svg>
                   {post.comment_count > 0 && post.comment_count}
                 </button>
               </div>
+
+              {/* Comments section */}
+              {expandedComments === post.id && (
+                <div className="mt-3 pt-3" style={{ borderTop: '1px solid var(--border-light)' }}>
+                  {(comments[post.id] || []).map((comment) => (
+                    <div key={comment.id} className="flex gap-2 mb-2">
+                      <div className="flex-1">
+                        <p className="text-xs">
+                          <span className="font-medium" style={{ color: 'var(--text-primary)' }}>
+                            {comment.guest.display_name}
+                          </span>{' '}
+                          <span style={{ color: 'var(--text-secondary)' }}>{comment.content}</span>
+                        </p>
+                        <p className="text-[10px] mt-0.5" style={{ color: 'var(--text-tertiary)' }}>
+                          {formatTime(comment.created_at)}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                  <div className="flex gap-2 mt-2">
+                    <input
+                      type="text"
+                      value={commentText}
+                      onChange={(e) => setCommentText(e.target.value)}
+                      placeholder="Add a comment..."
+                      className="flex-1 px-3 py-2 rounded-full text-xs"
+                      style={{
+                        background: 'var(--bg-soft-cream)',
+                        border: '1px solid var(--border-light)',
+                        color: 'var(--text-primary)',
+                        outline: 'none',
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          handleComment(post.id);
+                        }
+                      }}
+                    />
+                    <button
+                      onClick={() => handleComment(post.id)}
+                      disabled={!commentText.trim() || postingComment}
+                      className="px-3 py-2 rounded-full text-xs font-medium"
+                      style={{
+                        background: commentText.trim() ? 'var(--color-terracotta)' : 'var(--border-light)',
+                        color: commentText.trim() ? 'white' : 'var(--text-tertiary)',
+                      }}
+                    >
+                      {postingComment ? '...' : 'Post'}
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           ))}
 
           {nextCursor && (
             <div className="text-center mt-4">
               <button
-                onClick={() => fetchPosts(nextCursor)}
+                onClick={handleLoadMore}
+                disabled={loadingMore}
                 className="px-6 py-2 rounded-full text-sm font-medium"
                 style={{ background: 'rgba(196, 112, 75, 0.08)', color: 'var(--color-terracotta)' }}
               >
-                Load more
+                {loadingMore ? 'Loading...' : 'Load more'}
               </button>
             </div>
           )}
