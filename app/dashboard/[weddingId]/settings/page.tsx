@@ -17,7 +17,19 @@ interface WeddingEvent {
   sort_order: number;
 }
 
-type View = 'list' | 'add' | 'edit';
+interface ParsedEvent {
+  name: string;
+  date?: string | null;
+  start_time?: string | null;
+  end_time?: string | null;
+  venue_name?: string | null;
+  venue_address?: string | null;
+  dress_code?: string | null;
+  description?: string | null;
+  logistics?: string | null;
+}
+
+type View = 'list' | 'add' | 'edit' | 'import';
 
 export default function SettingsPage({ params }: { params: Promise<{ weddingId: string }> }) {
   const { weddingId } = use(params);
@@ -38,6 +50,59 @@ export default function SettingsPage({ params }: { params: Promise<{ weddingId: 
   const [dressCode, setDressCode] = useState('');
   const [description, setDescription] = useState('');
   const [logistics, setLogistics] = useState('');
+
+  // Bulk import state
+  const [importText, setImportText] = useState('');
+  const [importParsed, setImportParsed] = useState<ParsedEvent[] | null>(null);
+  const [importLoading, setImportLoading] = useState(false);
+  const [importResult, setImportResult] = useState<{ imported: number; total: number; errors: string[] } | null>(null);
+
+  const handleImportPreview = async () => {
+    if (!importText.trim()) return;
+    setImportLoading(true);
+    setError('');
+    try {
+      const res = await fetch(`/api/v1/dashboard/weddings/${weddingId}/events/import`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ raw_text: importText, step: 'preview' }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error?.message || 'Failed to parse events');
+        return;
+      }
+      setImportParsed(data.events);
+    } catch {
+      setError('Network error');
+    } finally {
+      setImportLoading(false);
+    }
+  };
+
+  const handleImportConfirm = async () => {
+    if (!importParsed || importParsed.length === 0) return;
+    setImportLoading(true);
+    setError('');
+    try {
+      const res = await fetch(`/api/v1/dashboard/weddings/${weddingId}/events/import`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ step: 'import', events: importParsed }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error?.message || 'Import failed');
+        return;
+      }
+      setImportResult(data);
+      fetchEvents();
+    } catch {
+      setError('Network error');
+    } finally {
+      setImportLoading(false);
+    }
+  };
 
   const fetchEvents = useCallback(async () => {
     try {
@@ -173,6 +238,130 @@ export default function SettingsPage({ params }: { params: Promise<{ weddingId: 
     }
   };
 
+  // ─── Bulk Import ───
+  if (view === 'import') {
+    // Import complete
+    if (importResult) {
+      return (
+        <div style={{ maxWidth: 600 }}>
+          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 500, color: 'var(--text-primary)', marginBottom: 24 }}>
+            Import Complete
+          </h1>
+          <div className="card" style={{ padding: 24, background: 'var(--bg-pure-white)' }}>
+            <div style={{ textAlign: 'center', padding: 16, borderRadius: 12, background: 'rgba(122, 139, 92, 0.08)', marginBottom: 20 }}>
+              <p style={{ fontSize: 28, fontWeight: 600, color: 'var(--color-olive)', margin: 0 }}>{importResult.imported}</p>
+              <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: 0 }}>events imported</p>
+            </div>
+            {importResult.errors.length > 0 && (
+              <div style={{ marginBottom: 16 }}>
+                <p style={{ fontSize: 13, fontWeight: 500, color: 'var(--color-terracotta)', marginBottom: 8 }}>Errors:</p>
+                {importResult.errors.map((err, i) => (
+                  <p key={i} style={{ fontSize: 12, color: 'var(--text-secondary)', margin: '2px 0' }}>{err}</p>
+                ))}
+              </div>
+            )}
+            <button className="btn-primary" onClick={() => { setView('list'); setImportText(''); setImportParsed(null); setImportResult(null); }}>
+              View Events
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    // Preview parsed events
+    if (importParsed) {
+      return (
+        <div style={{ maxWidth: 700 }}>
+          <button
+            onClick={() => setImportParsed(null)}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, color: 'var(--text-tertiary)', marginBottom: 16, fontFamily: 'var(--font-body)' }}
+          >
+            &larr; Back to text
+          </button>
+          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 500, color: 'var(--text-primary)', marginBottom: 8 }}>
+            Review Parsed Events
+          </h1>
+          <p style={{ fontSize: 14, color: 'var(--text-secondary)', marginBottom: 24 }}>
+            {importParsed.length} event{importParsed.length !== 1 ? 's' : ''} detected. Review below, then import.
+          </p>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 20 }}>
+            {importParsed.map((ev, i) => (
+              <div key={i} className="card" style={{ padding: 20, background: 'var(--bg-pure-white)' }}>
+                <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 500, color: 'var(--text-primary)', margin: '0 0 8px' }}>
+                  {ev.name}
+                </h3>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, fontSize: 12, color: 'var(--text-secondary)', marginBottom: 8 }}>
+                  {ev.start_time && <span>Time: {ev.start_time}{ev.end_time ? ` – ${ev.end_time}` : ''}</span>}
+                  {ev.venue_name && <span>Venue: {ev.venue_name}</span>}
+                  {ev.dress_code && <span>Dress: {ev.dress_code}</span>}
+                </div>
+                {ev.venue_address && (
+                  <p style={{ fontSize: 12, color: 'var(--text-tertiary)', margin: '0 0 6px' }}>{ev.venue_address}</p>
+                )}
+                {ev.description && (
+                  <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '0 0 4px', lineHeight: 1.5, whiteSpace: 'pre-line' }}>{ev.description}</p>
+                )}
+                {ev.logistics && (
+                  <p style={{ fontSize: 12, color: 'var(--text-tertiary)', margin: '4px 0 0', lineHeight: 1.4, whiteSpace: 'pre-line' }}>{ev.logistics}</p>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {error && <p style={{ color: 'var(--color-terracotta)', fontSize: 13, marginBottom: 12 }}>{error}</p>}
+
+          <div style={{ display: 'flex', gap: 12 }}>
+            <button className="btn-primary" onClick={handleImportConfirm} disabled={importLoading} style={{ opacity: importLoading ? 0.5 : 1 }}>
+              {importLoading ? 'Importing...' : `Import ${importParsed.length} Events`}
+            </button>
+            <button className="btn-ghost" onClick={() => setImportParsed(null)}>
+              Back
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    // Text input
+    return (
+      <div style={{ maxWidth: 600 }}>
+        <button
+          onClick={() => { setView('list'); setImportText(''); setError(''); }}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, color: 'var(--text-tertiary)', marginBottom: 16, fontFamily: 'var(--font-body)' }}
+        >
+          &larr; Back to events
+        </button>
+        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 500, color: 'var(--text-primary)', marginBottom: 8 }}>
+          Import Events
+        </h1>
+        <p style={{ fontSize: 14, color: 'var(--text-secondary)', marginBottom: 24 }}>
+          Paste your event details from Zola, The Knot, or any wedding website. We'll use AI to extract event names, times, venues, dress codes, and descriptions.
+        </p>
+
+        <div className="card" style={{ padding: 24, background: 'var(--bg-pure-white)' }}>
+          <textarea
+            style={{ ...inputStyle, minHeight: 200, resize: 'vertical', fontFamily: 'monospace', fontSize: 12 }}
+            value={importText}
+            onChange={(e) => setImportText(e.target.value)}
+            placeholder={'Paste event details here...\n\nExample:\n\nHaldi (Pithi)\n3:30 pm - 7:30 pm\n\nThe Garden at the Hotel Estela.\n\nWear light colors!\n\nSangeet\n4:00 pm - 11:45 pm\n\nXalet del Nin.\nDress colorfully and come ready to party!'}
+          />
+
+          {error && <p style={{ color: 'var(--color-terracotta)', fontSize: 13, marginTop: 12 }}>{error}</p>}
+
+          <button
+            className="btn-primary"
+            onClick={handleImportPreview}
+            disabled={!importText.trim() || importLoading}
+            style={{ marginTop: 16, opacity: !importText.trim() || importLoading ? 0.5 : 1 }}
+          >
+            {importLoading ? 'Analyzing...' : 'Parse Events'}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   // ─── Add/Edit Form ───
   if (view === 'add' || view === 'edit') {
     return (
@@ -269,9 +458,14 @@ export default function SettingsPage({ params }: { params: Promise<{ weddingId: 
             Manage your wedding events — ceremony, reception, mehndi, etc.
           </p>
         </div>
-        <button className="btn-primary" onClick={() => { resetForm(); setView('add'); }} style={{ fontSize: 13, padding: '8px 16px' }}>
-          + Add Event
-        </button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button className="btn-secondary" onClick={() => { setView('import'); setImportText(''); setImportParsed(null); setImportResult(null); setError(''); }} style={{ fontSize: 13, padding: '8px 16px' }}>
+            Import Events
+          </button>
+          <button className="btn-primary" onClick={() => { resetForm(); setView('add'); }} style={{ fontSize: 13, padding: '8px 16px' }}>
+            + Add Event
+          </button>
+        </div>
       </div>
 
       {loading && (
@@ -289,9 +483,14 @@ export default function SettingsPage({ params }: { params: Promise<{ weddingId: 
           <p style={{ fontSize: 14, color: 'var(--text-secondary)', marginBottom: 16, maxWidth: 400, margin: '0 auto 16px' }}>
             Add your wedding events so guests know when and where to go.
           </p>
-          <button className="btn-primary" onClick={() => { resetForm(); setView('add'); }} style={{ fontSize: 13 }}>
-            + Add Your First Event
-          </button>
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
+            <button className="btn-secondary" onClick={() => { setView('import'); setImportText(''); setImportParsed(null); setImportResult(null); setError(''); }} style={{ fontSize: 13 }}>
+              Import Events
+            </button>
+            <button className="btn-primary" onClick={() => { resetForm(); setView('add'); }} style={{ fontSize: 13 }}>
+              + Add Event
+            </button>
+          </div>
         </div>
       )}
 

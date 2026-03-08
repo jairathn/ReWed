@@ -10,7 +10,12 @@ interface FaqEntry {
   created_at: string;
 }
 
-type View = 'list' | 'add' | 'edit';
+interface ParsedFaq {
+  question: string;
+  answer: string;
+}
+
+type View = 'list' | 'add' | 'edit' | 'import';
 
 export default function FaqPage({ params }: { params: Promise<{ weddingId: string }> }) {
   const { weddingId } = use(params);
@@ -27,7 +32,8 @@ export default function FaqPage({ params }: { params: Promise<{ weddingId: strin
 
   // Bulk import
   const [bulkText, setBulkText] = useState('');
-  const [showBulk, setShowBulk] = useState(false);
+  const [importParsed, setImportParsed] = useState<ParsedFaq[] | null>(null);
+  const [importResult, setImportResult] = useState<{ count: number } | null>(null);
 
   const fetchEntries = useCallback(async () => {
     try {
@@ -84,7 +90,7 @@ export default function FaqPage({ params }: { params: Promise<{ weddingId: strin
     }
   };
 
-  // Detect if a line is a Zola-style doubled question like "Question?Question?"
+  // ── Detect Zola doubled-question format ──
   const parseDoubledQuestion = (line: string): string | null => {
     const trimmed = line.trim();
     if (!trimmed.includes('?')) return null;
@@ -97,19 +103,18 @@ export default function FaqPage({ params }: { params: Promise<{ weddingId: strin
     return null;
   };
 
-  const parseZolaFormat = (text: string): { question: string; answer: string }[] => {
+  const parseZolaFormat = (text: string): ParsedFaq[] => {
     const lines = text.split(/\r?\n/);
-    const results: { question: string; answer: string }[] = [];
+    const results: ParsedFaq[] = [];
     let currentQuestion: string | null = null;
     let currentAnswerLines: string[] = [];
 
     for (const line of lines) {
       const doubled = parseDoubledQuestion(line);
       if (doubled) {
-        // Save previous Q&A if exists
         if (currentQuestion && currentAnswerLines.length > 0) {
-          const answer = currentAnswerLines.join('\n').trim();
-          if (answer) results.push({ question: currentQuestion, answer });
+          const ans = currentAnswerLines.join('\n').trim();
+          if (ans) results.push({ question: currentQuestion, answer: ans });
         }
         currentQuestion = doubled;
         currentAnswerLines = [];
@@ -117,63 +122,92 @@ export default function FaqPage({ params }: { params: Promise<{ weddingId: strin
         currentAnswerLines.push(line);
       }
     }
-    // Save last Q&A
     if (currentQuestion && currentAnswerLines.length > 0) {
-      const answer = currentAnswerLines.join('\n').trim();
-      if (answer) results.push({ question: currentQuestion, answer });
+      const ans = currentAnswerLines.join('\n').trim();
+      if (ans) results.push({ question: currentQuestion, answer: ans });
+    }
+    return results;
+  };
+
+  const parseQAFormat = (text: string): ParsedFaq[] => {
+    const pairs = text.split(/\n\n+/).filter(Boolean);
+    const results: ParsedFaq[] = [];
+    for (const pair of pairs) {
+      const lines = pair.split('\n');
+      let q = '';
+      let a = '';
+      for (const line of lines) {
+        if (line.match(/^Q:\s*/i)) q = line.replace(/^Q:\s*/i, '').trim();
+        else if (line.match(/^A:\s*/i)) a = line.replace(/^A:\s*/i, '').trim();
+        else if (q && !a) q += ' ' + line.trim();
+        else if (a) a += ' ' + line.trim();
+      }
+      if (q && a) results.push({ question: q, answer: a });
     }
     return results;
   };
 
   const isZolaFormat = (text: string): boolean => {
     const lines = text.split(/\r?\n/);
-    let doubledCount = 0;
+    let count = 0;
     for (const line of lines) {
-      if (parseDoubledQuestion(line)) doubledCount++;
-      if (doubledCount >= 2) return true;
+      if (parseDoubledQuestion(line)) count++;
+      if (count >= 2) return true;
     }
     return false;
   };
 
-  const handleBulkImport = async () => {
+  // ── Parse locally first, then fall back to LLM ──
+  const handleImportPreview = async () => {
     if (!bulkText.trim()) return;
     setFormLoading(true);
     setError('');
 
-    let parsed: { question: string; answer: string }[] = [];
-
+    // Try local parsing first
+    let parsed: ParsedFaq[] = [];
     if (isZolaFormat(bulkText)) {
-      // Zola copy-paste: "Question?Question?\nAnswer lines..."
       parsed = parseZolaFormat(bulkText);
     } else {
-      // Standard format: Q: question\nA: answer (separated by blank lines)
-      const pairs = bulkText.split(/\n\n+/).filter(Boolean);
-
-      for (const pair of pairs) {
-        const lines = pair.split('\n');
-        let q = '';
-        let a = '';
-        for (const line of lines) {
-          if (line.match(/^Q:\s*/i)) q = line.replace(/^Q:\s*/i, '').trim();
-          else if (line.match(/^A:\s*/i)) a = line.replace(/^A:\s*/i, '').trim();
-          else if (q && !a) q += ' ' + line.trim();
-          else if (a) a += ' ' + line.trim();
-        }
-        if (q && a) parsed.push({ question: q, answer: a });
-      }
+      parsed = parseQAFormat(bulkText);
     }
 
-    if (parsed.length === 0) {
-      setError('No valid Q&A pairs found. Supports Zola copy-paste format or Q:/A: format (separated by blank lines).');
+    if (parsed.length > 0) {
+      setImportParsed(parsed);
       setFormLoading(false);
       return;
     }
 
+    // Fall back to LLM parsing
     try {
+      const res = await fetch(`/api/v1/dashboard/weddings/${weddingId}/faq/import`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ raw_text: bulkText, step: 'preview' }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error?.message || 'Could not parse Q&A pairs. Try using Q:/A: format or paste directly from Zola.');
+        return;
+      }
+      setImportParsed(data.entries);
+    } catch {
+      setError('Network error');
+    } finally {
+      setFormLoading(false);
+    }
+  };
+
+  const handleImportConfirm = async () => {
+    if (!importParsed || importParsed.length === 0) return;
+    setFormLoading(true);
+    setError('');
+
+    try {
+      const source = isZolaFormat(bulkText) ? 'zola_import' : 'manual';
       const res = await fetch(`/api/v1/dashboard/weddings/${weddingId}/faq`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ entries: parsed, source: isZolaFormat(bulkText) ? 'zola_import' : 'manual' }),
+        body: JSON.stringify({ entries: importParsed, source }),
       });
 
       if (!res.ok) {
@@ -183,11 +217,8 @@ export default function FaqPage({ params }: { params: Promise<{ weddingId: strin
       }
 
       const data = await res.json();
-      setBulkText('');
-      setShowBulk(false);
-      setError('');
+      setImportResult({ count: data.count });
       fetchEntries();
-      alert(`Imported ${data.count} FAQ entries`);
     } catch {
       setError('Network error');
     } finally {
@@ -234,6 +265,111 @@ export default function FaqPage({ params }: { params: Promise<{ weddingId: strin
     color: 'var(--text-primary)',
     fontFamily: 'var(--font-body)',
   };
+
+  // ─── Import View ───
+  if (view === 'import') {
+    // Import complete
+    if (importResult) {
+      return (
+        <div style={{ maxWidth: 600 }}>
+          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 500, color: 'var(--text-primary)', marginBottom: 24 }}>
+            Import Complete
+          </h1>
+          <div className="card" style={{ padding: 24, background: 'var(--bg-pure-white)' }}>
+            <div style={{ textAlign: 'center', padding: 16, borderRadius: 12, background: 'rgba(122, 139, 92, 0.08)', marginBottom: 20 }}>
+              <p style={{ fontSize: 28, fontWeight: 600, color: 'var(--color-olive)', margin: 0 }}>{importResult.count}</p>
+              <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: 0 }}>FAQ entries imported</p>
+            </div>
+            <button className="btn-primary" onClick={() => { setView('list'); setBulkText(''); setImportParsed(null); setImportResult(null); }}>
+              View FAQ
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    // Preview parsed entries
+    if (importParsed) {
+      return (
+        <div style={{ maxWidth: 700 }}>
+          <button
+            onClick={() => setImportParsed(null)}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, color: 'var(--text-tertiary)', marginBottom: 16, fontFamily: 'var(--font-body)' }}
+          >
+            &larr; Back to text
+          </button>
+          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 500, color: 'var(--text-primary)', marginBottom: 8 }}>
+            Review Parsed FAQ
+          </h1>
+          <p style={{ fontSize: 14, color: 'var(--text-secondary)', marginBottom: 24 }}>
+            {importParsed.length} Q&A pair{importParsed.length !== 1 ? 's' : ''} detected. Review below, then import.
+          </p>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 20 }}>
+            {importParsed.map((faq, i) => (
+              <div key={i} className="card" style={{ padding: 16, background: 'var(--bg-pure-white)' }}>
+                <p style={{ fontSize: 14, fontWeight: 500, color: 'var(--text-primary)', margin: '0 0 6px' }}>
+                  {faq.question}
+                </p>
+                <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5, whiteSpace: 'pre-line' }}>
+                  {faq.answer}
+                </p>
+              </div>
+            ))}
+          </div>
+
+          {error && <p style={{ color: 'var(--color-terracotta)', fontSize: 13, marginBottom: 12 }}>{error}</p>}
+
+          <div style={{ display: 'flex', gap: 12 }}>
+            <button className="btn-primary" onClick={handleImportConfirm} disabled={formLoading} style={{ opacity: formLoading ? 0.5 : 1 }}>
+              {formLoading ? 'Importing...' : `Import ${importParsed.length} Entries`}
+            </button>
+            <button className="btn-ghost" onClick={() => setImportParsed(null)}>
+              Back
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    // Text input
+    return (
+      <div style={{ maxWidth: 600 }}>
+        <button
+          onClick={() => { setView('list'); setBulkText(''); setError(''); }}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, color: 'var(--text-tertiary)', marginBottom: 16, fontFamily: 'var(--font-body)' }}
+        >
+          &larr; Back to FAQ
+        </button>
+        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 500, color: 'var(--text-primary)', marginBottom: 8 }}>
+          Import FAQ
+        </h1>
+        <p style={{ fontSize: 14, color: 'var(--text-secondary)', marginBottom: 24 }}>
+          Paste your FAQ content below. Supports copy-paste from Zola, The Knot, Q:/A: format, or any free-form text with questions and answers — we'll use AI to extract them.
+        </p>
+
+        <div className="card" style={{ padding: 24, background: 'var(--bg-pure-white)' }}>
+          <textarea
+            style={{ ...inputStyle, minHeight: 200, resize: 'vertical', fontFamily: 'monospace', fontSize: 12 }}
+            value={bulkText}
+            onChange={(e) => setBulkText(e.target.value)}
+            placeholder={'Paste FAQ content here...\n\nSupported formats:\n• Copy-paste from Zola or The Knot\n• Q: What is the dress code?\n  A: Formal attire.\n• Or any free-form text with Q&A'}
+          />
+
+          {error && <p style={{ color: 'var(--color-terracotta)', fontSize: 13, marginTop: 12 }}>{error}</p>}
+
+          <button
+            className="btn-primary"
+            onClick={handleImportPreview}
+            disabled={!bulkText.trim() || formLoading}
+            style={{ marginTop: 16, opacity: !bulkText.trim() || formLoading ? 0.5 : 1 }}
+          >
+            {formLoading ? 'Analyzing...' : 'Parse FAQ'}
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   // ─── Add/Edit Form ───
   if (view === 'add' || view === 'edit') {
@@ -289,8 +425,8 @@ export default function FaqPage({ params }: { params: Promise<{ weddingId: strin
           </p>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
-          <button className="btn-secondary" onClick={() => setShowBulk(!showBulk)} style={{ fontSize: 13, padding: '8px 16px' }}>
-            Bulk Import
+          <button className="btn-secondary" onClick={() => { setView('import'); setBulkText(''); setImportParsed(null); setImportResult(null); setError(''); }} style={{ fontSize: 13, padding: '8px 16px' }}>
+            Import FAQ
           </button>
           <button className="btn-primary" onClick={() => { resetForm(); setView('add'); }} style={{ fontSize: 13, padding: '8px 16px' }}>
             + Add Entry
@@ -298,40 +434,13 @@ export default function FaqPage({ params }: { params: Promise<{ weddingId: strin
         </div>
       </div>
 
-      {/* Bulk Import */}
-      {showBulk && (
-        <div className="card" style={{ padding: 20, background: 'var(--bg-pure-white)', marginBottom: 20 }}>
-          <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 16, marginBottom: 8, color: 'var(--text-primary)' }}>
-            Bulk Import FAQ
-          </h3>
-          <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 12 }}>
-            Paste Q&A pairs below. Supports copy-paste directly from Zola, or use Q:/A: format with blank lines between pairs.
-          </p>
-          <textarea
-            style={{ ...inputStyle, minHeight: 160, resize: 'vertical', fontFamily: 'monospace', fontSize: 12 }}
-            value={bulkText}
-            onChange={(e) => setBulkText(e.target.value)}
-            placeholder={'Q: What is the dress code?\nA: The ceremony is formal attire.\n\nQ: Where should I park?\nA: Free parking is available at the venue.'}
-          />
-          {error && <p style={{ color: 'var(--color-terracotta)', fontSize: 13, marginTop: 8 }}>{error}</p>}
-          <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-            <button className="btn-primary" onClick={handleBulkImport} disabled={formLoading || !bulkText.trim()} style={{ fontSize: 13, opacity: formLoading || !bulkText.trim() ? 0.5 : 1 }}>
-              {formLoading ? 'Importing...' : 'Import'}
-            </button>
-            <button className="btn-ghost" onClick={() => { setShowBulk(false); setBulkText(''); setError(''); }} style={{ fontSize: 13 }}>
-              Cancel
-            </button>
-          </div>
-        </div>
-      )}
-
       {loading && (
         <div className="card p-6">
           <div className="skeleton" style={{ width: '100%', height: 200 }} />
         </div>
       )}
 
-      {!loading && entries.length === 0 && !showBulk && (
+      {!loading && entries.length === 0 && (
         <div className="card" style={{ padding: 48, textAlign: 'center', background: 'var(--bg-pure-white)' }}>
           <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" style={{ margin: '0 auto 16px' }}>
             <path d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -341,7 +450,7 @@ export default function FaqPage({ params }: { params: Promise<{ weddingId: strin
             Add common questions and answers so the AI chatbot can help your guests.
           </p>
           <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
-            <button className="btn-secondary" onClick={() => setShowBulk(true)} style={{ fontSize: 13 }}>Bulk Import</button>
+            <button className="btn-secondary" onClick={() => { setView('import'); setBulkText(''); setImportParsed(null); setImportResult(null); setError(''); }} style={{ fontSize: 13 }}>Import FAQ</button>
             <button className="btn-primary" onClick={() => { resetForm(); setView('add'); }} style={{ fontSize: 13 }}>+ Add First Entry</button>
           </div>
         </div>
@@ -356,7 +465,7 @@ export default function FaqPage({ params }: { params: Promise<{ weddingId: strin
                   <p style={{ fontSize: 14, fontWeight: 500, color: 'var(--text-primary)', margin: '0 0 6px' }}>
                     {entry.question}
                   </p>
-                  <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5 }}>
+                  <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5, whiteSpace: 'pre-line' }}>
                     {entry.answer}
                   </p>
                   <span style={{ fontSize: 10, color: 'var(--text-tertiary)', marginTop: 6, display: 'inline-block', background: 'var(--bg-soft-cream)', padding: '1px 6px', borderRadius: 999 }}>
