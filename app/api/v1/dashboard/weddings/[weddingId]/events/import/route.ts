@@ -136,9 +136,11 @@ For each event found, return a JSON object with these fields:
 - description: string | null — the main description of the event, including cultural context or activities
 - logistics: string | null — any logistics info like transportation, parking, links to clothing resources, etc.
 
+CRITICAL: Do NOT rephrase, reword, summarize, or re-interpret ANY of the text. The users wrote their event descriptions with specific wording for a reason — preserve it verbatim. Only extract and categorize the text into the correct fields.
+
 Important:
 - The text may have inconsistent formatting — handle markdown like __text__, **text**, bullet points, etc.
-- Strip markdown formatting from the output values
+- Remove markdown formatting characters only (**, __, etc.) but keep the underlying text exactly as written
 - If text mentions clothing suggestions, links, or tips, put them in logistics (not description)
 - Preserve URLs in the logistics field
 - If a parenthetical alternate name is given like "Haldi (Pithi)", keep it in the event name
