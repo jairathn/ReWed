@@ -74,7 +74,6 @@ export default function WeddingOverviewPage({
     { label: 'Photos', value: stats.uploads.photos, sub: `${stats.uploads.videos} videos`, link: null, color: 'var(--color-olive)' },
     { label: 'FAQ Entries', value: stats.faq_entries, sub: 'for chatbot', link: `/dashboard/${weddingId}/faq`, color: 'var(--color-mediterranean-blue)' },
     { label: 'Feed Posts', value: stats.feed_posts, sub: 'from guests', link: `/dashboard/${weddingId}/feed`, color: 'var(--color-dusty-rose)' },
-    { label: 'RSVP Pending', value: stats.guests.pending, sub: `${stats.guests.declined} declined`, link: `/dashboard/${weddingId}/guests`, color: 'var(--text-tertiary)' },
   ];
 
   return (

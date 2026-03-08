@@ -40,10 +40,6 @@ export default function AnalyticsPage({ params }: { params: Promise<{ weddingId:
     return <p style={{ color: 'var(--text-secondary)' }}>Failed to load analytics.</p>;
   }
 
-  const rsvpRate = stats.guests.total > 0
-    ? Math.round(((stats.guests.attending + stats.guests.declined) / stats.guests.total) * 100)
-    : 0;
-
   return (
     <div>
       <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 500, color: 'var(--text-primary)', marginBottom: 24 }}>
@@ -51,32 +47,13 @@ export default function AnalyticsPage({ params }: { params: Promise<{ weddingId:
       </h1>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16, marginBottom: 32 }}>
-        {/* RSVP Overview */}
+        {/* Guest Summary */}
         <div className="card" style={{ padding: 24, background: 'var(--bg-pure-white)' }}>
           <h3 style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--text-tertiary)', marginBottom: 16 }}>
-            RSVP Overview
+            Guest List
           </h3>
-          <div style={{ display: 'flex', justifyContent: 'space-around', textAlign: 'center' }}>
-            <div>
-              <p style={{ fontSize: 28, fontWeight: 600, color: 'var(--color-olive)', margin: 0 }}>{stats.guests.attending}</p>
-              <p style={{ fontSize: 11, color: 'var(--text-secondary)' }}>Attending</p>
-            </div>
-            <div>
-              <p style={{ fontSize: 28, fontWeight: 600, color: 'var(--color-terracotta)', margin: 0 }}>{stats.guests.declined}</p>
-              <p style={{ fontSize: 11, color: 'var(--text-secondary)' }}>Declined</p>
-            </div>
-            <div>
-              <p style={{ fontSize: 28, fontWeight: 600, color: 'var(--text-tertiary)', margin: 0 }}>{stats.guests.pending}</p>
-              <p style={{ fontSize: 11, color: 'var(--text-secondary)' }}>Pending</p>
-            </div>
-          </div>
-          <div style={{ marginTop: 12, height: 6, borderRadius: 3, background: 'var(--bg-soft-cream)', overflow: 'hidden' }}>
-            <div style={{ display: 'flex', height: '100%' }}>
-              <div style={{ width: `${stats.guests.total > 0 ? (stats.guests.attending / stats.guests.total) * 100 : 0}%`, background: 'var(--color-olive)' }} />
-              <div style={{ width: `${stats.guests.total > 0 ? (stats.guests.declined / stats.guests.total) * 100 : 0}%`, background: 'var(--color-terracotta)' }} />
-            </div>
-          </div>
-          <p style={{ fontSize: 12, color: 'var(--text-tertiary)', marginTop: 8 }}>{rsvpRate}% response rate</p>
+          <p style={{ fontSize: 36, fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 4px' }}>{stats.guests.total}</p>
+          <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: 0 }}>total guests</p>
         </div>
 
         {/* Media Uploads */}

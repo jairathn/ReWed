@@ -38,6 +38,8 @@ export default function PhotoBoothPage() {
   const [permissionDenied, setPermissionDenied] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [selectedStyle, setSelectedStyle] = useState<string | null>(null);
+  const [flashOn, setFlashOn] = useState(false);
+  const [flashSupported, setFlashSupported] = useState(false);
 
   // Auth guard
   useEffect(() => {
@@ -64,6 +66,14 @@ export default function PhotoBoothPage() {
         videoRef.current.srcObject = stream;
       }
       setPermissionDenied(false);
+
+      // Check torch/flash support
+      const track = stream.getVideoTracks()[0];
+      if (track) {
+        const capabilities = track.getCapabilities?.() as Record<string, unknown> | undefined;
+        setFlashSupported(!!capabilities?.torch);
+        setFlashOn(false);
+      }
     } catch (err) {
       console.error('Camera access error:', err);
       setPermissionDenied(true);
@@ -102,6 +112,17 @@ export default function PhotoBoothPage() {
 
   const flipCamera = () => {
     setFacingMode((prev) => (prev === 'environment' ? 'user' : 'environment'));
+  };
+
+  const toggleFlash = async () => {
+    const track = streamRef.current?.getVideoTracks()[0];
+    if (!track) return;
+    try {
+      await track.applyConstraints({ advanced: [{ torch: !flashOn } as MediaTrackConstraintSet] });
+      setFlashOn(!flashOn);
+    } catch {
+      // Torch not available on this device/browser
+    }
   };
 
   const capturePhoto = () => {
@@ -349,6 +370,24 @@ export default function PhotoBoothPage() {
               </button>
             </div>
           </div>
+
+          {/* Flash toggle button */}
+          {flashSupported && (
+            <button
+              onClick={toggleFlash}
+              className="absolute top-7 left-5 w-11 h-11 rounded-full flex items-center justify-center z-10"
+              style={{
+                background: flashOn ? 'rgba(255, 214, 10, 0.3)' : 'rgba(0, 0, 0, 0.3)',
+                backdropFilter: 'blur(20px)',
+                WebkitBackdropFilter: 'blur(20px)',
+              }}
+              aria-label={flashOn ? 'Turn off flash' : 'Turn on flash'}
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill={flashOn ? '#FFD60A' : 'none'} stroke={flashOn ? '#FFD60A' : 'white'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+              </svg>
+            </button>
+          )}
 
           {/* Camera flip button */}
           <button
