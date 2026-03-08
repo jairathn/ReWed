@@ -84,31 +84,87 @@ export default function FaqPage({ params }: { params: Promise<{ weddingId: strin
     }
   };
 
+  // Detect if a line is a Zola-style doubled question like "Question?Question?"
+  const parseDoubledQuestion = (line: string): string | null => {
+    const trimmed = line.trim();
+    if (!trimmed.includes('?')) return null;
+    const firstQ = trimmed.indexOf('?');
+    const candidate = trimmed.substring(0, firstQ + 1);
+    const rest = trimmed.substring(firstQ + 1);
+    if (candidate.length > 5 && rest.trim() === candidate.trim()) {
+      return candidate.trim();
+    }
+    return null;
+  };
+
+  const parseZolaFormat = (text: string): { question: string; answer: string }[] => {
+    const lines = text.split(/\r?\n/);
+    const results: { question: string; answer: string }[] = [];
+    let currentQuestion: string | null = null;
+    let currentAnswerLines: string[] = [];
+
+    for (const line of lines) {
+      const doubled = parseDoubledQuestion(line);
+      if (doubled) {
+        // Save previous Q&A if exists
+        if (currentQuestion && currentAnswerLines.length > 0) {
+          const answer = currentAnswerLines.join('\n').trim();
+          if (answer) results.push({ question: currentQuestion, answer });
+        }
+        currentQuestion = doubled;
+        currentAnswerLines = [];
+      } else if (currentQuestion !== null) {
+        currentAnswerLines.push(line);
+      }
+    }
+    // Save last Q&A
+    if (currentQuestion && currentAnswerLines.length > 0) {
+      const answer = currentAnswerLines.join('\n').trim();
+      if (answer) results.push({ question: currentQuestion, answer });
+    }
+    return results;
+  };
+
+  const isZolaFormat = (text: string): boolean => {
+    const lines = text.split(/\r?\n/);
+    let doubledCount = 0;
+    for (const line of lines) {
+      if (parseDoubledQuestion(line)) doubledCount++;
+      if (doubledCount >= 2) return true;
+    }
+    return false;
+  };
+
   const handleBulkImport = async () => {
     if (!bulkText.trim()) return;
     setFormLoading(true);
     setError('');
 
-    // Parse Q&A pairs separated by blank lines
-    // Format: Q: question\nA: answer\n\nQ: question\nA: answer
-    const pairs = bulkText.split(/\n\n+/).filter(Boolean);
-    const parsed: { question: string; answer: string }[] = [];
+    let parsed: { question: string; answer: string }[] = [];
 
-    for (const pair of pairs) {
-      const lines = pair.split('\n');
-      let q = '';
-      let a = '';
-      for (const line of lines) {
-        if (line.match(/^Q:\s*/i)) q = line.replace(/^Q:\s*/i, '').trim();
-        else if (line.match(/^A:\s*/i)) a = line.replace(/^A:\s*/i, '').trim();
-        else if (q && !a) q += ' ' + line.trim();
-        else if (a) a += ' ' + line.trim();
+    if (isZolaFormat(bulkText)) {
+      // Zola copy-paste: "Question?Question?\nAnswer lines..."
+      parsed = parseZolaFormat(bulkText);
+    } else {
+      // Standard format: Q: question\nA: answer (separated by blank lines)
+      const pairs = bulkText.split(/\n\n+/).filter(Boolean);
+
+      for (const pair of pairs) {
+        const lines = pair.split('\n');
+        let q = '';
+        let a = '';
+        for (const line of lines) {
+          if (line.match(/^Q:\s*/i)) q = line.replace(/^Q:\s*/i, '').trim();
+          else if (line.match(/^A:\s*/i)) a = line.replace(/^A:\s*/i, '').trim();
+          else if (q && !a) q += ' ' + line.trim();
+          else if (a) a += ' ' + line.trim();
+        }
+        if (q && a) parsed.push({ question: q, answer: a });
       }
-      if (q && a) parsed.push({ question: q, answer: a });
     }
 
     if (parsed.length === 0) {
-      setError('No valid Q&A pairs found. Use format: Q: question\\nA: answer (separated by blank lines)');
+      setError('No valid Q&A pairs found. Supports Zola copy-paste format or Q:/A: format (separated by blank lines).');
       setFormLoading(false);
       return;
     }
@@ -117,7 +173,7 @@ export default function FaqPage({ params }: { params: Promise<{ weddingId: strin
       const res = await fetch(`/api/v1/dashboard/weddings/${weddingId}/faq`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ entries: parsed, source: 'manual' }),
+        body: JSON.stringify({ entries: parsed, source: isZolaFormat(bulkText) ? 'zola_import' : 'manual' }),
       });
 
       if (!res.ok) {
@@ -249,7 +305,7 @@ export default function FaqPage({ params }: { params: Promise<{ weddingId: strin
             Bulk Import FAQ
           </h3>
           <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 12 }}>
-            Paste Q&A pairs in this format (separate pairs with blank lines):
+            Paste Q&A pairs below. Supports copy-paste directly from Zola, or use Q:/A: format with blank lines between pairs.
           </p>
           <textarea
             style={{ ...inputStyle, minHeight: 160, resize: 'vertical', fontFamily: 'monospace', fontSize: 12 }}
