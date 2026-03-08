@@ -46,6 +46,9 @@ export default function CreateWeddingPage() {
   const [slug, setSlug] = useState('');
   const [slugManual, setSlugManual] = useState(false);
   const [weddingDate, setWeddingDate] = useState('');
+  const [timezone, setTimezone] = useState(() => {
+    try { return Intl.DateTimeFormat().resolvedOptions().timeZone; } catch { return 'America/New_York'; }
+  });
 
   // Step 1: Size
   const [guestCount, setGuestCount] = useState('200');
@@ -81,6 +84,7 @@ export default function CreateWeddingPage() {
           slug,
           display_name: displayName,
           wedding_date: weddingDate || undefined,
+          timezone,
           guest_count: guestCount,
           event_count: eventCount,
           features: {
@@ -219,6 +223,52 @@ export default function CreateWeddingPage() {
                 }}
               />
             </div>
+            <div>
+              <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--text-primary)' }}>
+                Wedding timezone
+              </label>
+              <select
+                value={timezone}
+                onChange={(e) => setTimezone(e.target.value)}
+                className="w-full px-4 py-3 rounded-xl text-sm"
+                style={{
+                  background: 'var(--bg-soft-cream)',
+                  border: '1.5px solid var(--border-medium)',
+                  color: 'var(--text-primary)',
+                  fontFamily: 'var(--font-body)',
+                  outline: 'none',
+                }}
+              >
+                {(() => {
+                  const zones = [
+                    'America/New_York', 'America/Chicago', 'America/Denver', 'America/Los_Angeles',
+                    'America/Anchorage', 'Pacific/Honolulu', 'America/Phoenix',
+                    'America/Toronto', 'America/Vancouver',
+                    'Europe/London', 'Europe/Paris', 'Europe/Berlin', 'Europe/Rome', 'Europe/Madrid',
+                    'Europe/Amsterdam', 'Europe/Zurich', 'Europe/Athens', 'Europe/Istanbul',
+                    'Asia/Dubai', 'Asia/Kolkata', 'Asia/Bangkok', 'Asia/Singapore',
+                    'Asia/Shanghai', 'Asia/Tokyo', 'Asia/Seoul',
+                    'Australia/Sydney', 'Australia/Melbourne', 'Pacific/Auckland',
+                    'Africa/Johannesburg', 'Africa/Lagos', 'Africa/Cairo',
+                    'America/Mexico_City', 'America/Sao_Paulo', 'America/Argentina/Buenos_Aires',
+                  ];
+                  if (!zones.includes(timezone)) zones.unshift(timezone);
+                  return zones.map((tz) => {
+                    try {
+                      const label = tz.replace(/_/g, ' ').replace(/\//g, ' / ');
+                      const offset = new Intl.DateTimeFormat('en-US', { timeZone: tz, timeZoneName: 'shortOffset' })
+                        .formatToParts(new Date()).find((p) => p.type === 'timeZoneName')?.value || '';
+                      return <option key={tz} value={tz}>{label} ({offset})</option>;
+                    } catch {
+                      return <option key={tz} value={tz}>{tz}</option>;
+                    }
+                  });
+                })()}
+              </select>
+              <p className="text-xs mt-1" style={{ color: 'var(--text-tertiary)' }}>
+                Event times will display in this timezone for your guests.
+              </p>
+            </div>
           </div>
         )}
 
@@ -331,7 +381,7 @@ export default function CreateWeddingPage() {
                 <div className="flex justify-between py-2" style={{ borderBottom: '1px solid var(--border-light)' }}>
                   <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>Date</span>
                   <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
-                    {new Date(weddingDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                    {new Date(weddingDate + 'T12:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: timezone })}
                   </span>
                 </div>
               )}

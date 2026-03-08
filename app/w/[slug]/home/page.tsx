@@ -31,21 +31,24 @@ export default function GuestHomePage() {
     );
   }
 
-  // Calculate days until wedding
+  // Calculate days until wedding in the wedding's timezone
+  const tz = config.timezone || 'America/New_York';
   const daysToGo = config.wedding_date
-    ? Math.max(
-        0,
-        Math.ceil(
-          (new Date(config.wedding_date).getTime() - Date.now()) /
-            (1000 * 60 * 60 * 24)
-        )
-      )
+    ? (() => {
+        const nowInTz = new Date(new Date().toLocaleString('en-US', { timeZone: tz }));
+        const todayStr = `${nowInTz.getFullYear()}-${String(nowInTz.getMonth() + 1).padStart(2, '0')}-${String(nowInTz.getDate()).padStart(2, '0')}`;
+        const todayMs = new Date(todayStr).getTime();
+        const weddingMs = new Date(config.wedding_date!).getTime();
+        return Math.max(0, Math.ceil((weddingMs - todayMs) / (1000 * 60 * 60 * 24)));
+      })()
     : null;
 
-  // Find next upcoming event
+  // Find next upcoming event (comparing in wedding timezone)
   const upNextEvent = config.events.find((e) => {
     if (!e.date) return false;
-    return new Date(e.date) >= new Date();
+    const nowInTz = new Date(new Date().toLocaleString('en-US', { timeZone: tz }));
+    const todayStr = `${nowInTz.getFullYear()}-${String(nowInTz.getMonth() + 1).padStart(2, '0')}-${String(nowInTz.getDate()).padStart(2, '0')}`;
+    return e.date >= todayStr;
   });
 
   return (

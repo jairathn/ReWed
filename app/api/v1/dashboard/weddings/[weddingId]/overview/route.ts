@@ -21,7 +21,7 @@ export async function GET(
     // Fetch wedding + counts in parallel
     const [weddingRes, guestRes, eventRes, uploadRes, faqRes, feedRes] = await Promise.all([
       pool.query(
-        `SELECT id, slug, display_name, wedding_date, status, config, package_config,
+        `SELECT id, slug, display_name, wedding_date, timezone, status, config, package_config,
                 storage_used_bytes, ai_portraits_used, created_at
          FROM weddings WHERE id = $1`,
         [weddingId]

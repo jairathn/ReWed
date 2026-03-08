@@ -18,6 +18,7 @@ export interface Wedding {
   display_name: string;
   hashtag: string | null;
   wedding_date: string | null;
+  timezone: string;
   status: 'setup' | 'active' | 'post_wedding' | 'archived';
   config: WeddingConfigData;
   package_config: PackageConfigData;

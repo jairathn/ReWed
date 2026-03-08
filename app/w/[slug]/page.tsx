@@ -122,11 +122,12 @@ export default function GuestRegistrationPage() {
             className="text-sm mb-1"
             style={{ color: 'var(--text-tertiary)' }}
           >
-            {new Date(config.wedding_date).toLocaleDateString('en-US', {
+            {new Date(config.wedding_date + 'T12:00:00').toLocaleDateString('en-US', {
               weekday: 'long',
               year: 'numeric',
               month: 'long',
               day: 'numeric',
+              timeZone: config.timezone || 'America/New_York',
             })}
           </p>
         )}

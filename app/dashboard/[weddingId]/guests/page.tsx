@@ -224,8 +224,8 @@ export default function GuestsPage({ params }: { params: Promise<{ weddingId: st
     if (!confirm(`Delete ${selectedIds.size} guest${selectedIds.size !== 1 ? 's' : ''}? This cannot be undone.`)) return;
     setBatchDeleting(true);
     try {
-      const res = await fetch(`/api/v1/dashboard/weddings/${weddingId}/guests`, {
-        method: 'DELETE',
+      const res = await fetch(`/api/v1/dashboard/weddings/${weddingId}/guests/batch-delete`, {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ids: Array.from(selectedIds) }),
       });
