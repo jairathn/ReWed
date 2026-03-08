@@ -91,7 +91,7 @@ export async function POST(request: NextRequest) {
 
     const result = await pool.query(
       `INSERT INTO weddings (couple_id, slug, display_name, wedding_date, config, package_config, status)
-       VALUES ($1, $2, $3, $4, $5, $6, 'setup')
+       VALUES ($1, $2, $3, $4, $5::jsonb, $6::jsonb, 'setup')
        RETURNING id, slug, display_name, wedding_date, status, config, package_config, created_at`,
       [coupleId, parsed.slug, parsed.display_name, parsed.wedding_date || null, JSON.stringify(weddingConfig), JSON.stringify(packageConfig)]
     );

@@ -75,8 +75,10 @@ export function handleApiError(error: unknown): Response {
   }
 
   console.error('Unhandled error:', error);
+  const isDev = process.env.NODE_ENV !== 'production';
+  const detail = isDev && error instanceof Error ? error.message : undefined;
   return Response.json(
-    { error: { code: 'INTERNAL_ERROR', message: ErrorCodes.INTERNAL_ERROR.message } },
+    { error: { code: 'INTERNAL_ERROR', message: detail || ErrorCodes.INTERNAL_ERROR.message } },
     { status: 500 }
   );
 }
