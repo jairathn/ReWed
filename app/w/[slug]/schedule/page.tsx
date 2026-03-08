@@ -7,7 +7,7 @@ async function getScheduleData(slug: string) {
   const pool = getPool();
 
   const weddingResult = await pool.query(
-    'SELECT id, display_name, config FROM weddings WHERE slug = $1',
+    'SELECT id, display_name, config, timezone FROM weddings WHERE slug = $1',
     [slug]
   );
 
@@ -26,12 +26,14 @@ async function getScheduleData(slug: string) {
   return {
     wedding,
     events: eventsResult.rows,
+    timezone: wedding.timezone || 'America/New_York',
   };
 }
 
-function formatTime(time: string | null): string {
+function formatTime(time: string | null, tz: string): string {
   if (!time) return '';
   try {
+    // Create a date in the wedding timezone to get proper AM/PM
     const [hours, minutes] = time.split(':');
     const h = parseInt(hours, 10);
     const ampm = h >= 12 ? 'PM' : 'AM';
@@ -42,13 +44,25 @@ function formatTime(time: string | null): string {
   }
 }
 
-function formatDate(date: string | null): string {
+function formatDate(date: string | null, tz: string): string {
   if (!date) return '';
-  return new Date(date).toLocaleDateString('en-US', {
+  // Parse as local date in the wedding timezone
+  const d = new Date(date + 'T12:00:00');
+  return d.toLocaleDateString('en-US', {
     weekday: 'long',
     month: 'long',
     day: 'numeric',
+    timeZone: tz,
   });
+}
+
+function getTimezoneAbbr(tz: string): string {
+  try {
+    return new Intl.DateTimeFormat('en-US', { timeZone: tz, timeZoneName: 'short' })
+      .formatToParts(new Date()).find((p) => p.type === 'timeZoneName')?.value || '';
+  } catch {
+    return '';
+  }
 }
 
 // Event color map for emojis
@@ -85,7 +99,8 @@ export default async function SchedulePage({
     );
   }
 
-  const { events } = data;
+  const { events, timezone } = data;
+  const tzAbbr = getTimezoneAbbr(timezone);
 
   return (
     <div className="pb-24 px-5 pt-8 max-w-lg mx-auto">
@@ -170,7 +185,7 @@ export default async function SchedulePage({
                             className="text-sm"
                             style={{ color: 'var(--text-secondary)' }}
                           >
-                            {formatDate(event.date)}
+                            {formatDate(event.date, timezone)}
                           </p>
                         )}
                       </div>
@@ -181,8 +196,9 @@ export default async function SchedulePage({
                         className="text-sm mb-2"
                         style={{ color: 'var(--text-secondary)' }}
                       >
-                        {formatTime(event.start_time)}
-                        {event.end_time && ` \u2013 ${formatTime(event.end_time)}`}
+                        {formatTime(event.start_time, timezone)}
+                        {event.end_time && ` \u2013 ${formatTime(event.end_time, timezone)}`}
+                        {tzAbbr && ` ${tzAbbr}`}
                       </p>
                     )}
 

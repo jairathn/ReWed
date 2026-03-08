@@ -51,6 +51,10 @@ export default function SettingsPage({ params }: { params: Promise<{ weddingId: 
   const [description, setDescription] = useState('');
   const [logistics, setLogistics] = useState('');
 
+  // Wedding timezone
+  const [timezone, setTimezone] = useState('America/New_York');
+  const [timezoneSaving, setTimezoneSaving] = useState(false);
+
   // Batch selection
   const [selectedEventIds, setSelectedEventIds] = useState<Set<string>>(new Set());
   const [batchDeleting, setBatchDeleting] = useState(false);
@@ -123,6 +127,32 @@ export default function SettingsPage({ params }: { params: Promise<{ weddingId: 
   }, [weddingId]);
 
   useEffect(() => { fetchEvents(); }, [fetchEvents]);
+
+  // Fetch wedding timezone
+  useEffect(() => {
+    fetch(`/api/v1/dashboard/weddings/${weddingId}/overview`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.wedding?.timezone) setTimezone(data.wedding.timezone);
+      })
+      .catch(() => {});
+  }, [weddingId]);
+
+  const handleTimezoneChange = async (newTz: string) => {
+    setTimezone(newTz);
+    setTimezoneSaving(true);
+    try {
+      await fetch(`/api/v1/dashboard/weddings/${weddingId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ timezone: newTz }),
+      });
+    } catch {
+      // Silently fail
+    } finally {
+      setTimezoneSaving(false);
+    }
+  };
 
   const resetForm = () => {
     setEditEvent(null);
@@ -489,8 +519,60 @@ export default function SettingsPage({ params }: { params: Promise<{ weddingId: 
   }
 
   // ─── Event List ───
+
+  const timezoneOptions = [
+    'America/New_York', 'America/Chicago', 'America/Denver', 'America/Los_Angeles',
+    'America/Anchorage', 'Pacific/Honolulu', 'America/Phoenix',
+    'America/Toronto', 'America/Vancouver',
+    'Europe/London', 'Europe/Paris', 'Europe/Berlin', 'Europe/Rome', 'Europe/Madrid',
+    'Europe/Amsterdam', 'Europe/Zurich', 'Europe/Athens', 'Europe/Istanbul',
+    'Asia/Dubai', 'Asia/Kolkata', 'Asia/Bangkok', 'Asia/Singapore',
+    'Asia/Shanghai', 'Asia/Tokyo', 'Asia/Seoul',
+    'Australia/Sydney', 'Australia/Melbourne', 'Pacific/Auckland',
+    'Africa/Johannesburg', 'Africa/Lagos', 'Africa/Cairo',
+    'America/Mexico_City', 'America/Sao_Paulo', 'America/Argentina/Buenos_Aires',
+  ];
+  if (!timezoneOptions.includes(timezone)) timezoneOptions.unshift(timezone);
+
+  const formatTzLabel = (tz: string) => {
+    try {
+      const label = tz.replace(/_/g, ' ').replace(/\//g, ' / ');
+      const offset = new Intl.DateTimeFormat('en-US', { timeZone: tz, timeZoneName: 'shortOffset' })
+        .formatToParts(new Date()).find((p) => p.type === 'timeZoneName')?.value || '';
+      return `${label} (${offset})`;
+    } catch {
+      return tz;
+    }
+  };
+
   return (
     <div>
+      {/* Timezone Setting */}
+      <div className="card" style={{ padding: 20, background: 'var(--bg-pure-white)', marginBottom: 24 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
+          <div>
+            <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 500, color: 'var(--text-primary)', margin: '0 0 4px' }}>
+              Wedding Timezone
+            </h3>
+            <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: 0 }}>
+              Event times display in this timezone for your guests.
+            </p>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <select
+              style={{ ...inputStyle, width: 'auto', minWidth: 240, fontSize: 13 }}
+              value={timezone}
+              onChange={(e) => handleTimezoneChange(e.target.value)}
+            >
+              {timezoneOptions.map((tz) => (
+                <option key={tz} value={tz}>{formatTzLabel(tz)}</option>
+              ))}
+            </select>
+            {timezoneSaving && <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>Saving...</span>}
+          </div>
+        </div>
+      </div>
+
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
         <div>
           <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 500, color: 'var(--text-primary)', margin: 0 }}>
@@ -600,7 +682,7 @@ export default function SettingsPage({ params }: { params: Promise<{ weddingId: 
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, fontSize: 13, color: 'var(--text-secondary)' }}>
                       {ev.date && (
                         <span>
-                          {new Date(ev.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                          {new Date(ev.date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: timezone })}
                         </span>
                       )}
                       {(ev.start_time || ev.end_time) && (

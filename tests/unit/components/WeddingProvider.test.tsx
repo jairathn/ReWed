@@ -60,6 +60,7 @@ describe('WeddingProvider', () => {
       couple_names: { name1: 'A', name2: 'B' },
       hashtag: '#Test',
       wedding_date: null,
+      timezone: 'America/New_York',
       status: 'active' as const,
       theme: {
         preset: 'mediterranean',

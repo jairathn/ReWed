@@ -25,6 +25,7 @@ const createWeddingSchema = z.object({
   slug: slugSchema,
   display_name: z.string().min(1).max(200),
   wedding_date: z.string().optional(),
+  timezone: z.string().max(100).optional(),
   guest_count: z.string().optional(),
   event_count: z.string().optional(),
   features: z.object({
@@ -90,10 +91,10 @@ export async function POST(request: NextRequest) {
     };
 
     const result = await pool.query(
-      `INSERT INTO weddings (couple_id, slug, display_name, wedding_date, config, package_config, status)
-       VALUES ($1, $2, $3, $4, $5::jsonb, $6::jsonb, 'setup')
-       RETURNING id, slug, display_name, wedding_date, status, config, package_config, created_at`,
-      [coupleId, parsed.slug, parsed.display_name, parsed.wedding_date || null, JSON.stringify(weddingConfig), JSON.stringify(packageConfig)]
+      `INSERT INTO weddings (couple_id, slug, display_name, wedding_date, timezone, config, package_config, status)
+       VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7::jsonb, 'setup')
+       RETURNING id, slug, display_name, wedding_date, timezone, status, config, package_config, created_at`,
+      [coupleId, parsed.slug, parsed.display_name, parsed.wedding_date || null, parsed.timezone || 'America/New_York', JSON.stringify(weddingConfig), JSON.stringify(packageConfig)]
     );
 
     return Response.json({ wedding: result.rows[0] }, { status: 201 });

@@ -13,7 +13,7 @@ export async function GET(
 
     // Fetch wedding by slug
     const weddingResult = await pool.query(
-      `SELECT id, slug, display_name, hashtag, wedding_date, status, config, package_config
+      `SELECT id, slug, display_name, hashtag, wedding_date, timezone, status, config, package_config
        FROM weddings WHERE slug = $1`,
       [slug]
     );
@@ -60,6 +60,7 @@ export async function GET(
       couple_names: config.couple_names || { name1: '', name2: '' },
       hashtag: wedding.hashtag || config.hashtag || '',
       wedding_date: wedding.wedding_date ? String(wedding.wedding_date) : null,
+      timezone: wedding.timezone || 'America/New_York',
       status: wedding.status,
       theme: config.theme || {
         preset: 'mediterranean',

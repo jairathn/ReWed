@@ -26,6 +26,7 @@ export type WeddingConfig = {
   couple_names: { name1: string; name2: string };
   hashtag: string;
   wedding_date: string | null;
+  timezone: string;
   status: 'setup' | 'active' | 'post_wedding' | 'archived';
   theme: {
     preset: string;
