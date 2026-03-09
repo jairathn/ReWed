@@ -34,7 +34,10 @@ export default function WeddingOverviewPage({
 
   useEffect(() => {
     fetch(`/api/v1/dashboard/weddings/${weddingId}/overview`)
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) throw new Error('API error');
+        return res.json();
+      })
       .then(setData)
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -93,7 +96,7 @@ export default function WeddingOverviewPage({
         </h1>
         <p style={{ color: 'var(--text-secondary)', fontSize: 14, marginTop: 4 }}>
           {wedding.wedding_date
-            ? new Date(wedding.wedding_date + 'T12:00:00').toLocaleDateString('en-US', {
+            ? new Date(String(wedding.wedding_date).slice(0, 10) + 'T12:00:00').toLocaleDateString('en-US', {
                 month: 'long', day: 'numeric', year: 'numeric',
                 timeZone: wedding.timezone || 'America/New_York',
               })

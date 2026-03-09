@@ -30,7 +30,10 @@ export default function WeddingManageLayout({
   useEffect(() => {
     if (!weddingId) return;
     fetch(`/api/v1/dashboard/weddings/${weddingId}/overview`)
-      .then((res) => (res.ok ? res.json() : null))
+      .then((res) => {
+        if (!res.ok) return null;
+        return res.json();
+      })
       .then((data) => {
         if (data?.wedding) setWedding(data.wedding);
       })

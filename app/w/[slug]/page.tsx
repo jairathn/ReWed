@@ -122,7 +122,7 @@ export default function GuestRegistrationPage() {
             className="text-sm mb-1"
             style={{ color: 'var(--text-tertiary)' }}
           >
-            {new Date(config.wedding_date + 'T12:00:00').toLocaleDateString('en-US', {
+            {new Date(String(config.wedding_date).slice(0, 10) + 'T12:00:00').toLocaleDateString('en-US', {
               weekday: 'long',
               year: 'numeric',
               month: 'long',
