@@ -31,8 +31,8 @@ describe('BottomNav', () => {
     expect(screen.getByText('Home')).toBeDefined();
     expect(screen.getByText('Video')).toBeDefined();
     expect(screen.getByText('Photo')).toBeDefined();
+    expect(screen.getByText('Travel')).toBeDefined();
     expect(screen.getByText('Events')).toBeDefined();
-    expect(screen.getByText('Gallery')).toBeDefined();
   });
 
   it('has correct links for each tab', () => {
@@ -47,11 +47,11 @@ describe('BottomNav', () => {
     const photoLink = screen.getByText('Photo').closest('a');
     expect(photoLink?.getAttribute('href')).toBe('/w/test-wedding/photo');
 
+    const travelLink = screen.getByText('Travel').closest('a');
+    expect(travelLink?.getAttribute('href')).toBe('/w/test-wedding/travel');
+
     const eventsLink = screen.getByText('Events').closest('a');
     expect(eventsLink?.getAttribute('href')).toBe('/w/test-wedding/schedule');
-
-    const galleryLink = screen.getByText('Gallery').closest('a');
-    expect(galleryLink?.getAttribute('href')).toBe('/w/test-wedding/gallery');
   });
 
   it('renders the Photo tab as elevated (with gradient circle)', () => {

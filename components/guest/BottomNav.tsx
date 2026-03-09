@@ -42,12 +42,20 @@ const GalleryIcon = () => (
   </svg>
 );
 
+const MapIcon = () => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6" />
+    <line x1="8" y1="2" x2="8" y2="18" />
+    <line x1="16" y1="6" x2="16" y2="22" />
+  </svg>
+);
+
 const tabs = [
   { id: 'home', label: 'Home', icon: HomeIcon, path: '' },
   { id: 'video', label: 'Video', icon: VideoIcon, path: '/video' },
   { id: 'photo', label: 'Photo', icon: CameraIcon, path: '/photo', elevated: true },
+  { id: 'travel', label: 'Travel', icon: MapIcon, path: '/travel' },
   { id: 'schedule', label: 'Events', icon: CalendarIcon, path: '/schedule' },
-  { id: 'gallery', label: 'Gallery', icon: GalleryIcon, path: '/gallery' },
 ];
 
 export default function BottomNav() {

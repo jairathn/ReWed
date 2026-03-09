@@ -34,6 +34,40 @@ export const guestRegisterSchema = z.object({
   guest_id: z.string().uuid(),
 });
 
+// Travel plan validation
+const travelStopInputSchema = z.object({
+  stop_type: z.enum(['origin', 'pre_wedding', 'arrival', 'departure', 'post_wedding', 'return']),
+  city: z.string().min(1).max(200),
+  region: z.string().max(200).optional(),
+  country: z.string().min(1).max(100),
+  country_code: z.string().max(5).optional(),
+  latitude: z.number().min(-90).max(90),
+  longitude: z.number().min(-180).max(180),
+  arrive_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Must be YYYY-MM-DD").optional(),
+  depart_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Must be YYYY-MM-DD").optional(),
+  arrive_time: z.string().regex(/^\d{2}:\d{2}$/, "Must be HH:MM").optional(),
+  transport_mode: z.enum(['flight', 'train', 'car', 'bus', 'ferry']).optional(),
+  transport_details: z.string().max(200).optional(),
+  accommodation: z.string().max(200).optional(),
+  open_to_meetup: z.boolean().default(true),
+  notes: z.string().max(500).optional(),
+  sort_order: z.number().int().min(0).default(0),
+});
+
+export const travelPlanSchema = z.object({
+  plan_type: z.enum(['direct', 'exploring']),
+  origin_city: z.string().max(200).optional(),
+  origin_lat: z.number().min(-90).max(90).optional(),
+  origin_lng: z.number().min(-180).max(180).optional(),
+  origin_country: z.string().max(100).optional(),
+  share_transport: z.boolean().default(false),
+  visibility: z.enum(['full', 'city_only', 'private']).default('full'),
+  notes: z.string().max(500).optional(),
+  stops: z.array(travelStopInputSchema).min(1).max(20),
+});
+
+export type TravelStopInput = z.infer<typeof travelStopInputSchema>;
+
 export function sanitizeText(input: string): string {
   return input
     .replace(/[<>]/g, '')
