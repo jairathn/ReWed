@@ -2,10 +2,14 @@
 
 import { useEffect, useState } from 'react';
 import type { TravelStopInput } from '@/lib/validation';
+import CityAutocomplete, { type CityResult } from './CityAutocomplete';
 
 interface TravelPlanFormProps {
   slug: string;
   onSaved: () => void;
+  /** Venue info from the first wedding event, used to prefill arrival */
+  venueCity?: string;
+  venueCountry?: string;
 }
 
 type PlanType = 'direct' | 'exploring';
@@ -38,10 +42,31 @@ function emptyStop(stop_type: string): StopFormData {
   };
 }
 
-export default function TravelPlanForm({ slug, onSaved }: TravelPlanFormProps) {
+function applyCityResult(stop: StopFormData, city: CityResult): StopFormData {
+  return {
+    ...stop,
+    city: city.city,
+    country: city.country,
+    country_code: city.country_code,
+    latitude: city.latitude,
+    longitude: city.longitude,
+  };
+}
+
+/** Build display string for a stop's city (for the autocomplete input value) */
+function stopCityDisplay(stop: StopFormData): string {
+  if (!stop.city) return '';
+  const parts = [stop.city];
+  if (stop.country) parts.push(stop.country);
+  return parts.join(', ');
+}
+
+export default function TravelPlanForm({ slug, onSaved, venueCity, venueCountry }: TravelPlanFormProps) {
   const [planType, setPlanType] = useState<PlanType | null>(null);
   const [originCity, setOriginCity] = useState('');
   const [originCountry, setOriginCountry] = useState('');
+  const [originLat, setOriginLat] = useState(0);
+  const [originLng, setOriginLng] = useState(0);
   const [shareTransport, setShareTransport] = useState(false);
   const [visibility, setVisibility] = useState<Visibility>('full');
   const [planNotes, setPlanNotes] = useState('');
@@ -50,11 +75,22 @@ export default function TravelPlanForm({ slug, onSaved }: TravelPlanFormProps) {
   const [existingPlan, setExistingPlan] = useState<boolean>(false);
 
   // Stops
-  const [arrivalStop, setArrivalStop] = useState<StopFormData>(emptyStop('arrival'));
-  const [departureStop, setDepartureStop] = useState<StopFormData>(emptyStop('departure'));
+  const [arrivalStop, setArrivalStop] = useState<StopFormData>(() => {
+    // Prefill arrival with venue data from wedding config
+    const stop = emptyStop('arrival');
+    if (venueCity) stop.city = venueCity;
+    if (venueCountry) stop.country = venueCountry;
+    return stop;
+  });
+  const [departureStop, setDepartureStop] = useState<StopFormData>(() => {
+    const stop = emptyStop('departure');
+    if (venueCity) stop.city = venueCity;
+    if (venueCountry) stop.country = venueCountry;
+    return stop;
+  });
   const [extraStops, setExtraStops] = useState<StopFormData[]>([]);
 
-  // Load existing plan
+  // Load existing plan (overrides prefill)
   useEffect(() => {
     fetch(`/api/v1/w/${slug}/travel/my-plan`)
       .then((res) => res.json())
@@ -73,10 +109,15 @@ export default function TravelPlanForm({ slug, onSaved }: TravelPlanFormProps) {
         const stops = plan.stops || [];
         const arrival = stops.find((s: StopFormData) => s.stop_type === 'arrival');
         const departure = stops.find((s: StopFormData) => s.stop_type === 'departure');
+        const origin = stops.find((s: StopFormData) => s.stop_type === 'origin');
         const extras = stops.filter(
           (s: StopFormData) => !['arrival', 'departure', 'origin'].includes(s.stop_type)
         );
 
+        if (origin) {
+          setOriginLat(origin.latitude || 0);
+          setOriginLng(origin.longitude || 0);
+        }
         if (arrival) setArrivalStop({ ...emptyStop('arrival'), ...arrival });
         if (departure) setDepartureStop({ ...emptyStop('departure'), ...departure });
         if (extras.length > 0) setExtraStops(extras.map((s: StopFormData) => ({ ...emptyStop(s.stop_type), ...s })));
@@ -96,23 +137,50 @@ export default function TravelPlanForm({ slug, onSaved }: TravelPlanFormProps) {
     setExtraStops(extraStops.map((s, i) => (i === index ? { ...s, ...updates } : s)));
   }
 
+  function handleOriginSelect(city: CityResult) {
+    setOriginCity(city.city);
+    setOriginCountry(city.country);
+    setOriginLat(city.latitude);
+    setOriginLng(city.longitude);
+  }
+
+  function handleArrivalCitySelect(city: CityResult) {
+    setArrivalStop((prev) => applyCityResult(prev, city));
+    // Also update departure city to match if it hasn't been explicitly set
+    setDepartureStop((prev) => {
+      if (!prev.city || prev.city === venueCity) {
+        return applyCityResult(prev, city);
+      }
+      return prev;
+    });
+  }
+
+  function handleExtraStopCitySelect(index: number, city: CityResult) {
+    updateExtraStop(index, {
+      city: city.city,
+      country: city.country,
+      country_code: city.country_code,
+      latitude: city.latitude,
+      longitude: city.longitude,
+    });
+  }
+
   async function handleSave() {
     if (!planType) return;
     setError(null);
     setSaving(true);
 
     try {
-      // Build stops array
       const stops: TravelStopInput[] = [];
 
-      // Origin stop (if city provided)
+      // Origin stop
       if (originCity) {
         stops.push({
           stop_type: 'origin',
           city: originCity,
           country: originCountry || 'Unknown',
-          latitude: 0, // V1: geocoding would resolve this
-          longitude: 0,
+          latitude: originLat,
+          longitude: originLng,
           open_to_meetup: false,
           sort_order: 0,
         });
@@ -185,6 +253,8 @@ export default function TravelPlanForm({ slug, onSaved }: TravelPlanFormProps) {
           plan_type: planType,
           origin_city: originCity || undefined,
           origin_country: originCountry || undefined,
+          origin_lat: originLat || undefined,
+          origin_lng: originLng || undefined,
           share_transport: shareTransport,
           visibility,
           notes: planNotes || undefined,
@@ -199,7 +269,7 @@ export default function TravelPlanForm({ slug, onSaved }: TravelPlanFormProps) {
       }
 
       onSaved();
-    } catch (err) {
+    } catch {
       setError('Something went wrong. Please try again.');
     } finally {
       setSaving(false);
@@ -213,9 +283,22 @@ export default function TravelPlanForm({ slug, onSaved }: TravelPlanFormProps) {
       await fetch(`/api/v1/w/${slug}/travel/my-plan`, { method: 'DELETE' });
       setPlanType(null);
       setOriginCity('');
+      setOriginCountry('');
+      setOriginLat(0);
+      setOriginLng(0);
       setExtraStops([]);
-      setArrivalStop(emptyStop('arrival'));
-      setDepartureStop(emptyStop('departure'));
+      setArrivalStop(() => {
+        const stop = emptyStop('arrival');
+        if (venueCity) stop.city = venueCity;
+        if (venueCountry) stop.country = venueCountry;
+        return stop;
+      });
+      setDepartureStop(() => {
+        const stop = emptyStop('departure');
+        if (venueCity) stop.city = venueCity;
+        if (venueCountry) stop.country = venueCountry;
+        return stop;
+      });
       setExistingPlan(false);
     } catch {
       setError('Failed to delete');
@@ -280,21 +363,10 @@ export default function TravelPlanForm({ slug, onSaved }: TravelPlanFormProps) {
         <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>
           Where are you coming from?
         </label>
-        <input
-          type="text"
-          value={originCity}
-          onChange={(e) => setOriginCity(e.target.value)}
-          placeholder="e.g. Chicago, IL"
-          className="w-full px-3 py-2 rounded-lg text-sm border"
-          style={{ borderColor: 'var(--border-light)', color: 'var(--text-primary)' }}
-        />
-        <input
-          type="text"
-          value={originCountry}
-          onChange={(e) => setOriginCountry(e.target.value)}
-          placeholder="Country"
-          className="w-full px-3 py-2 rounded-lg text-sm border mt-2"
-          style={{ borderColor: 'var(--border-light)', color: 'var(--text-primary)' }}
+        <CityAutocomplete
+          value={originCity ? `${originCity}${originCountry ? ', ' + originCountry : ''}` : ''}
+          onSelect={handleOriginSelect}
+          placeholder="Search your home city..."
         />
       </div>
 
@@ -324,22 +396,13 @@ export default function TravelPlanForm({ slug, onSaved }: TravelPlanFormProps) {
                   Remove
                 </button>
               </div>
-              <input
-                type="text"
-                value={stop.city}
-                onChange={(e) => updateExtraStop(i, { city: e.target.value })}
-                placeholder="City"
-                className="w-full px-3 py-2 rounded-lg text-sm border mb-2"
-                style={{ borderColor: 'var(--border-light)', color: 'var(--text-primary)' }}
-              />
-              <input
-                type="text"
-                value={stop.country}
-                onChange={(e) => updateExtraStop(i, { country: e.target.value })}
-                placeholder="Country"
-                className="w-full px-3 py-2 rounded-lg text-sm border mb-2"
-                style={{ borderColor: 'var(--border-light)', color: 'var(--text-primary)' }}
-              />
+              <div className="mb-2">
+                <CityAutocomplete
+                  value={stopCityDisplay(stop)}
+                  onSelect={(city) => handleExtraStopCitySelect(i, city)}
+                  placeholder="Search for a city..."
+                />
+              </div>
               <div className="grid grid-cols-2 gap-2 mb-2">
                 <input
                   type="date"
@@ -389,22 +452,19 @@ export default function TravelPlanForm({ slug, onSaved }: TravelPlanFormProps) {
         <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>
           Arriving at wedding destination
         </label>
-        <input
-          type="text"
-          value={arrivalStop.city}
-          onChange={(e) => setArrivalStop({ ...arrivalStop, city: e.target.value })}
-          placeholder="City (e.g. Barcelona)"
-          className="w-full px-3 py-2 rounded-lg text-sm border mb-2"
-          style={{ borderColor: 'var(--border-light)', color: 'var(--text-primary)' }}
-        />
-        <input
-          type="text"
-          value={arrivalStop.country}
-          onChange={(e) => setArrivalStop({ ...arrivalStop, country: e.target.value })}
-          placeholder="Country"
-          className="w-full px-3 py-2 rounded-lg text-sm border mb-2"
-          style={{ borderColor: 'var(--border-light)', color: 'var(--text-primary)' }}
-        />
+        <div className="mb-2">
+          <CityAutocomplete
+            value={stopCityDisplay(arrivalStop)}
+            onSelect={handleArrivalCitySelect}
+            placeholder="Search wedding destination city..."
+          />
+        </div>
+        {arrivalStop.city && (
+          <p className="text-xs mb-2" style={{ color: 'var(--text-tertiary)' }}>
+            &#128205; {arrivalStop.city}{arrivalStop.country ? `, ${arrivalStop.country}` : ''}
+            {arrivalStop.latitude ? ` (${arrivalStop.latitude.toFixed(2)}, ${arrivalStop.longitude.toFixed(2)})` : ''}
+          </p>
+        )}
         <div className="grid grid-cols-2 gap-2 mb-2">
           <input
             type="date"

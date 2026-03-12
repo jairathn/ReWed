@@ -3,7 +3,7 @@
 import { useWedding } from '@/components/WeddingProvider';
 import BottomNav from '@/components/guest/BottomNav';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import TravelPlanForm from '@/components/travel/TravelPlanForm';
 import TravelMapView from '@/components/travel/TravelMapView';
 import ArrivalsView from '@/components/travel/ArrivalsView';
@@ -12,7 +12,7 @@ import OverlapsCard from '@/components/travel/OverlapsCard';
 type Tab = 'map' | 'arrivals' | 'my-plan';
 
 export default function TravelPage() {
-  const { slug, isAuthenticated, isLoading } = useWedding();
+  const { slug, config, isAuthenticated, isLoading } = useWedding();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<Tab>('map');
   const [hasPlan, setHasPlan] = useState<boolean | null>(null);
@@ -31,6 +31,26 @@ export default function TravelPage() {
       .then((data) => setHasPlan(!!data.data?.plan))
       .catch(() => setHasPlan(false));
   }, [slug, isAuthenticated]);
+
+  // Extract venue city from the first event's venue_address
+  const venueInfo = useMemo(() => {
+    if (!config?.events?.length) return { city: '', country: '' };
+    // Find first event with a venue address
+    const event = config.events.find((e) => e.venue_address || e.venue_name);
+    if (!event?.venue_address) return { city: '', country: '' };
+    // Try to parse "City, Country" or "Street, City, State, Country" patterns
+    const parts = event.venue_address.split(',').map((p) => p.trim());
+    if (parts.length >= 2) {
+      // Last part is usually country, second-to-last is state/region or city
+      const country = parts[parts.length - 1];
+      // For addresses like "123 Main St, Barcelona, Spain" → city = Barcelona
+      // For "Barcelona, Spain" → city = Barcelona
+      const city = parts.length >= 3 ? parts[parts.length - 2] : parts[0];
+      return { city, country };
+    }
+    // Single value — treat as city name
+    return { city: parts[0], country: '' };
+  }, [config]);
 
   const handlePlanSaved = useCallback(() => {
     setHasPlan(true);
@@ -115,7 +135,12 @@ export default function TravelPage() {
       {activeTab === 'arrivals' && <ArrivalsView slug={slug} />}
 
       {activeTab === 'my-plan' && (
-        <TravelPlanForm slug={slug} onSaved={handlePlanSaved} />
+        <TravelPlanForm
+          slug={slug}
+          onSaved={handlePlanSaved}
+          venueCity={venueInfo.city}
+          venueCountry={venueInfo.country}
+        />
       )}
 
       <BottomNav />
