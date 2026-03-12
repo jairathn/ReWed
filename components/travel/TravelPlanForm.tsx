@@ -354,7 +354,7 @@ export default function TravelPlanForm({ slug, onSaved, venueCity, venueCountry 
           &larr; Change type
         </button>
         <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
-          {planType === 'direct' ? '&#9992;&#65039; Flying in & out' : '&#128506;&#65039; Making a trip of it'}
+          {planType === 'direct' ? '✈️ Flying in & out' : '🗺️ Making a trip of it'}
         </span>
       </div>
 
