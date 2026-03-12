@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useRef, useCallback, type ReactNode } from 'react';
 import type { WeddingConfig, GuestProfile } from '@/lib/types/api';
 
 interface WeddingContextType {
@@ -8,6 +8,8 @@ interface WeddingContextType {
   guest: GuestProfile | null;
   isLoading: boolean;
   isAuthenticated: boolean;
+  configError: string | null;
+  retryConfig: () => void;
   setGuest: (guest: GuestProfile) => void;
   slug: string;
 }
@@ -17,6 +19,8 @@ const WeddingContext = createContext<WeddingContextType>({
   guest: null,
   isLoading: true,
   isAuthenticated: false,
+  configError: null,
+  retryConfig: () => {},
   setGuest: () => {},
   slug: '',
 });
@@ -37,20 +41,49 @@ export function WeddingProvider({
   const [config, setConfig] = useState<WeddingConfig | null>(initialConfig || null);
   const [guest, setGuest] = useState<GuestProfile | null>(null);
   const [isLoading, setIsLoading] = useState(!initialConfig);
+  const [configError, setConfigError] = useState<string | null>(null);
+  const retryCount = useRef(0);
+
+  const fetchConfig = useCallback(async () => {
+    setIsLoading(true);
+    setConfigError(null);
+    try {
+      const res = await fetch(`/api/v1/w/${slug}/config`);
+      if (!res.ok) {
+        throw new Error(`Config fetch failed (${res.status})`);
+      }
+      const data = await res.json();
+      if (data.data) {
+        setConfig(data.data);
+        retryCount.current = 0;
+        setIsLoading(false);
+      } else {
+        throw new Error('Invalid config response');
+      }
+    } catch (err) {
+      console.error('Config fetch error:', err);
+      // Auto-retry once after a short delay
+      if (retryCount.current < 1) {
+        retryCount.current += 1;
+        setTimeout(() => fetchConfig(), 1500);
+        // Keep isLoading true during retry
+      } else {
+        setConfigError(err instanceof Error ? err.message : 'Failed to load wedding');
+        setIsLoading(false);
+      }
+    }
+  }, [slug]);
+
+  const retryConfig = useCallback(() => {
+    retryCount.current = 0;
+    fetchConfig();
+  }, [fetchConfig]);
 
   useEffect(() => {
     if (!config) {
-      fetch(`/api/v1/w/${slug}/config`)
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.data) {
-            setConfig(data.data);
-          }
-        })
-        .catch(console.error)
-        .finally(() => setIsLoading(false));
+      fetchConfig();
     }
-  }, [slug, config]);
+  }, [slug, config, fetchConfig]);
 
   // Try to restore guest from localStorage
   useEffect(() => {
@@ -76,6 +109,8 @@ export function WeddingProvider({
         guest,
         isLoading,
         isAuthenticated: !!guest,
+        configError,
+        retryConfig,
         setGuest: handleSetGuest,
         slug,
       }}

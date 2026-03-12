@@ -63,6 +63,9 @@ const envSchema = z.object({
   TEST_MODE: z.string().default('false'),
   LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
 
+  // Geocoding
+  GEONAMES_USERNAME: optionalStr,
+
   // Feature flags
   ENABLE_AI_PORTRAITS: z.string().default('true'),
   ENABLE_SMS: z.string().default('true'),
@@ -107,6 +110,7 @@ function getEnv(): Env {
       NODE_ENV: (process.env.NODE_ENV as 'development' | 'production' | 'test') || 'development',
       TEST_MODE: process.env.TEST_MODE || 'false',
       LOG_LEVEL: (process.env.LOG_LEVEL as 'debug' | 'info' | 'warn' | 'error') || 'info',
+      GEONAMES_USERNAME: process.env.GEONAMES_USERNAME || undefined,
       ENABLE_AI_PORTRAITS: process.env.ENABLE_AI_PORTRAITS || 'true',
       ENABLE_SMS: process.env.ENABLE_SMS || 'true',
     } as Env;

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useWedding } from '@/components/WeddingProvider';
 
 export default function GuestRegistrationPage() {
-  const { config, slug, isLoading, isAuthenticated, setGuest } = useWedding();
+  const { config, slug, isLoading, isAuthenticated, configError, retryConfig, setGuest } = useWedding();
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<
@@ -87,6 +87,25 @@ export default function GuestRegistrationPage() {
       setIsRegistering(false);
     }
   };
+
+  if (configError && !isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-6">
+        <div className="w-full max-w-md text-center">
+          <p className="text-sm mb-4" style={{ color: 'var(--text-secondary)' }}>
+            Couldn&apos;t load the wedding. Check your connection and try again.
+          </p>
+          <button
+            onClick={retryConfig}
+            className="px-6 py-2.5 rounded-full text-sm font-medium text-white"
+            style={{ background: 'var(--color-terracotta-gradient)' }}
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (

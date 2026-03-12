@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
 export default function GuestHomePage() {
-  const { config, guest, slug, isAuthenticated, isLoading } = useWedding();
+  const { config, guest, slug, isAuthenticated, isLoading, configError, retryConfig } = useWedding();
   const router = useRouter();
 
   useEffect(() => {
@@ -15,6 +15,26 @@ export default function GuestHomePage() {
       router.replace(`/w/${slug}`);
     }
   }, [isLoading, isAuthenticated, router, slug]);
+
+  if (configError && !isLoading) {
+    return (
+      <div className="pb-24 px-5 pt-8 max-w-lg mx-auto">
+        <div className="card p-8 text-center mt-12">
+          <p className="text-sm mb-4" style={{ color: 'var(--text-secondary)' }}>
+            Couldn&apos;t load the wedding. Check your connection and try again.
+          </p>
+          <button
+            onClick={retryConfig}
+            className="px-6 py-2.5 rounded-full text-sm font-medium text-white"
+            style={{ background: 'var(--color-terracotta-gradient)' }}
+          >
+            Retry
+          </button>
+        </div>
+        <BottomNav />
+      </div>
+    );
+  }
 
   if (isLoading || !config || !guest) {
     return (
