@@ -25,6 +25,7 @@ interface StopFormData {
   arrive_date: string;
   depart_date: string;
   arrive_time: string;
+  depart_time: string;
   transport_mode: string;
   transport_details: string;
   accommodation: string;
@@ -36,7 +37,7 @@ function emptyStop(stop_type: string): StopFormData {
   return {
     stop_type,
     city: '', country: '', country_code: '', latitude: 0, longitude: 0,
-    arrive_date: '', depart_date: '', arrive_time: '',
+    arrive_date: '', depart_date: '', arrive_time: '', depart_time: '',
     transport_mode: '', transport_details: '', accommodation: '',
     open_to_meetup: true, notes: '',
   };
@@ -68,6 +69,7 @@ export default function TravelPlanForm({ slug, onSaved, venueCity, venueCountry 
   const [originLat, setOriginLat] = useState(0);
   const [originLng, setOriginLng] = useState(0);
   const [shareTransport, setShareTransport] = useState(false);
+  const [shareContact, setShareContact] = useState('');
   const [visibility, setVisibility] = useState<Visibility>('full');
   const [planNotes, setPlanNotes] = useState('');
   const [saving, setSaving] = useState(false);
@@ -103,6 +105,7 @@ export default function TravelPlanForm({ slug, onSaved, venueCity, venueCountry 
         setOriginCity(plan.origin_city || '');
         setOriginCountry(plan.origin_country || '');
         setShareTransport(plan.share_transport);
+        setShareContact(plan.share_contact || '');
         setVisibility(plan.visibility);
         setPlanNotes(plan.notes || '');
 
@@ -235,6 +238,7 @@ export default function TravelPlanForm({ slug, onSaved, venueCity, venueCountry 
           latitude: departureStop.latitude || arrivalStop.latitude || 0,
           longitude: departureStop.longitude || arrivalStop.longitude || 0,
           depart_date: departureStop.depart_date || undefined,
+          depart_time: departureStop.depart_time || undefined,
           open_to_meetup: false,
           sort_order: 101,
         });
@@ -256,6 +260,7 @@ export default function TravelPlanForm({ slug, onSaved, venueCity, venueCountry 
           origin_lat: originLat || undefined,
           origin_lng: originLng || undefined,
           share_transport: shareTransport,
+          share_contact: shareTransport ? shareContact : undefined,
           visibility,
           notes: planNotes || undefined,
           stops,
@@ -286,6 +291,7 @@ export default function TravelPlanForm({ slug, onSaved, venueCity, venueCountry 
       setOriginCountry('');
       setOriginLat(0);
       setOriginLng(0);
+      setShareContact('');
       setExtraStops([]);
       setArrivalStop(() => {
         const stop = emptyStop('arrival');
@@ -519,18 +525,42 @@ export default function TravelPlanForm({ slug, onSaved, venueCity, venueCountry 
             className="px-3 py-2 rounded-lg text-sm border"
             style={{ borderColor: 'var(--border-light)', color: 'var(--text-primary)' }}
           />
+          <input
+            type="time"
+            value={departureStop.depart_time}
+            onChange={(e) => setDepartureStop({ ...departureStop, depart_time: e.target.value })}
+            className="px-3 py-2 rounded-lg text-sm border"
+            style={{ borderColor: 'var(--border-light)', color: 'var(--text-primary)' }}
+          />
         </div>
       </div>
 
       {/* Share transport */}
-      <label className="flex items-center gap-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
-        <input
-          type="checkbox"
-          checked={shareTransport}
-          onChange={(e) => setShareTransport(e.target.checked)}
-        />
-        I&apos;d share a ride from the airport
-      </label>
+      <div>
+        <label className="flex items-center gap-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
+          <input
+            type="checkbox"
+            checked={shareTransport}
+            onChange={(e) => setShareTransport(e.target.checked)}
+          />
+          I&apos;d share a ride from the airport
+        </label>
+        {shareTransport && (
+          <div className="mt-2 ml-6">
+            <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>
+              Phone or email (shared with ride matches only)
+            </label>
+            <input
+              type="text"
+              value={shareContact}
+              onChange={(e) => setShareContact(e.target.value)}
+              placeholder="e.g. +1 555-123-4567 or name@email.com"
+              className="w-full px-3 py-2 rounded-lg text-sm border"
+              style={{ borderColor: 'var(--border-light)', color: 'var(--text-primary)' }}
+            />
+          </div>
+        )}
+      </div>
 
       {/* Visibility */}
       <div>

@@ -46,6 +46,7 @@ const travelStopInputSchema = z.object({
   arrive_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Must be YYYY-MM-DD").optional(),
   depart_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Must be YYYY-MM-DD").optional(),
   arrive_time: z.string().regex(/^\d{2}:\d{2}$/, "Must be HH:MM").optional(),
+  depart_time: z.string().regex(/^\d{2}:\d{2}$/, "Must be HH:MM").optional(),
   transport_mode: z.enum(['flight', 'train', 'car', 'bus', 'ferry']).optional(),
   transport_details: z.string().max(200).optional(),
   accommodation: z.string().max(200).optional(),
@@ -61,10 +62,14 @@ export const travelPlanSchema = z.object({
   origin_lng: z.number().min(-180).max(180).optional(),
   origin_country: z.string().max(100).optional(),
   share_transport: z.boolean().default(false),
+  share_contact: z.string().max(200).optional(),
   visibility: z.enum(['full', 'city_only', 'private']).default('full'),
   notes: z.string().max(500).optional(),
   stops: z.array(travelStopInputSchema).min(1).max(20),
-});
+}).refine(
+  (d) => !d.share_transport || (d.share_contact && d.share_contact.trim().length > 0),
+  { message: 'Phone or email is required when sharing rides', path: ['share_contact'] }
+);
 
 export type TravelStopInput = z.infer<typeof travelStopInputSchema>;
 

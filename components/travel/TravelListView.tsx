@@ -36,9 +36,34 @@ interface CityOverlap {
   overlapping_guests: OverlapGuest[];
 }
 
+interface RideShareMatch {
+  display_name: string;
+  time: string;
+  transport_mode: string | null;
+  transport_details: string | null;
+  origin_city: string | null;
+  share_contact: string | null;
+}
+
+interface RideShareGroup {
+  type: 'arrival' | 'departure';
+  your_date: string;
+  your_time: string;
+  city: string;
+  matches: RideShareMatch[];
+}
+
 function formatDate(dateStr: string): string {
   const d = new Date(dateStr + 'T00:00:00');
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+function formatTime(timeStr: string): string {
+  const [h, m] = timeStr.split(':');
+  const hour = parseInt(h, 10);
+  const ampm = hour >= 12 ? 'PM' : 'AM';
+  const hour12 = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+  return `${hour12}:${m} ${ampm}`;
 }
 
 export default function TravelListView({
@@ -52,8 +77,11 @@ export default function TravelListView({
 }) {
   const [stops, setStops] = useState<MapStop[]>([]);
   const [overlaps, setOverlaps] = useState<CityOverlap[]>([]);
+  const [rideShares, setRideShares] = useState<RideShareGroup[]>([]);
+  const [mySharing, setMySharing] = useState(false);
   const [loadingStops, setLoadingStops] = useState(true);
   const [loadingOverlaps, setLoadingOverlaps] = useState(true);
+  const [loadingRides, setLoadingRides] = useState(true);
 
   useEffect(() => {
     fetch(`/api/v1/w/${slug}/travel/map`)
@@ -66,6 +94,7 @@ export default function TravelListView({
   useEffect(() => {
     if (!hasPlan) {
       setLoadingOverlaps(false);
+      setLoadingRides(false);
       return;
     }
     fetch(`/api/v1/w/${slug}/travel/overlaps`)
@@ -73,9 +102,18 @@ export default function TravelListView({
       .then((data) => setOverlaps(data.data?.overlaps || []))
       .catch(console.error)
       .finally(() => setLoadingOverlaps(false));
+
+    fetch(`/api/v1/w/${slug}/travel/ride-shares`)
+      .then((res) => res.json())
+      .then((data) => {
+        setRideShares(data.data?.ride_shares || []);
+        setMySharing(data.data?.my_sharing || false);
+      })
+      .catch(console.error)
+      .finally(() => setLoadingRides(false));
   }, [slug, hasPlan]);
 
-  const loading = loadingStops || loadingOverlaps;
+  const loading = loadingStops || loadingOverlaps || loadingRides;
 
   if (loading) {
     return (
@@ -167,6 +205,106 @@ export default function TravelListView({
                             Meetup
                           </span>
                         )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* Ride Shares section */}
+      {hasPlan && (
+        <section>
+          <h2
+            className="text-base font-medium mb-3"
+            style={{ fontFamily: 'var(--font-display)', color: 'var(--text-primary)' }}
+          >
+            Ride Shares
+          </h2>
+
+          {!mySharing ? (
+            <div
+              className="card p-5 text-center"
+              style={{ background: 'var(--bg-muted, #f9f8f6)' }}
+            >
+              <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                Enable &ldquo;share a ride&rdquo; in My Plan to see guests
+                arriving or departing within 2 hours of you.
+              </p>
+            </div>
+          ) : rideShares.length === 0 ? (
+            <div
+              className="card p-5 text-center"
+              style={{ background: 'var(--bg-muted, #f9f8f6)' }}
+            >
+              <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                No ride matches yet. Make sure you&rsquo;ve added your arrival
+                and departure times.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {rideShares.map((group, gi) => (
+                <div
+                  key={gi}
+                  className="card p-4"
+                  style={{ borderLeft: '3px solid #d97706' }}
+                >
+                  <div className="flex items-center gap-2 mb-1">
+                    <span
+                      className="text-xs px-2 py-0.5 rounded-full font-medium"
+                      style={{
+                        background: group.type === 'arrival' ? '#3b82f620' : '#10b98120',
+                        color: group.type === 'arrival' ? '#3b82f6' : '#10b981',
+                      }}
+                    >
+                      {group.type === 'arrival' ? 'Arriving' : 'Departing'}
+                    </span>
+                    <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+                      {group.city}
+                    </span>
+                  </div>
+                  <p className="text-xs mb-3" style={{ color: 'var(--text-tertiary)' }}>
+                    You: {formatDate(group.your_date)} at {formatTime(group.your_time)}
+                  </p>
+                  <div className="space-y-2">
+                    {group.matches.map((match, i) => (
+                      <div
+                        key={i}
+                        className="flex items-start gap-3 p-2.5 rounded-lg"
+                        style={{ background: 'var(--bg-muted, #f9f8f6)' }}
+                      >
+                        <div
+                          className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium flex-shrink-0"
+                          style={{
+                            background: '#d97706',
+                            color: 'white',
+                          }}
+                        >
+                          {match.display_name.charAt(0)}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p
+                            className="text-sm font-medium"
+                            style={{ color: 'var(--text-primary)' }}
+                          >
+                            {match.display_name}
+                          </p>
+                          <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+                            {formatTime(match.time)}
+                            {match.transport_mode && ` · ${match.transport_mode}`}
+                            {match.transport_details && ` ${match.transport_details}`}
+                            {match.origin_city && ` · from ${match.origin_city}`}
+                          </p>
+                          {match.share_contact && (
+                            <p className="text-xs mt-1 font-medium" style={{ color: '#d97706' }}>
+                              {match.share_contact}
+                            </p>
+                          )}
+                        </div>
                       </div>
                     ))}
                   </div>
