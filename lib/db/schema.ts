@@ -196,6 +196,45 @@ export interface FaqCache {
   created_at: Date;
 }
 
+export interface TravelPlan {
+  id: string;
+  wedding_id: string;
+  guest_id: string;
+  plan_type: 'direct' | 'exploring';
+  origin_city: string | null;
+  origin_lat: number | null;
+  origin_lng: number | null;
+  origin_country: string | null;
+  share_transport: boolean;
+  visibility: 'full' | 'city_only' | 'private';
+  notes: string | null;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface TravelStop {
+  id: string;
+  plan_id: string;
+  wedding_id: string;
+  stop_type: 'origin' | 'pre_wedding' | 'arrival' | 'departure' | 'post_wedding' | 'return';
+  city: string;
+  region: string | null;
+  country: string;
+  country_code: string | null;
+  latitude: number;
+  longitude: number;
+  arrive_date: string | null;
+  depart_date: string | null;
+  arrive_time: string | null;
+  transport_mode: string | null;
+  transport_details: string | null;
+  accommodation: string | null;
+  open_to_meetup: boolean;
+  notes: string | null;
+  sort_order: number;
+  created_at: Date;
+}
+
 export interface Notification {
   id: string;
   wedding_id: string;
