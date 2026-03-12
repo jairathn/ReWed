@@ -2,7 +2,11 @@ import { NextRequest } from 'next/server';
 import { authenticateTravelRequest } from '@/lib/travel/auth';
 import { handleApiError } from '@/lib/errors';
 
-// GET /api/v1/w/[slug]/travel/overlaps — find date overlaps for current guest
+const MATCH_RADIUS_MILES = 100;
+// Haversine: 3959 = Earth radius in miles
+const EARTH_RADIUS_MILES = 3959;
+
+// GET /api/v1/w/[slug]/travel/overlaps — find nearby date overlaps for current guest
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ slug: string }> }
@@ -11,14 +15,16 @@ export async function GET(
     const { slug } = await params;
     const { pool, weddingId, guestId } = await authenticateTravelRequest(request, slug);
 
-    // Get the current guest's stops (non-arrival/departure)
+    // Get the current guest's stops with coordinates
     const myStops = await pool.query(
-      `SELECT ts.city, ts.country, ts.arrive_date, ts.depart_date
+      `SELECT ts.city, ts.country, ts.arrive_date, ts.depart_date,
+              ts.latitude, ts.longitude
        FROM travel_stops ts
        JOIN travel_plans tp ON ts.plan_id = tp.id
        WHERE tp.wedding_id = $1 AND tp.guest_id = $2
          AND ts.stop_type NOT IN ('arrival', 'departure')
-         AND ts.arrive_date IS NOT NULL AND ts.depart_date IS NOT NULL`,
+         AND ts.arrive_date IS NOT NULL AND ts.depart_date IS NOT NULL
+         AND ts.latitude IS NOT NULL AND ts.longitude IS NOT NULL`,
       [weddingId, guestId]
     );
 
@@ -26,24 +32,36 @@ export async function GET(
       return Response.json({ data: { overlaps: [] } });
     }
 
-    // Find other guests in the same cities with overlapping dates
+    // Find other guests within 100 miles with overlapping dates
     const overlaps = [];
 
     for (const myStop of myStops.rows) {
       const othersResult = await pool.query(
-        `SELECT g.display_name, ts.arrive_date, ts.depart_date, ts.open_to_meetup
+        `SELECT g.display_name, ts.city, ts.country,
+                ts.arrive_date, ts.depart_date, ts.open_to_meetup,
+                (${EARTH_RADIUS_MILES} * acos(
+                  LEAST(1.0, cos(radians($3)) * cos(radians(ts.latitude))
+                  * cos(radians(ts.longitude) - radians($4))
+                  + sin(radians($3)) * sin(radians(ts.latitude)))
+                )) AS distance_miles
          FROM travel_stops ts
          JOIN travel_plans tp ON ts.plan_id = tp.id
          JOIN guests g ON tp.guest_id = g.id
          WHERE ts.wedding_id = $1
            AND tp.guest_id != $2
            AND tp.visibility != 'private'
-           AND ts.city = $3
-           AND ts.country = $4
+           AND ts.stop_type NOT IN ('arrival', 'departure')
            AND ts.arrive_date IS NOT NULL AND ts.depart_date IS NOT NULL
+           AND ts.latitude IS NOT NULL AND ts.longitude IS NOT NULL
            AND ts.arrive_date <= $6
-           AND ts.depart_date >= $5`,
-        [weddingId, guestId, myStop.city, myStop.country, myStop.arrive_date, myStop.depart_date]
+           AND ts.depart_date >= $5
+           AND (${EARTH_RADIUS_MILES} * acos(
+             LEAST(1.0, cos(radians($3)) * cos(radians(ts.latitude))
+             * cos(radians(ts.longitude) - radians($4))
+             + sin(radians($3)) * sin(radians(ts.latitude)))
+           )) <= ${MATCH_RADIUS_MILES}
+         ORDER BY distance_miles`,
+        [weddingId, guestId, myStop.latitude, myStop.longitude, myStop.arrive_date, myStop.depart_date]
       );
 
       if (othersResult.rows.length > 0) {
@@ -56,9 +74,12 @@ export async function GET(
           },
           overlapping_guests: othersResult.rows.map((r) => ({
             display_name: r.display_name,
+            their_city: r.city,
+            their_country: r.country,
             arrive_date: r.arrive_date,
             depart_date: r.depart_date,
             open_to_meetup: r.open_to_meetup,
+            distance_miles: Math.round(r.distance_miles),
           })),
         });
       }

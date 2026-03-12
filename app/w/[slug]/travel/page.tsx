@@ -5,16 +5,15 @@ import BottomNav from '@/components/guest/BottomNav';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import TravelPlanForm from '@/components/travel/TravelPlanForm';
-import TravelMapView from '@/components/travel/TravelMapView';
+import TravelListView from '@/components/travel/TravelListView';
 import ArrivalsView from '@/components/travel/ArrivalsView';
-import OverlapsCard from '@/components/travel/OverlapsCard';
 
-type Tab = 'map' | 'arrivals' | 'my-plan';
+type Tab = 'travel' | 'arrivals' | 'my-plan';
 
 export default function TravelPage() {
   const { slug, config, isAuthenticated, isLoading } = useWedding();
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<Tab>('map');
+  const [activeTab, setActiveTab] = useState<Tab>('travel');
   const [hasPlan, setHasPlan] = useState<boolean | null>(null);
 
   useEffect(() => {
@@ -41,20 +40,16 @@ export default function TravelPage() {
     // Try to parse "City, Country" or "Street, City, State, Country" patterns
     const parts = event.venue_address.split(',').map((p) => p.trim());
     if (parts.length >= 2) {
-      // Last part is usually country, second-to-last is state/region or city
       const country = parts[parts.length - 1];
-      // For addresses like "123 Main St, Barcelona, Spain" → city = Barcelona
-      // For "Barcelona, Spain" → city = Barcelona
       const city = parts.length >= 3 ? parts[parts.length - 2] : parts[0];
       return { city, country };
     }
-    // Single value — treat as city name
     return { city: parts[0], country: '' };
   }, [config]);
 
   const handlePlanSaved = useCallback(() => {
     setHasPlan(true);
-    setActiveTab('map');
+    setActiveTab('travel');
   }, []);
 
   if (isLoading) {
@@ -76,10 +71,10 @@ export default function TravelPage() {
           color: 'var(--text-primary)',
         }}
       >
-        Travel Map
+        Guest Travel
       </h1>
       <p className="text-sm mb-5" style={{ color: 'var(--text-secondary)' }}>
-        See where everyone is traveling and find overlaps
+        See where everyone is headed and find nearby matches
       </p>
 
       {/* Tab bar */}
@@ -88,7 +83,7 @@ export default function TravelPage() {
         style={{ background: 'var(--bg-muted, #f5f3f0)' }}
       >
         {([
-          { id: 'map' as Tab, label: 'Map' },
+          { id: 'travel' as Tab, label: 'Travel' },
           { id: 'arrivals' as Tab, label: 'Arrivals' },
           { id: 'my-plan' as Tab, label: 'My Plan' },
         ]).map((tab) => (
@@ -108,28 +103,12 @@ export default function TravelPage() {
       </div>
 
       {/* Tab content */}
-      {activeTab === 'map' && (
-        <div>
-          <TravelMapView slug={slug} />
-          {hasPlan && <OverlapsCard slug={slug} />}
-          {hasPlan === false && (
-            <div
-              className="card p-5 text-center mt-4"
-              style={{ borderLeft: '3px solid var(--color-terracotta)' }}
-            >
-              <p className="text-sm mb-3" style={{ color: 'var(--text-secondary)' }}>
-                Share your travel plans so other guests can find you!
-              </p>
-              <button
-                onClick={() => setActiveTab('my-plan')}
-                className="px-5 py-2.5 rounded-full text-sm font-medium text-white"
-                style={{ background: 'var(--color-terracotta-gradient)' }}
-              >
-                Add My Travel Plans
-              </button>
-            </div>
-          )}
-        </div>
+      {activeTab === 'travel' && (
+        <TravelListView
+          slug={slug}
+          hasPlan={hasPlan}
+          onAddPlan={() => setActiveTab('my-plan')}
+        />
       )}
 
       {activeTab === 'arrivals' && <ArrivalsView slug={slug} />}

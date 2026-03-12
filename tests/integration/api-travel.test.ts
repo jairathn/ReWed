@@ -238,20 +238,23 @@ describe('Travel API', () => {
   });
 
   describe('GET /travel/overlaps', () => {
-    it('returns overlapping guests in same city', async () => {
+    it('returns overlapping guests within 100 miles', async () => {
       mockQuery
         .mockResolvedValueOnce({ rows: [{ id: 'w-001' }] }) // wedding slug
         .mockResolvedValueOnce({
           rows: [{
             city: 'Paris', country: 'France',
             arrive_date: '2026-09-03', depart_date: '2026-09-06',
+            latitude: 48.8566, longitude: 2.3522,
           }],
         }) // my stops
         .mockResolvedValueOnce({
           rows: [{
             display_name: 'Priya Patel',
+            city: 'Paris', country: 'France',
             arrive_date: '2026-09-04', depart_date: '2026-09-07',
             open_to_meetup: true,
+            distance_miles: 0,
           }],
         }); // overlapping guests
 
@@ -263,6 +266,7 @@ describe('Travel API', () => {
       expect(body.data.overlaps).toHaveLength(1);
       expect(body.data.overlaps[0].city).toBe('Paris');
       expect(body.data.overlaps[0].overlapping_guests[0].display_name).toBe('Priya Patel');
+      expect(body.data.overlaps[0].overlapping_guests[0].distance_miles).toBe(0);
     });
 
     it('returns empty when no plan exists', async () => {
