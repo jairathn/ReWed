@@ -1,5 +1,6 @@
 'use client';
 
+// Travel list: matches, ride shares, and guest destinations
 import { useEffect, useState } from 'react';
 
 interface MapGuest {
