@@ -21,6 +21,7 @@ import { GET as getMyPlan, PUT as putMyPlan, DELETE as deleteMyPlan } from '@/ap
 import { GET as getMap } from '@/app/api/v1/w/[slug]/travel/map/route';
 import { GET as getArrivals } from '@/app/api/v1/w/[slug]/travel/arrivals/route';
 import { GET as getOverlaps } from '@/app/api/v1/w/[slug]/travel/overlaps/route';
+import { GET as getRideShares } from '@/app/api/v1/w/[slug]/travel/ride-shares/route';
 
 function makeParams(slug = 'neil-shriya') {
   return { params: Promise.resolve({ slug }) };
@@ -238,20 +239,23 @@ describe('Travel API', () => {
   });
 
   describe('GET /travel/overlaps', () => {
-    it('returns overlapping guests in same city', async () => {
+    it('returns overlapping guests within 100 miles', async () => {
       mockQuery
         .mockResolvedValueOnce({ rows: [{ id: 'w-001' }] }) // wedding slug
         .mockResolvedValueOnce({
           rows: [{
             city: 'Paris', country: 'France',
             arrive_date: '2026-09-03', depart_date: '2026-09-06',
+            latitude: 48.8566, longitude: 2.3522,
           }],
         }) // my stops
         .mockResolvedValueOnce({
           rows: [{
             display_name: 'Priya Patel',
+            city: 'Paris', country: 'France',
             arrive_date: '2026-09-04', depart_date: '2026-09-07',
             open_to_meetup: true,
+            distance_miles: 0,
           }],
         }); // overlapping guests
 
@@ -263,6 +267,7 @@ describe('Travel API', () => {
       expect(body.data.overlaps).toHaveLength(1);
       expect(body.data.overlaps[0].city).toBe('Paris');
       expect(body.data.overlaps[0].overlapping_guests[0].display_name).toBe('Priya Patel');
+      expect(body.data.overlaps[0].overlapping_guests[0].distance_miles).toBe(0);
     });
 
     it('returns empty when no plan exists', async () => {
@@ -275,6 +280,57 @@ describe('Travel API', () => {
       const body = await response.json();
 
       expect(body.data.overlaps).toHaveLength(0);
+    });
+  });
+
+  describe('GET /travel/ride-shares', () => {
+    it('returns ride matches within 2 hours', async () => {
+      mockQuery
+        .mockResolvedValueOnce({ rows: [{ id: 'w-001' }] }) // wedding slug
+        .mockResolvedValueOnce({
+          rows: [{
+            stop_type: 'arrival', arrive_date: '2026-09-07',
+            depart_date: null, arrive_time: '14:30', depart_time: null,
+            city: 'Barcelona',
+          }],
+        }) // my stops
+        .mockResolvedValueOnce({
+          rows: [{ share_transport: true }],
+        }) // my plan
+        .mockResolvedValueOnce({
+          rows: [{
+            display_name: 'Priya Patel', guest_id: 'g-002',
+            stop_type: 'arrival', arrive_date: '2026-09-07',
+            depart_date: null, arrive_time: '15:45', depart_time: null,
+            transport_mode: 'flight', transport_details: 'BA 492',
+            share_contact: 'priya@email.com', origin_city: 'London',
+          }],
+        }); // matches
+
+      const request = makeRequest('http://localhost:3000/api/v1/w/neil-shriya/travel/ride-shares');
+      const response = await getRideShares(request, makeParams());
+      const body = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(body.data.ride_shares).toHaveLength(1);
+      expect(body.data.ride_shares[0].type).toBe('arrival');
+      expect(body.data.ride_shares[0].matches[0].display_name).toBe('Priya Patel');
+      expect(body.data.ride_shares[0].matches[0].share_contact).toBe('priya@email.com');
+      expect(body.data.my_sharing).toBe(true);
+    });
+
+    it('returns empty when no arrival/departure stops', async () => {
+      mockQuery
+        .mockResolvedValueOnce({ rows: [{ id: 'w-001' }] }) // wedding slug
+        .mockResolvedValueOnce({ rows: [] }) // no stops
+        .mockResolvedValueOnce({ rows: [{ share_transport: false }] }); // my plan
+
+      const request = makeRequest('http://localhost:3000/api/v1/w/neil-shriya/travel/ride-shares');
+      const response = await getRideShares(request, makeParams());
+      const body = await response.json();
+
+      expect(body.data.ride_shares).toHaveLength(0);
+      expect(body.data.my_sharing).toBe(false);
     });
   });
 

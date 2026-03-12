@@ -7,6 +7,7 @@ describe('travelPlanSchema', () => {
     origin_city: 'Chicago, IL',
     origin_country: 'USA',
     share_transport: true,
+    share_contact: '+1 555-123-4567',
     visibility: 'full' as const,
     stops: [
       {
@@ -162,6 +163,40 @@ describe('travelPlanSchema', () => {
     if (result.success) {
       expect(result.data.visibility).toBe('full');
     }
+  });
+
+  it('rejects share_transport without share_contact', () => {
+    const result = travelPlanSchema.safeParse({
+      ...validDirectPlan,
+      share_transport: true,
+      share_contact: undefined,
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('accepts share_transport=false without share_contact', () => {
+    const result = travelPlanSchema.safeParse({
+      ...validDirectPlan,
+      share_transport: false,
+      share_contact: undefined,
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('accepts depart_time on stops', () => {
+    const result = travelPlanSchema.safeParse({
+      ...validDirectPlan,
+      stops: [{ ...validDirectPlan.stops[0], depart_time: '16:30' }],
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('rejects invalid depart_time format', () => {
+    const result = travelPlanSchema.safeParse({
+      ...validDirectPlan,
+      stops: [{ ...validDirectPlan.stops[0], depart_time: '4:30 PM' }],
+    });
+    expect(result.success).toBe(false);
   });
 
   it('rejects more than 20 stops', () => {
