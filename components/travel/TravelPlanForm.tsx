@@ -113,6 +113,7 @@ export default function TravelPlanForm({ slug, onSaved }: TravelPlanFormProps) {
           country: originCountry || 'Unknown',
           latitude: 0, // V1: geocoding would resolve this
           longitude: 0,
+          open_to_meetup: false,
           sort_order: 0,
         });
       }
@@ -152,6 +153,7 @@ export default function TravelPlanForm({ slug, onSaved }: TravelPlanFormProps) {
           arrive_time: arrivalStop.arrive_time || undefined,
           transport_mode: (arrivalStop.transport_mode || undefined) as TravelStopInput['transport_mode'],
           transport_details: arrivalStop.transport_details || undefined,
+          open_to_meetup: true,
           sort_order: 100,
         });
       }
@@ -165,6 +167,7 @@ export default function TravelPlanForm({ slug, onSaved }: TravelPlanFormProps) {
           latitude: departureStop.latitude || arrivalStop.latitude || 0,
           longitude: departureStop.longitude || arrivalStop.longitude || 0,
           depart_date: departureStop.depart_date || undefined,
+          open_to_meetup: false,
           sort_order: 101,
         });
       }
