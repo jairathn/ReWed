@@ -2,6 +2,8 @@ import { NextRequest } from 'next/server';
 import { authenticateTravelRequest } from '@/lib/travel/auth';
 import { handleApiError } from '@/lib/errors';
 
+// Ride-share matching: finds guests arriving/departing within 2 hours of you
+
 // GET /api/v1/w/[slug]/travel/ride-shares — find guests arriving/departing within 2 hours of you
 export async function GET(
   request: NextRequest,
