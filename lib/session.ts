@@ -66,3 +66,8 @@ export async function validateSession(
     guestId: result.rows[0].guest_id,
   };
 }
+
+export async function invalidateSession(pool: Pool, token: string): Promise<void> {
+  const tokenHash = hashToken(token);
+  await pool.query(`DELETE FROM sessions WHERE token_hash = $1`, [tokenHash]);
+}
