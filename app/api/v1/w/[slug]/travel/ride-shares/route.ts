@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
 import { authenticateTravelRequest } from '@/lib/travel/auth';
+import { toDateString } from '@/lib/db/format';
 import { handleApiError } from '@/lib/errors';
 
 // Ride-share matching: finds guests arriving/departing within 2 hours of you
@@ -75,7 +76,7 @@ export async function GET(
       if (othersResult.rows.length > 0) {
         rideShares.push({
           type: isArrival ? 'arrival' : 'departure',
-          your_date: myDate,
+          your_date: toDateString(myDate),
           your_time: myTime,
           city: myStop.city,
           matches: othersResult.rows.map((r) => ({

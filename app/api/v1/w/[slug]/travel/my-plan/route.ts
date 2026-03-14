@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
 import { authenticateTravelRequest } from '@/lib/travel/auth';
+import { toDateString } from '@/lib/db/format';
 import { travelPlanSchema, sanitizeText } from '@/lib/validation';
 import { AppError, handleApiError } from '@/lib/errors';
 
@@ -35,12 +36,15 @@ export async function GET(
       [plan.id]
     );
 
+    const stops = stopsResult.rows.map((s) => ({
+      ...s,
+      arrive_date: toDateString(s.arrive_date),
+      depart_date: toDateString(s.depart_date),
+    }));
+
     return Response.json({
       data: {
-        plan: {
-          ...plan,
-          stops: stopsResult.rows,
-        },
+        plan: { ...plan, stops },
       },
     });
   } catch (error) {
@@ -120,7 +124,12 @@ export async function PUT(
           stop.notes ? sanitizeText(stop.notes) : null, i,
         ]
       );
-      stops.push(stopResult.rows[0]);
+      const saved = stopResult.rows[0];
+      stops.push({
+        ...saved,
+        arrive_date: toDateString(saved.arrive_date),
+        depart_date: toDateString(saved.depart_date),
+      });
     }
 
     return Response.json({

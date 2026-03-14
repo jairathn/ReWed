@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
 import { authenticateTravelRequest } from '@/lib/travel/auth';
+import { toDateString } from '@/lib/db/format';
 import { handleApiError } from '@/lib/errors';
 
 // GET /api/v1/w/[slug]/travel/arrivals — wedding destination arrivals/departures
@@ -31,8 +32,8 @@ export async function GET(
       guest_id: row.guest_id,
       display_name: row.display_name,
       stop_type: row.stop_type,
-      arrive_date: row.arrive_date,
-      depart_date: row.depart_date,
+      arrive_date: toDateString(row.arrive_date),
+      depart_date: toDateString(row.depart_date),
       arrive_time: row.arrive_time,
       transport_mode: row.transport_mode,
       transport_details: row.transport_details,

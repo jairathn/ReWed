@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
 import { authenticateTravelRequest } from '@/lib/travel/auth';
+import { toDateString } from '@/lib/db/format';
 import { handleApiError } from '@/lib/errors';
 
 // GET /api/v1/w/[slug]/travel/map — all non-private travel stops for the map
@@ -66,8 +67,8 @@ export async function GET(
       cityMap.get(key)!.guests.push({
         guest_id: row.guest_id,
         display_name: row.display_name,
-        arrive_date: isCityOnly ? null : row.arrive_date,
-        depart_date: isCityOnly ? null : row.depart_date,
+        arrive_date: isCityOnly ? null : toDateString(row.arrive_date),
+        depart_date: isCityOnly ? null : toDateString(row.depart_date),
         open_to_meetup: row.open_to_meetup,
         notes: isCityOnly ? null : row.stop_notes,
         stop_type: row.stop_type,

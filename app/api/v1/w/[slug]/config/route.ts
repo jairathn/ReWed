@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
 import { getPool } from '@/lib/db/client';
+import { toDateString } from '@/lib/db/format';
 import { handleApiError, AppError } from '@/lib/errors';
 import type { WeddingConfig, EventConfig } from '@/lib/types/api';
 
@@ -42,7 +43,7 @@ export async function GET(
     const events: EventConfig[] = eventsResult.rows.map((e: Record<string, unknown>) => ({
       id: e.id as string,
       name: e.name as string,
-      date: e.date ? String(e.date) : null,
+      date: toDateString(e.date),
       start_time: e.start_time ? String(e.start_time) : null,
       end_time: e.end_time ? String(e.end_time) : null,
       venue_name: (e.venue_name as string) || null,
@@ -59,7 +60,7 @@ export async function GET(
       display_name: wedding.display_name,
       couple_names: config.couple_names || { name1: '', name2: '' },
       hashtag: wedding.hashtag || config.hashtag || '',
-      wedding_date: wedding.wedding_date ? String(wedding.wedding_date) : null,
+      wedding_date: toDateString(wedding.wedding_date),
       timezone: wedding.timezone || 'America/New_York',
       status: wedding.status,
       theme: config.theme || {
