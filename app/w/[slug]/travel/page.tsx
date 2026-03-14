@@ -31,13 +31,15 @@ export default function TravelPage() {
       .catch(() => setHasPlan(false));
   }, [slug, isAuthenticated]);
 
-  // Extract venue city from the first event's venue_address
+  // Get venue city from wedding config (set during registration)
   const venueInfo = useMemo(() => {
+    if (config?.venue_city) {
+      return { city: config.venue_city, country: config.venue_country || '' };
+    }
+    // Fallback: try parsing from first event's venue_address
     if (!config?.events?.length) return { city: '', country: '' };
-    // Find first event with a venue address
     const event = config.events.find((e) => e.venue_address || e.venue_name);
     if (!event?.venue_address) return { city: '', country: '' };
-    // Try to parse "City, Country" or "Street, City, State, Country" patterns
     const parts = event.venue_address.split(',').map((p) => p.trim());
     if (parts.length >= 2) {
       const country = parts[parts.length - 1];

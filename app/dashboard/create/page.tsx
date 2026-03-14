@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import CityAutocomplete, { type CityResult } from '@/components/travel/CityAutocomplete';
 
 const GUEST_COUNTS = ['25', '50', '100', '150', '200', '300', '500', '1000+'];
 const EVENT_COUNTS = ['1 event', '2-3 events', '4+ events'];
@@ -50,6 +51,12 @@ export default function CreateWeddingPage() {
     try { return Intl.DateTimeFormat().resolvedOptions().timeZone; } catch { return 'America/New_York'; }
   });
 
+  // Step 0 continued: Venue city
+  const [venueCity, setVenueCity] = useState('');
+  const [venueCountry, setVenueCountry] = useState('');
+  const [venueLat, setVenueLat] = useState(0);
+  const [venueLng, setVenueLng] = useState(0);
+
   // Step 1: Size
   const [guestCount, setGuestCount] = useState('200');
   const [eventCount, setEventCount] = useState('2-3 events');
@@ -85,6 +92,10 @@ export default function CreateWeddingPage() {
           display_name: displayName,
           wedding_date: weddingDate || undefined,
           timezone,
+          venue_city: venueCity || undefined,
+          venue_country: venueCountry || undefined,
+          venue_lat: venueLat || undefined,
+          venue_lng: venueLng || undefined,
           guest_count: guestCount,
           event_count: eventCount,
           features: {
@@ -222,6 +233,24 @@ export default function CreateWeddingPage() {
                   outline: 'none',
                 }}
               />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--text-primary)' }}>
+                Wedding city
+              </label>
+              <CityAutocomplete
+                value={venueCity ? `${venueCity}${venueCountry ? ', ' + venueCountry : ''}` : ''}
+                onSelect={(city: CityResult) => {
+                  setVenueCity(city.city);
+                  setVenueCountry(city.country);
+                  setVenueLat(city.latitude);
+                  setVenueLng(city.longitude);
+                }}
+                placeholder="Where is the wedding? e.g. Barcelona"
+              />
+              <p className="text-xs mt-1" style={{ color: 'var(--text-tertiary)' }}>
+                Used for guest travel planning and coordination.
+              </p>
             </div>
             <div>
               <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--text-primary)' }}>
@@ -382,6 +411,14 @@ export default function CreateWeddingPage() {
                   <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>Date</span>
                   <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
                     {new Date(weddingDate + 'T12:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: timezone })}
+                  </span>
+                </div>
+              )}
+              {venueCity && (
+                <div className="flex justify-between py-2" style={{ borderBottom: '1px solid var(--border-light)' }}>
+                  <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>Wedding city</span>
+                  <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+                    {venueCity}{venueCountry ? `, ${venueCountry}` : ''}
                   </span>
                 </div>
               )}
