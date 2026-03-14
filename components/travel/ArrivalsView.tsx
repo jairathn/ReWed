@@ -9,6 +9,7 @@ interface ArrivalInfo {
   arrive_date: string | null;
   depart_date: string | null;
   arrive_time: string | null;
+  depart_time: string | null;
   transport_mode: string | null;
   transport_details: string | null;
   share_transport: boolean;
@@ -30,6 +31,14 @@ function formatDateLabel(dateStr: string): string {
     month: 'short',
     day: 'numeric',
   });
+}
+
+function formatTime(timeStr: string): string {
+  const [h, m] = timeStr.split(':');
+  const hour = parseInt(h, 10);
+  const ampm = hour >= 12 ? 'PM' : 'AM';
+  const hour12 = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+  return `${hour12}:${m} ${ampm}`;
 }
 
 export default function ArrivalsView({ slug }: { slug: string }) {
@@ -111,7 +120,7 @@ export default function ArrivalsView({ slug }: { slug: string }) {
                       {guest.display_name}
                     </p>
                     <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-                      {guest.arrive_time || ''}{' '}
+                      {guest.arrive_time ? formatTime(guest.arrive_time) : ''}{' '}
                       {guest.transport_mode && transportIcon[guest.transport_mode]}{' '}
                       {guest.transport_details || ''}
                       {guest.origin_city ? ` from ${guest.origin_city}` : ''}
@@ -120,9 +129,9 @@ export default function ArrivalsView({ slug }: { slug: string }) {
                   {guest.share_transport && (
                     <span
                       className="text-xs px-2 py-0.5 rounded-full flex-shrink-0"
-                      style={{ background: '#10b98120', color: '#10b981' }}
+                      style={{ background: 'var(--bg-muted, #f5f3f0)', color: 'var(--text-tertiary)' }}
                     >
-                      &#128663; Sharing ride
+                      Open to sharing
                     </span>
                   )}
                 </div>
@@ -165,7 +174,7 @@ export default function ArrivalsView({ slug }: { slug: string }) {
                       {guest.display_name}
                     </p>
                     <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-                      {guest.arrive_time || ''}{' '}
+                      {guest.depart_time ? formatTime(guest.depart_time) : ''}{' '}
                       {guest.transport_mode && transportIcon[guest.transport_mode]}{' '}
                       {guest.transport_details || ''}
                     </p>

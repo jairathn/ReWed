@@ -53,8 +53,8 @@ const MapIcon = () => (
 const tabs = [
   { id: 'home', label: 'Home', icon: HomeIcon, path: '' },
   { id: 'video', label: 'Video', icon: VideoIcon, path: '/video' },
-  { id: 'photo', label: 'Photo', icon: CameraIcon, path: '/photo', elevated: true },
-  { id: 'travel', label: 'Travel', icon: MapIcon, path: '/travel' },
+  { id: 'travel', label: 'Travel', icon: MapIcon, path: '/travel', elevated: true },
+  { id: 'photo', label: 'Photo', icon: CameraIcon, path: '/photo' },
   { id: 'schedule', label: 'Events', icon: CalendarIcon, path: '/schedule' },
 ];
 

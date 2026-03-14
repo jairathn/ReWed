@@ -14,7 +14,7 @@ export async function GET(
 
     const result = await pool.query(
       `SELECT
-         ts.stop_type, ts.arrive_date, ts.depart_date, ts.arrive_time,
+         ts.stop_type, ts.arrive_date, ts.depart_date, ts.arrive_time, ts.depart_time,
          ts.transport_mode, ts.transport_details,
          g.id AS guest_id, g.display_name,
          tp.share_transport, tp.origin_city
@@ -35,6 +35,7 @@ export async function GET(
       arrive_date: toDateString(row.arrive_date),
       depart_date: toDateString(row.depart_date),
       arrive_time: row.arrive_time,
+      depart_time: row.depart_time,
       transport_mode: row.transport_mode,
       transport_details: row.transport_details,
       share_transport: row.share_transport,

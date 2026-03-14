@@ -1,7 +1,7 @@
 'use client';
 
 // Travel list: matches, ride shares, and guest destinations
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 
 interface MapGuest {
   guest_id: string;
@@ -11,6 +11,7 @@ interface MapGuest {
   open_to_meetup: boolean;
   stop_type: string;
   visibility: string;
+  notes: string | null;
 }
 
 interface MapStop {
@@ -83,6 +84,8 @@ export default function TravelListView({
   const [loadingStops, setLoadingStops] = useState(true);
   const [loadingOverlaps, setLoadingOverlaps] = useState(true);
   const [loadingRides, setLoadingRides] = useState(true);
+  const [citySearch, setCitySearch] = useState('');
+  const [expandedGuest, setExpandedGuest] = useState<string | null>(null);
 
   useEffect(() => {
     fetch(`/api/v1/w/${slug}/travel/map`)
@@ -115,6 +118,36 @@ export default function TravelListView({
   }, [slug, hasPlan]);
 
   const loading = loadingStops || loadingOverlaps || loadingRides;
+
+  // Build a map of guest_id → all their stops across cities
+  const guestItineraries = useMemo(() => {
+    const map = new Map<string, { display_name: string; stops: Array<{ city: string; country: string; arrive_date: string | null; depart_date: string | null; stop_type: string; notes: string | null }> }>();
+    for (const stop of stops) {
+      for (const guest of stop.guests) {
+        if (!map.has(guest.guest_id)) {
+          map.set(guest.guest_id, { display_name: guest.display_name, stops: [] });
+        }
+        map.get(guest.guest_id)!.stops.push({
+          city: stop.city,
+          country: stop.country,
+          arrive_date: guest.arrive_date,
+          depart_date: guest.depart_date,
+          stop_type: guest.stop_type,
+          notes: guest.notes,
+        });
+      }
+    }
+    return map;
+  }, [stops]);
+
+  // Filter stops by city search
+  const filteredStops = useMemo(() => {
+    if (!citySearch.trim()) return stops;
+    const q = citySearch.toLowerCase();
+    return stops.filter(
+      (s) => s.city.toLowerCase().includes(q) || s.country.toLowerCase().includes(q)
+    );
+  }, [stops, citySearch]);
 
   if (loading) {
     return (
@@ -191,11 +224,11 @@ export default function TravelListView({
                           <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
                             {guest.their_city === overlap.city
                               ? ''
-                              : `${guest.their_city} · `}
+                              : `${guest.their_city} \u00b7 `}
                             {formatDate(guest.arrive_date)} &ndash;{' '}
                             {formatDate(guest.depart_date)}
                             {guest.distance_miles > 0 &&
-                              ` · ${guest.distance_miles}mi away`}
+                              ` \u00b7 ${guest.distance_miles}mi away`}
                           </p>
                         </div>
                         {guest.open_to_meetup && (
@@ -296,9 +329,9 @@ export default function TravelListView({
                           </p>
                           <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
                             {formatTime(match.time)}
-                            {match.transport_mode && ` · ${match.transport_mode}`}
+                            {match.transport_mode && ` \u00b7 ${match.transport_mode}`}
                             {match.transport_details && ` ${match.transport_details}`}
-                            {match.origin_city && ` · from ${match.origin_city}`}
+                            {match.origin_city && ` \u00b7 from ${match.origin_city}`}
                           </p>
                           {match.share_contact && (
                             <p className="text-xs mt-1 font-medium" style={{ color: '#d97706' }}>
@@ -344,6 +377,22 @@ export default function TravelListView({
           Where Everyone Is Traveling
         </h2>
 
+        {stops.length > 0 && (
+          <input
+            type="text"
+            value={citySearch}
+            onChange={(e) => setCitySearch(e.target.value)}
+            placeholder="Search by city or country..."
+            className="w-full px-3 py-2 rounded-lg text-sm mb-3"
+            style={{
+              background: 'var(--bg-muted, #f9f8f6)',
+              border: '1px solid var(--border-light)',
+              color: 'var(--text-primary)',
+              outline: 'none',
+            }}
+          />
+        )}
+
         {stops.length === 0 ? (
           <div
             className="card p-5 text-center"
@@ -353,9 +402,18 @@ export default function TravelListView({
               No travel plans shared yet. Be the first!
             </p>
           </div>
+        ) : filteredStops.length === 0 ? (
+          <div
+            className="card p-5 text-center"
+            style={{ background: 'var(--bg-muted, #f9f8f6)' }}
+          >
+            <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+              No cities match &ldquo;{citySearch}&rdquo;
+            </p>
+          </div>
         ) : (
           <div className="space-y-2">
-            {stops.map((stop) => (
+            {filteredStops.map((stop) => (
               <div
                 key={`${stop.city}|${stop.country}`}
                 className="card p-4"
@@ -378,32 +436,97 @@ export default function TravelListView({
                   </span>
                 </div>
                 <div className="flex flex-wrap gap-1.5">
-                  {stop.guests.map((guest, i) => (
-                    <div
-                      key={`${guest.guest_id}-${i}`}
-                      className="flex items-center gap-1.5 px-2 py-1 rounded-full text-xs"
-                      style={{ background: 'var(--bg-muted, #f9f8f6)' }}
-                    >
-                      <div
-                        className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-medium flex-shrink-0"
-                        style={{
-                          background: 'var(--color-terracotta)',
-                          color: 'white',
-                        }}
-                      >
-                        {guest.display_name.charAt(0)}
+                  {stop.guests.map((guest, i) => {
+                    const isExpanded = expandedGuest === `${guest.guest_id}-${stop.city}`;
+                    const itinerary = guestItineraries.get(guest.guest_id);
+
+                    return (
+                      <div key={`${guest.guest_id}-${i}`} className="w-full">
+                        <button
+                          onClick={() =>
+                            setExpandedGuest(
+                              isExpanded ? null : `${guest.guest_id}-${stop.city}`
+                            )
+                          }
+                          className="flex items-center gap-1.5 px-2 py-1 rounded-full text-xs text-left"
+                          style={{
+                            background: isExpanded
+                              ? 'var(--color-terracotta)'
+                              : 'var(--bg-muted, #f9f8f6)',
+                          }}
+                        >
+                          <div
+                            className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-medium flex-shrink-0"
+                            style={{
+                              background: isExpanded ? 'rgba(255,255,255,0.3)' : 'var(--color-terracotta)',
+                              color: 'white',
+                            }}
+                          >
+                            {guest.display_name.charAt(0)}
+                          </div>
+                          <span style={{ color: isExpanded ? 'white' : 'var(--text-primary)' }}>
+                            {guest.display_name}
+                          </span>
+                          {!isExpanded && guest.arrive_date && (
+                            <span style={{ color: 'var(--text-tertiary)' }}>
+                              {formatDate(guest.arrive_date)}
+                              {guest.depart_date ? `\u2013${formatDate(guest.depart_date)}` : ''}
+                            </span>
+                          )}
+                        </button>
+
+                        {isExpanded && itinerary && (
+                          <div
+                            className="mt-1 mb-2 ml-3 p-3 rounded-lg text-xs space-y-2"
+                            style={{ background: 'var(--bg-muted, #f9f8f6)' }}
+                          >
+                            <p className="font-medium" style={{ color: 'var(--text-primary)' }}>
+                              {guest.display_name}&apos;s travel plan
+                            </p>
+                            {itinerary.stops.map((s, si) => (
+                              <div
+                                key={si}
+                                className="flex items-start gap-2"
+                              >
+                                <div
+                                  className="w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0"
+                                  style={{
+                                    background: s.city === stop.city
+                                      ? 'var(--color-terracotta)'
+                                      : 'var(--text-tertiary)',
+                                  }}
+                                />
+                                <div>
+                                  <p style={{
+                                    color: 'var(--text-primary)',
+                                    fontWeight: s.city === stop.city ? 600 : 400,
+                                  }}>
+                                    {s.city}, {s.country}
+                                  </p>
+                                  {s.arrive_date && (
+                                    <p style={{ color: 'var(--text-secondary)' }}>
+                                      {formatDate(s.arrive_date)}
+                                      {s.depart_date ? ` \u2013 ${formatDate(s.depart_date)}` : ''}
+                                    </p>
+                                  )}
+                                  {s.notes && (
+                                    <p style={{ color: 'var(--text-tertiary)', fontStyle: 'italic' }}>
+                                      {s.notes}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                            {guest.open_to_meetup && (
+                              <p style={{ color: '#10b981' }}>
+                                Open to meetups
+                              </p>
+                            )}
+                          </div>
+                        )}
                       </div>
-                      <span style={{ color: 'var(--text-primary)' }}>
-                        {guest.display_name}
-                      </span>
-                      {guest.arrive_date && (
-                        <span style={{ color: 'var(--text-tertiary)' }}>
-                          {formatDate(guest.arrive_date)}
-                          {guest.depart_date ? `–${formatDate(guest.depart_date)}` : ''}
-                        </span>
-                      )}
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             ))}
