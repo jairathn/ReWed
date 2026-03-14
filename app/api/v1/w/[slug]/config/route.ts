@@ -1,16 +1,8 @@
 import { NextRequest } from 'next/server';
 import { getPool } from '@/lib/db/client';
+import { toDateString } from '@/lib/db/format';
 import { handleApiError, AppError } from '@/lib/errors';
 import type { WeddingConfig, EventConfig } from '@/lib/types/api';
-
-/** Convert a pg DATE value (JS Date or string) to YYYY-MM-DD */
-function toDateString(value: unknown): string | null {
-  if (!value) return null;
-  if (value instanceof Date) {
-    return value.toISOString().slice(0, 10);
-  }
-  return String(value);
-}
 
 export async function GET(
   request: NextRequest,

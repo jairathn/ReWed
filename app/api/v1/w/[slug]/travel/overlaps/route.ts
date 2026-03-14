@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
 import { authenticateTravelRequest } from '@/lib/travel/auth';
+import { toDateString } from '@/lib/db/format';
 import { handleApiError } from '@/lib/errors';
 
 const MATCH_RADIUS_MILES = 100;
@@ -69,15 +70,15 @@ export async function GET(
           city: myStop.city,
           country: myStop.country,
           your_dates: {
-            arrive: myStop.arrive_date,
-            depart: myStop.depart_date,
+            arrive: toDateString(myStop.arrive_date),
+            depart: toDateString(myStop.depart_date),
           },
           overlapping_guests: othersResult.rows.map((r) => ({
             display_name: r.display_name,
             their_city: r.city,
             their_country: r.country,
-            arrive_date: r.arrive_date,
-            depart_date: r.depart_date,
+            arrive_date: toDateString(r.arrive_date),
+            depart_date: toDateString(r.depart_date),
             open_to_meetup: r.open_to_meetup,
             distance_miles: Math.round(r.distance_miles),
           })),
