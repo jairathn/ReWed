@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, useRef, useCallback, type ReactNode } from 'react';
+import { useRouter } from 'next/navigation';
 import type { WeddingConfig, GuestProfile } from '@/lib/types/api';
 
 interface WeddingContextType {
@@ -11,6 +12,7 @@ interface WeddingContextType {
   configError: string | null;
   retryConfig: () => void;
   setGuest: (guest: GuestProfile) => void;
+  logout: () => Promise<void>;
   slug: string;
 }
 
@@ -22,6 +24,7 @@ const WeddingContext = createContext<WeddingContextType>({
   configError: null,
   retryConfig: () => {},
   setGuest: () => {},
+  logout: async () => {},
   slug: '',
 });
 
@@ -97,9 +100,18 @@ export function WeddingProvider({
     }
   }, [slug]);
 
+  const router = useRouter();
+
   const handleSetGuest = (newGuest: GuestProfile) => {
     setGuest(newGuest);
     localStorage.setItem(`guest_${slug}`, JSON.stringify(newGuest));
+  };
+
+  const handleLogout = async () => {
+    await fetch(`/api/v1/w/${slug}/auth/logout`, { method: 'POST' });
+    localStorage.removeItem(`guest_${slug}`);
+    setGuest(null);
+    router.replace(`/w/${slug}`);
   };
 
   return (
@@ -112,6 +124,7 @@ export function WeddingProvider({
         configError,
         retryConfig,
         setGuest: handleSetGuest,
+        logout: handleLogout,
         slug,
       }}
     >

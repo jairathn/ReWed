@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
 export default function GuestHomePage() {
-  const { config, guest, slug, isAuthenticated, isLoading, configError, retryConfig } = useWedding();
+  const { config, guest, slug, isAuthenticated, isLoading, configError, retryConfig, logout } = useWedding();
   const router = useRouter();
 
   useEffect(() => {
@@ -74,15 +74,24 @@ export default function GuestHomePage() {
   return (
     <div className="pb-24 px-5 pt-8 max-w-lg mx-auto">
       {/* Welcome Greeting */}
-      <h1
-        className="text-2xl font-medium mb-1"
-        style={{
-          fontFamily: 'var(--font-display)',
-          color: 'var(--text-primary)',
-        }}
-      >
-        Welcome back, {guest.first_name}
-      </h1>
+      <div className="flex items-baseline justify-between mb-1">
+        <h1
+          className="text-2xl font-medium"
+          style={{
+            fontFamily: 'var(--font-display)',
+            color: 'var(--text-primary)',
+          }}
+        >
+          Welcome back, {guest.first_name}
+        </h1>
+        <button
+          onClick={logout}
+          className="text-xs underline"
+          style={{ color: 'var(--text-tertiary)' }}
+        >
+          Not you?
+        </button>
+      </div>
       <p className="text-sm mb-6" style={{ color: 'var(--text-secondary)' }}>
         {config.display_name}
       </p>
