@@ -2,7 +2,7 @@ export const ErrorCodes = {
   // Auth
   AUTH_INVALID_CREDENTIALS: { status: 401, message: "Invalid email or password" },
   AUTH_TOKEN_EXPIRED: { status: 401, message: "Session expired. Please log in again." },
-  AUTH_NOT_REGISTERED: { status: 401, message: "Please register first" },
+  AUTH_NOT_REGISTERED: { status: 401, message: "Please sign in by selecting your name on the guest list" },
   AUTH_GUEST_NOT_FOUND: { status: 404, message: "We couldn't find that name on the guest list. Try a different spelling?" },
 
   // Tenant
