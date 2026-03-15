@@ -4,6 +4,8 @@ import { handleApiError, AppError } from '@/lib/errors';
 import { getPool } from '@/lib/db/client';
 import { slugSchema } from '@/lib/validation';
 import { z } from 'zod';
+import { generateWeddingQrCode, uploadQrCodeToR2 } from '@/lib/qr';
+import { getCdnUrl } from '@/lib/storage/r2';
 
 function getJwtSecret(): string {
   return process.env.JWT_SECRET || 'dev-jwt-secret-change-in-production-min-32-chars!!';
@@ -49,12 +51,17 @@ export async function GET(request: NextRequest) {
     const pool = getPool();
 
     const result = await pool.query(
-      `SELECT id, slug, display_name, wedding_date, status, config, package_config, created_at
+      `SELECT id, slug, display_name, wedding_date, status, config, package_config, qr_code_key, created_at
        FROM weddings WHERE couple_id = $1 ORDER BY created_at DESC`,
       [coupleId]
     );
 
-    return Response.json({ weddings: result.rows });
+    const weddings = result.rows.map((w: Record<string, unknown>) => ({
+      ...w,
+      qr_code_url: w.qr_code_key ? getCdnUrl(w.qr_code_key as string) : null,
+    }));
+
+    return Response.json({ weddings });
   } catch (error) {
     return handleApiError(error);
   }
@@ -101,7 +108,20 @@ export async function POST(request: NextRequest) {
       [coupleId, parsed.slug, parsed.display_name, parsed.wedding_date || null, parsed.timezone || 'America/New_York', parsed.venue_city || null, parsed.venue_country || null, parsed.venue_lat || null, parsed.venue_lng || null, JSON.stringify(weddingConfig), JSON.stringify(packageConfig)]
     );
 
-    return Response.json({ wedding: result.rows[0] }, { status: 201 });
+    const wedding = result.rows[0];
+
+    // Auto-generate QR code for the guest sign-in page
+    try {
+      const pngBuffer = await generateWeddingQrCode(parsed.slug);
+      const qrKey = await uploadQrCodeToR2(wedding.id, pngBuffer);
+      await pool.query('UPDATE weddings SET qr_code_key = $1 WHERE id = $2', [qrKey, wedding.id]);
+      wedding.qr_code_url = getCdnUrl(qrKey);
+    } catch (err) {
+      // QR generation is non-blocking — wedding still created if R2 is unavailable
+      console.warn('[wedding-create] QR code generation failed:', err);
+    }
+
+    return Response.json({ wedding }, { status: 201 });
   } catch (error) {
     return handleApiError(error);
   }
