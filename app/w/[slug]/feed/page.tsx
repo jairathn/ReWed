@@ -2,7 +2,7 @@
 
 import { useWedding } from '@/components/WeddingProvider';
 import BottomNav from '@/components/guest/BottomNav';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 
 interface FeedPost {
@@ -41,6 +41,11 @@ export default function FeedPage() {
   const [commentText, setCommentText] = useState('');
   const [postingComment, setPostingComment] = useState(false);
   const [fetchError, setFetchError] = useState('');
+  const [mediaFile, setMediaFile] = useState<File | null>(null);
+  const [mediaPreview, setMediaPreview] = useState('');
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -79,17 +84,98 @@ export default function FeedPage() {
     fetchPosts().finally(() => setLoadingPosts(false));
   }, [guest, fetchPosts]);
 
+  const handleMediaSelect = (file: File) => {
+    // Validate type and size
+    const isImage = file.type.startsWith('image/');
+    const isVideo = file.type.startsWith('video/');
+    if (!isImage && !isVideo) {
+      setPostError('Please select a photo or video file.');
+      return;
+    }
+    const maxSize = isVideo ? 500 * 1024 * 1024 : 25 * 1024 * 1024;
+    if (file.size > maxSize) {
+      setPostError(isVideo ? 'Video must be under 500MB.' : 'Photo must be under 25MB.');
+      return;
+    }
+    setMediaFile(file);
+    setMediaPreview(URL.createObjectURL(file));
+    setPostError('');
+  };
+
+  const clearMedia = () => {
+    if (mediaPreview) URL.revokeObjectURL(mediaPreview);
+    setMediaFile(null);
+    setMediaPreview('');
+    setUploadProgress(0);
+  };
+
+  const uploadMedia = async (file: File): Promise<string | null> => {
+    const isVideo = file.type.startsWith('video/');
+    // Step 1: Presign
+    const presignRes = await fetch(`/api/v1/w/${slug}/upload/presign`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        type: isVideo ? 'video' : 'photo',
+        mime_type: file.type,
+        size_bytes: file.size,
+      }),
+    });
+    if (!presignRes.ok) throw new Error('Failed to get upload URL');
+    const { data: presignData } = await presignRes.json();
+    setUploadProgress(15);
+
+    // Step 2: Upload to presigned URL
+    await new Promise<void>((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open('PUT', presignData.presigned_url);
+      xhr.setRequestHeader('Content-Type', file.type);
+      xhr.upload.onprogress = (e) => {
+        if (e.lengthComputable) {
+          setUploadProgress(15 + Math.round((e.loaded / e.total) * 65));
+        }
+      };
+      xhr.onload = () => (xhr.status >= 200 && xhr.status < 300 ? resolve() : reject(new Error('Upload failed')));
+      xhr.onerror = () => reject(new Error('Upload network error'));
+      xhr.send(file);
+    });
+    setUploadProgress(85);
+
+    // Step 3: Complete
+    const completeRes = await fetch(`/api/v1/w/${slug}/upload/complete`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        upload_id: presignData.upload_id,
+        storage_key: presignData.storage_key,
+      }),
+    });
+    if (!completeRes.ok) throw new Error('Failed to complete upload');
+    setUploadProgress(100);
+    return presignData.upload_id;
+  };
+
   const handlePost = async () => {
-    if (!composeText.trim() || posting) return;
+    if (!composeText.trim() && !mediaFile) return;
+    if (posting) return;
     setPosting(true);
+    setPostError('');
 
     try {
+      let photoUploadId: string | null = null;
+
+      // Upload media first if attached
+      if (mediaFile) {
+        photoUploadId = await uploadMedia(mediaFile);
+      }
+
       const res = await fetch(`/api/v1/w/${slug}/feed`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          type: composeType,
-          content: composeText.trim(),
+          type: mediaFile ? 'photo' : composeType,
+          content: composeText.trim() || undefined,
+          photo_upload_id: photoUploadId || undefined,
         }),
       });
 
@@ -101,14 +187,16 @@ export default function FeedPage() {
       if (data.data?.post) {
         setPosts((prev) => [data.data.post, ...prev]);
         setComposeText('');
+        clearMedia();
         setShowCompose(false);
         setPostError('');
       }
     } catch (err) {
       console.error('Failed to create post:', err);
-      setPostError('Network error. Please check your connection.');
+      setPostError('Upload failed. Please try again.');
     } finally {
       setPosting(false);
+      setUploadProgress(0);
     }
   };
 
@@ -287,18 +375,103 @@ export default function FeedPage() {
             }}
             maxLength={500}
           />
+
+          {/* Media preview */}
+          {mediaPreview && mediaFile && (
+            <div className="relative mt-2 rounded-xl overflow-hidden" style={{ maxHeight: '200px' }}>
+              {mediaFile.type.startsWith('video/') ? (
+                <video src={mediaPreview} className="w-full rounded-xl" style={{ maxHeight: '200px', objectFit: 'cover' }} />
+              ) : (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img src={mediaPreview} alt="Selected" className="w-full rounded-xl" style={{ maxHeight: '200px', objectFit: 'cover' }} />
+              )}
+              <button
+                onClick={clearMedia}
+                className="absolute top-2 right-2 w-7 h-7 rounded-full flex items-center justify-center"
+                style={{ background: 'rgba(0,0,0,0.6)', color: 'white' }}
+                aria-label="Remove"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                  <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
+            </div>
+          )}
+
+          {/* Upload progress */}
+          {posting && uploadProgress > 0 && uploadProgress < 100 && (
+            <div className="mt-2 w-full h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--border-light)' }}>
+              <div className="h-full rounded-full transition-all duration-300" style={{ width: `${uploadProgress}%`, background: 'var(--color-terracotta-gradient)' }} />
+            </div>
+          )}
+
           {postError && (
             <p className="text-xs mt-1" style={{ color: 'var(--color-terracotta)' }}>
               {postError}
             </p>
           )}
+
+          {/* Hidden file inputs */}
+          <input
+            ref={cameraInputRef}
+            type="file"
+            accept="image/*,video/*"
+            capture="environment"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) handleMediaSelect(file);
+              e.target.value = '';
+            }}
+          />
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*,video/*"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) handleMediaSelect(file);
+              e.target.value = '';
+            }}
+          />
+
           <div className="flex justify-between items-center mt-2">
-            <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
-              {composeText.length}/500
-            </span>
+            <div className="flex items-center gap-1">
+              {/* Camera button (opens native camera on mobile, file picker on desktop) */}
+              <button
+                onClick={() => cameraInputRef.current?.click()}
+                className="w-9 h-9 rounded-full flex items-center justify-center"
+                style={{ color: 'var(--text-tertiary)' }}
+                aria-label="Take photo or video"
+                title="Take photo or video"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                  <circle cx="12" cy="13" r="4" />
+                </svg>
+              </button>
+              {/* Upload from library/files */}
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="w-9 h-9 rounded-full flex items-center justify-center"
+                style={{ color: 'var(--text-tertiary)' }}
+                aria-label="Upload from library"
+                title="Choose from library"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                  <circle cx="8.5" cy="8.5" r="1.5" />
+                  <polyline points="21 15 16 10 5 21" />
+                </svg>
+              </button>
+              <span className="text-xs ml-1" style={{ color: 'var(--text-tertiary)' }}>
+                {composeText.length}/500
+              </span>
+            </div>
             <div className="flex gap-2">
               <button
-                onClick={() => { setShowCompose(false); setComposeText(''); }}
+                onClick={() => { setShowCompose(false); setComposeText(''); clearMedia(); }}
                 className="px-4 py-2 text-sm rounded-full"
                 style={{ color: 'var(--text-secondary)' }}
               >
@@ -306,15 +479,15 @@ export default function FeedPage() {
               </button>
               <button
                 onClick={handlePost}
-                disabled={!composeText.trim() || posting}
+                disabled={(!composeText.trim() && !mediaFile) || posting}
                 className="px-4 py-2 text-sm rounded-full font-medium"
                 style={{
-                  background: composeText.trim() ? 'var(--color-terracotta-gradient)' : 'var(--border-light)',
-                  color: composeText.trim() ? 'white' : 'var(--text-tertiary)',
+                  background: (composeText.trim() || mediaFile) ? 'var(--color-terracotta-gradient)' : 'var(--border-light)',
+                  color: (composeText.trim() || mediaFile) ? 'white' : 'var(--text-tertiary)',
                   border: 'none',
                 }}
               >
-                {posting ? 'Posting...' : 'Post'}
+                {posting ? (uploadProgress > 0 ? 'Uploading...' : 'Posting...') : 'Post'}
               </button>
             </div>
           </div>
