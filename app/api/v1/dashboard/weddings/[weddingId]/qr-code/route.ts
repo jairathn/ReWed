@@ -77,3 +77,48 @@ export async function GET(
     return handleApiError(error);
   }
 }
+
+/**
+ * POST /api/v1/dashboard/weddings/[weddingId]/qr-code
+ * Regenerate the QR code (e.g. after slug change, or for pre-existing weddings).
+ */
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ weddingId: string }> }
+) {
+  try {
+    const { weddingId } = await params;
+    const coupleId = getCoupleId(request);
+    await verifyWeddingOwnership(coupleId, weddingId);
+
+    const pool = getPool();
+    const wedding = await pool.query('SELECT slug FROM weddings WHERE id = $1', [weddingId]);
+    const { slug } = wedding.rows[0];
+
+    const pngBuffer = await generateWeddingQrCode(slug);
+
+    try {
+      const qrKey = await uploadQrCodeToR2(weddingId, pngBuffer);
+      await pool.query('UPDATE weddings SET qr_code_key = $1 WHERE id = $2', [qrKey, weddingId]);
+
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+      return Response.json({
+        data: {
+          qr_url: getCdnUrl(qrKey),
+          guest_url: `${appUrl}/w/${slug}`,
+        },
+      });
+    } catch {
+      const { generateWeddingQrDataUrl } = await import('@/lib/qr');
+      const dataUrl = await generateWeddingQrDataUrl(slug);
+      return Response.json({
+        data: {
+          qr_url: dataUrl,
+          guest_url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/w/${slug}`,
+        },
+      });
+    }
+  } catch (error) {
+    return handleApiError(error);
+  }
+}
