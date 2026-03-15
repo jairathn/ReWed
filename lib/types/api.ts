@@ -27,6 +27,10 @@ export type WeddingConfig = {
   hashtag: string;
   wedding_date: string | null;
   timezone: string;
+  venue_city: string | null;
+  venue_country: string | null;
+  venue_lat: number | null;
+  venue_lng: number | null;
   status: 'setup' | 'active' | 'post_wedding' | 'archived';
   theme: {
     preset: string;

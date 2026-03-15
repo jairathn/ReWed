@@ -14,7 +14,8 @@ export async function GET(
 
     // Fetch wedding by slug
     const weddingResult = await pool.query(
-      `SELECT id, slug, display_name, hashtag, wedding_date, timezone, status, config, package_config
+      `SELECT id, slug, display_name, hashtag, wedding_date, timezone, status, config, package_config,
+              venue_city, venue_country, venue_lat, venue_lng
        FROM weddings WHERE slug = $1`,
       [slug]
     );
@@ -62,6 +63,10 @@ export async function GET(
       hashtag: wedding.hashtag || config.hashtag || '',
       wedding_date: toDateString(wedding.wedding_date),
       timezone: wedding.timezone || 'America/New_York',
+      venue_city: wedding.venue_city || null,
+      venue_country: wedding.venue_country || null,
+      venue_lat: wedding.venue_lat ? Number(wedding.venue_lat) : null,
+      venue_lng: wedding.venue_lng ? Number(wedding.venue_lng) : null,
       status: wedding.status,
       theme: config.theme || {
         preset: 'mediterranean',
