@@ -50,11 +50,18 @@ const MapIcon = () => (
   </svg>
 );
 
+const CaptureIcon = () => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="10" />
+    <circle cx="12" cy="12" r="3" />
+  </svg>
+);
+
 const tabs = [
   { id: 'home', label: 'Home', icon: HomeIcon, path: '' },
-  { id: 'video', label: 'Video', icon: VideoIcon, path: '/video' },
+  { id: 'capture', label: 'Capture', icon: CaptureIcon, path: '/capture' },
   { id: 'travel', label: 'Travel', icon: MapIcon, path: '/travel', elevated: true },
-  { id: 'photo', label: 'Photo', icon: CameraIcon, path: '/photo' },
+  { id: 'gallery', label: 'Gallery', icon: GalleryIcon, path: '/gallery' },
   { id: 'schedule', label: 'Events', icon: CalendarIcon, path: '/schedule' },
 ];
 
@@ -79,7 +86,11 @@ export default function BottomNav() {
           const isActive =
             tab.path === ''
               ? pathname === `${basePath}/home` || pathname === basePath
-              : pathname.startsWith(`${basePath}${tab.path}`);
+              : tab.id === 'capture'
+                ? pathname.startsWith(`${basePath}/capture`) ||
+                  pathname.startsWith(`${basePath}/photo`) ||
+                  pathname.startsWith(`${basePath}/video`)
+                : pathname.startsWith(`${basePath}${tab.path}`);
           const Icon = tab.icon;
 
           if (tab.elevated) {
