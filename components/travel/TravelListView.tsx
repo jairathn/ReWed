@@ -419,12 +419,34 @@ export default function TravelListView({
                 className="card p-4"
               >
                 <div className="flex items-center justify-between mb-2">
-                  <p
-                    className="text-sm font-medium"
-                    style={{ color: 'var(--text-primary)' }}
-                  >
-                    {stop.city}, {stop.country}
-                  </p>
+                  <div>
+                    <p
+                      className="text-sm font-medium"
+                      style={{ color: 'var(--text-primary)' }}
+                    >
+                      {stop.city}, {stop.country}
+                    </p>
+                    {/* Show context label based on stop types */}
+                    {(() => {
+                      const allOrigin = stop.guests.every((g) => g.stop_type === 'origin');
+                      const someOrigin = stop.guests.some((g) => g.stop_type === 'origin');
+                      if (allOrigin) {
+                        return (
+                          <p className="text-[11px] mt-0.5" style={{ color: 'var(--text-tertiary)' }}>
+                            Departing from
+                          </p>
+                        );
+                      }
+                      if (someOrigin) {
+                        return (
+                          <p className="text-[11px] mt-0.5" style={{ color: 'var(--text-tertiary)' }}>
+                            Departing &amp; visiting
+                          </p>
+                        );
+                      }
+                      return null;
+                    })()}
+                  </div>
                   <span
                     className="text-xs px-2 py-0.5 rounded-full"
                     style={{
@@ -501,6 +523,7 @@ export default function TravelListView({
                                     color: 'var(--text-primary)',
                                     fontWeight: s.city === stop.city ? 600 : 400,
                                   }}>
+                                    {s.stop_type === 'origin' ? 'Departing from ' : ''}
                                     {s.city}, {s.country}
                                   </p>
                                   {s.arrive_date && (

@@ -65,6 +65,68 @@ const BUILTIN_CITIES: CityEntry[] = [
   { geoname_id: 4335045, city: 'New Orleans', region: 'Louisiana', country: 'United States', country_code: 'US', latitude: 29.9511, longitude: -90.0715, population: 383997 },
   { geoname_id: 5780993, city: 'Honolulu', region: 'Hawaii', country: 'United States', country_code: 'US', latitude: 21.3069, longitude: -157.8583, population: 371657 },
   { geoname_id: 5856195, city: 'Maui', region: 'Hawaii', country: 'United States', country_code: 'US', latitude: 20.7984, longitude: -156.3319, population: 167417 },
+  // More US cities (mid-size)
+  { geoname_id: 4259671, city: 'Evansville', region: 'Indiana', country: 'United States', country_code: 'US', latitude: 37.9716, longitude: -87.5711, population: 117429 },
+  { geoname_id: 4254010, city: 'Fort Wayne', region: 'Indiana', country: 'United States', country_code: 'US', latitude: 41.0793, longitude: -85.1394, population: 263886 },
+  { geoname_id: 4254679, city: 'Bloomington', region: 'Indiana', country: 'United States', country_code: 'US', latitude: 39.1653, longitude: -86.5264, population: 84067 },
+  { geoname_id: 4508722, city: 'Cincinnati', region: 'Ohio', country: 'United States', country_code: 'US', latitude: 39.1031, longitude: -84.512, population: 309317 },
+  { geoname_id: 4517009, city: 'Cleveland', region: 'Ohio', country: 'United States', country_code: 'US', latitude: 41.4995, longitude: -81.6954, population: 372624 },
+  { geoname_id: 4508722, city: 'Dayton', region: 'Ohio', country: 'United States', country_code: 'US', latitude: 39.7589, longitude: -84.1916, population: 137644 },
+  { geoname_id: 4299276, city: 'Louisville', region: 'Kentucky', country: 'United States', country_code: 'US', latitude: 38.2527, longitude: -85.7585, population: 633045 },
+  { geoname_id: 4299670, city: 'Lexington', region: 'Kentucky', country: 'United States', country_code: 'US', latitude: 38.0406, longitude: -84.5037, population: 322570 },
+  { geoname_id: 4990729, city: 'Grand Rapids', region: 'Michigan', country: 'United States', country_code: 'US', latitude: 42.9634, longitude: -85.6681, population: 198917 },
+  { geoname_id: 4990729, city: 'Ann Arbor', region: 'Michigan', country: 'United States', country_code: 'US', latitude: 42.2808, longitude: -83.743, population: 123851 },
+  { geoname_id: 5037649, city: 'St. Paul', region: 'Minnesota', country: 'United States', country_code: 'US', latitude: 44.9537, longitude: -93.09, population: 311527 },
+  { geoname_id: 5263045, city: 'Madison', region: 'Wisconsin', country: 'United States', country_code: 'US', latitude: 43.0731, longitude: -89.4012, population: 269840 },
+  { geoname_id: 4853828, city: 'Des Moines', region: 'Iowa', country: 'United States', country_code: 'US', latitude: 41.5868, longitude: -93.625, population: 214133 },
+  { geoname_id: 4381982, city: 'Kansas City', region: 'Missouri', country: 'United States', country_code: 'US', latitude: 39.0997, longitude: -94.5786, population: 508090 },
+  { geoname_id: 5074472, city: 'Omaha', region: 'Nebraska', country: 'United States', country_code: 'US', latitude: 41.2565, longitude: -95.9345, population: 486051 },
+  { geoname_id: 5308655, city: 'Tucson', region: 'Arizona', country: 'United States', country_code: 'US', latitude: 32.2226, longitude: -110.9747, population: 542629 },
+  { geoname_id: 5308655, city: 'Scottsdale', region: 'Arizona', country: 'United States', country_code: 'US', latitude: 33.4942, longitude: -111.9261, population: 241361 },
+  { geoname_id: 5419384, city: 'Colorado Springs', region: 'Colorado', country: 'United States', country_code: 'US', latitude: 38.8339, longitude: -104.8214, population: 478961 },
+  { geoname_id: 5419384, city: 'Boulder', region: 'Colorado', country: 'United States', country_code: 'US', latitude: 40.015, longitude: -105.2705, population: 105673 },
+  { geoname_id: 5419384, city: 'Boise', region: 'Idaho', country: 'United States', country_code: 'US', latitude: 43.615, longitude: -116.2023, population: 228959 },
+  { geoname_id: 5308655, city: 'Albuquerque', region: 'New Mexico', country: 'United States', country_code: 'US', latitude: 35.0844, longitude: -106.6504, population: 564559 },
+  { geoname_id: 4160021, city: 'Orlando', region: 'Florida', country: 'United States', country_code: 'US', latitude: 28.5383, longitude: -81.3792, population: 307573 },
+  { geoname_id: 4174715, city: 'St. Petersburg', region: 'Florida', country: 'United States', country_code: 'US', latitude: 27.7676, longitude: -82.6403, population: 258308 },
+  { geoname_id: 4155966, city: 'Fort Lauderdale', region: 'Florida', country: 'United States', country_code: 'US', latitude: 26.1224, longitude: -80.1373, population: 182760 },
+  { geoname_id: 4167147, city: 'Naples', region: 'Florida', country: 'United States', country_code: 'US', latitude: 26.142, longitude: -81.7948, population: 22088 },
+  { geoname_id: 4174715, city: 'Sarasota', region: 'Florida', country: 'United States', country_code: 'US', latitude: 27.3364, longitude: -82.5307, population: 57738 },
+  { geoname_id: 4174715, city: 'West Palm Beach', region: 'Florida', country: 'United States', country_code: 'US', latitude: 26.7153, longitude: -80.0534, population: 117415 },
+  { geoname_id: 4460243, city: 'Durham', region: 'North Carolina', country: 'United States', country_code: 'US', latitude: 35.994, longitude: -78.8986, population: 283506 },
+  { geoname_id: 4460243, city: 'Asheville', region: 'North Carolina', country: 'United States', country_code: 'US', latitude: 35.5951, longitude: -82.5515, population: 94067 },
+  { geoname_id: 4781708, city: 'Richmond', region: 'Virginia', country: 'United States', country_code: 'US', latitude: 37.5407, longitude: -77.436, population: 226610 },
+  { geoname_id: 4776222, city: 'Norfolk', region: 'Virginia', country: 'United States', country_code: 'US', latitude: 36.8508, longitude: -76.2859, population: 244076 },
+  { geoname_id: 4140963, city: 'Arlington', region: 'Virginia', country: 'United States', country_code: 'US', latitude: 38.8816, longitude: -77.0909, population: 238643 },
+  { geoname_id: 4180439, city: 'Savannah', region: 'Georgia', country: 'United States', country_code: 'US', latitude: 32.0809, longitude: -81.0912, population: 147780 },
+  { geoname_id: 4247703, city: 'Chattanooga', region: 'Tennessee', country: 'United States', country_code: 'US', latitude: 35.0456, longitude: -85.3097, population: 181099 },
+  { geoname_id: 4247703, city: 'Knoxville', region: 'Tennessee', country: 'United States', country_code: 'US', latitude: 35.9606, longitude: -83.9207, population: 190740 },
+  { geoname_id: 4247703, city: 'Memphis', region: 'Tennessee', country: 'United States', country_code: 'US', latitude: 35.1495, longitude: -90.049, population: 633104 },
+  { geoname_id: 4180439, city: 'Birmingham', region: 'Alabama', country: 'United States', country_code: 'US', latitude: 33.5207, longitude: -86.8025, population: 200733 },
+  { geoname_id: 4335045, city: 'Baton Rouge', region: 'Louisiana', country: 'United States', country_code: 'US', latitude: 30.4515, longitude: -91.1871, population: 225128 },
+  { geoname_id: 5391811, city: 'Santa Barbara', region: 'California', country: 'United States', country_code: 'US', latitude: 34.4208, longitude: -119.6982, population: 88665 },
+  { geoname_id: 5391811, city: 'Irvine', region: 'California', country: 'United States', country_code: 'US', latitude: 33.6846, longitude: -117.8265, population: 307670 },
+  { geoname_id: 5391811, city: 'Pasadena', region: 'California', country: 'United States', country_code: 'US', latitude: 34.1478, longitude: -118.1445, population: 138699 },
+  { geoname_id: 5391811, city: 'Long Beach', region: 'California', country: 'United States', country_code: 'US', latitude: 33.77, longitude: -118.1937, population: 466742 },
+  { geoname_id: 5809844, city: 'Tacoma', region: 'Washington', country: 'United States', country_code: 'US', latitude: 47.2529, longitude: -122.4443, population: 219346 },
+  { geoname_id: 5809844, city: 'Spokane', region: 'Washington', country: 'United States', country_code: 'US', latitude: 47.6588, longitude: -117.426, population: 222081 },
+  { geoname_id: 5746545, city: 'Eugene', region: 'Oregon', country: 'United States', country_code: 'US', latitude: 44.0521, longitude: -123.0868, population: 176654 },
+  { geoname_id: 5128581, city: 'Buffalo', region: 'New York', country: 'United States', country_code: 'US', latitude: 42.8864, longitude: -78.8784, population: 278349 },
+  { geoname_id: 5128581, city: 'Rochester', region: 'New York', country: 'United States', country_code: 'US', latitude: 43.1566, longitude: -77.6088, population: 211328 },
+  { geoname_id: 5128581, city: 'Albany', region: 'New York', country: 'United States', country_code: 'US', latitude: 42.6526, longitude: -73.7562, population: 99224 },
+  { geoname_id: 4930956, city: 'Providence', region: 'Rhode Island', country: 'United States', country_code: 'US', latitude: 41.824, longitude: -71.4128, population: 190934 },
+  { geoname_id: 4835797, city: 'Hartford', region: 'Connecticut', country: 'United States', country_code: 'US', latitude: 41.7658, longitude: -72.6734, population: 121054 },
+  { geoname_id: 4835797, city: 'New Haven', region: 'Connecticut', country: 'United States', country_code: 'US', latitude: 41.3083, longitude: -72.9279, population: 134023 },
+  { geoname_id: 4835797, city: 'Stamford', region: 'Connecticut', country: 'United States', country_code: 'US', latitude: 41.0534, longitude: -73.5387, population: 135470 },
+  { geoname_id: 5090174, city: 'Manchester', region: 'New Hampshire', country: 'United States', country_code: 'US', latitude: 42.9956, longitude: -71.4548, population: 115644 },
+  { geoname_id: 5234372, city: 'Burlington', region: 'Vermont', country: 'United States', country_code: 'US', latitude: 44.4759, longitude: -73.2121, population: 44743 },
+  { geoname_id: 4930956, city: 'Cambridge', region: 'Massachusetts', country: 'United States', country_code: 'US', latitude: 42.3736, longitude: -71.1097, population: 118403 },
+  { geoname_id: 4930956, city: 'Worcester', region: 'Massachusetts', country: 'United States', country_code: 'US', latitude: 42.2626, longitude: -71.8023, population: 206518 },
+  { geoname_id: 5206379, city: 'Pittsburgh', region: 'Pennsylvania', country: 'United States', country_code: 'US', latitude: 40.4406, longitude: -79.9959, population: 302971 },
+  { geoname_id: 5560244, city: 'Reno', region: 'Nevada', country: 'United States', country_code: 'US', latitude: 39.5296, longitude: -119.8138, population: 264165 },
+  { geoname_id: 5254218, city: 'Green Bay', region: 'Wisconsin', country: 'United States', country_code: 'US', latitude: 44.5133, longitude: -88.0133, population: 107395 },
+  { geoname_id: 4726206, city: 'Fort Worth', region: 'Texas', country: 'United States', country_code: 'US', latitude: 32.7555, longitude: -97.3308, population: 918915 },
+  { geoname_id: 4726206, city: 'El Paso', region: 'Texas', country: 'United States', country_code: 'US', latitude: 31.7619, longitude: -106.485, population: 678815 },
   // Canada
   { geoname_id: 6167865, city: 'Toronto', region: 'Ontario', country: 'Canada', country_code: 'CA', latitude: 43.6532, longitude: -79.3832, population: 2731571 },
   { geoname_id: 6077243, city: 'Montreal', region: 'Quebec', country: 'Canada', country_code: 'CA', latitude: 45.5017, longitude: -73.5673, population: 1762949 },
@@ -164,12 +226,18 @@ const BUILTIN_CITIES: CityEntry[] = [
 
 function searchBuiltinCities(query: string): CityEntry[] {
   const q = query.toLowerCase();
+  // Score matches: startsWith gets priority over includes
   return BUILTIN_CITIES
     .filter((c) =>
-      c.city.toLowerCase().startsWith(q) ||
-      (c.region && c.region.toLowerCase().startsWith(q))
+      c.city.toLowerCase().includes(q) ||
+      (c.region && c.region.toLowerCase().includes(q))
     )
-    .sort((a, b) => b.population - a.population)
+    .sort((a, b) => {
+      const aStartsWith = a.city.toLowerCase().startsWith(q) ? 1 : 0;
+      const bStartsWith = b.city.toLowerCase().startsWith(q) ? 1 : 0;
+      if (aStartsWith !== bStartsWith) return bStartsWith - aStartsWith;
+      return b.population - a.population;
+    })
     .slice(0, 8);
 }
 
