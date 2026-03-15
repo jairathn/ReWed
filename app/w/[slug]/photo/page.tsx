@@ -441,9 +441,9 @@ export default function PhotoBoothPage() {
 
           {/* Shutter Button Area */}
           <div
-            className="pb-24 pt-4 flex justify-center safe-bottom relative z-10"
+            className="pb-28 pt-5 flex justify-center safe-bottom relative z-40 flex-shrink-0"
             style={{
-              background: 'rgba(0, 0, 0, 0.3)',
+              background: 'rgba(0, 0, 0, 0.6)',
               backdropFilter: 'blur(20px)',
               WebkitBackdropFilter: 'blur(20px)',
             }}
@@ -481,7 +481,7 @@ export default function PhotoBoothPage() {
 
           {/* Review Actions */}
           <div
-            className="pb-24 pt-6 px-6 flex gap-4 justify-center safe-bottom relative z-10"
+            className="pb-28 pt-6 px-6 flex gap-4 justify-center safe-bottom relative z-40 flex-shrink-0"
             style={{
               background: 'rgba(0, 0, 0, 0.3)',
               backdropFilter: 'blur(20px)',
@@ -576,7 +576,7 @@ export default function PhotoBoothPage() {
 
           {/* Style picker actions */}
           <div
-            className="pb-24 pt-4 px-6 flex gap-4 justify-center safe-bottom relative z-10"
+            className="pb-28 pt-4 px-6 flex gap-4 justify-center safe-bottom relative z-40 flex-shrink-0"
             style={{
               background: 'rgba(0, 0, 0, 0.5)',
               backdropFilter: 'blur(20px)',

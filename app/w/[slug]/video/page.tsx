@@ -31,14 +31,44 @@ export default function VideoRecordingPage() {
   const [permissionDenied, setPermissionDenied] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
 
-  // Build prompts list
-  const prompts = config
+  // Default Voast-style prompts when none configured
+  const DEFAULT_PROMPTS = {
+    heartfelt: [
+      "What's your favorite memory with the couple?",
+      "What advice would you give the newlyweds?",
+      "What do you love most about them as a couple?",
+      "How did you know they were meant for each other?",
+      "What makes their relationship special?",
+    ],
+    fun: [
+      "What's the most embarrassing story you have about the couple?",
+      "If their love story was a movie, what would it be called?",
+      "Predict something about their future together!",
+      "What song should they play at every anniversary?",
+      "Describe the couple in exactly three words.",
+    ],
+    quick_takes: [
+      "Cheers! Say something to the couple in 10 seconds!",
+      "Give your best wedding toast — 30 seconds or less!",
+      "One word to describe tonight?",
+    ],
+  };
+
+  // Build prompts list — use configured prompts or fall back to defaults
+  const configuredPrompts = config
     ? [
         ...(config.prompts.heartfelt || []),
         ...(config.prompts.fun || []),
         ...(config.prompts.quick_takes || []),
       ]
     : [];
+  const prompts = configuredPrompts.length > 0
+    ? configuredPrompts
+    : [
+        ...DEFAULT_PROMPTS.heartfelt,
+        ...DEFAULT_PROMPTS.fun,
+        ...DEFAULT_PROMPTS.quick_takes,
+      ];
   const currentPrompt = prompts[promptIndex] || 'Share a message for the couple!';
 
   // Auth guard
@@ -453,15 +483,21 @@ export default function VideoRecordingPage() {
             </div>
           )}
 
-          {/* Mode Toggle (only when not recording) */}
-          {phase === 'viewfinder' && (
-            <div className="absolute bottom-40 left-0 right-0 flex justify-center z-10">
+          {/* Controls area: mode toggle + record button */}
+          <div
+            className="pb-28 pt-4 flex flex-col items-center gap-4 safe-bottom relative z-40 flex-shrink-0"
+            style={{
+              background: 'rgba(0, 0, 0, 0.6)',
+              backdropFilter: 'blur(20px)',
+              WebkitBackdropFilter: 'blur(20px)',
+            }}
+          >
+            {/* Mode Toggle (only when not recording) */}
+            {phase === 'viewfinder' && (
               <div
                 className="inline-flex rounded-full p-1"
                 style={{
-                  background: 'rgba(0, 0, 0, 0.3)',
-                  backdropFilter: 'blur(20px)',
-                  WebkitBackdropFilter: 'blur(20px)',
+                  background: 'rgba(255, 255, 255, 0.1)',
                 }}
               >
                 <button
@@ -497,18 +533,9 @@ export default function VideoRecordingPage() {
                   Free Record
                 </button>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Record / Stop Button */}
-          <div
-            className="pb-24 pt-4 flex justify-center safe-bottom relative z-10"
-            style={{
-              background: 'rgba(0, 0, 0, 0.3)',
-              backdropFilter: 'blur(20px)',
-              WebkitBackdropFilter: 'blur(20px)',
-            }}
-          >
+            {/* Record / Stop Button */}
             {phase === 'viewfinder' ? (
               <button
                 onClick={startRecording}
@@ -574,7 +601,7 @@ export default function VideoRecordingPage() {
 
           {/* Review Actions */}
           <div
-            className="pb-24 pt-6 px-6 flex gap-4 justify-center safe-bottom relative z-10"
+            className="pb-28 pt-6 px-6 flex gap-4 justify-center safe-bottom relative z-40 flex-shrink-0"
             style={{
               background: 'rgba(0, 0, 0, 0.3)',
               backdropFilter: 'blur(20px)',
