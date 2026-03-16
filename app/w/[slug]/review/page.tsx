@@ -2,6 +2,7 @@
 
 import { useWedding } from '@/components/WeddingProvider';
 import BottomNav from '@/components/guest/BottomNav';
+import BackButton from '@/components/guest/BackButton';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState, Suspense } from 'react';
 
@@ -224,6 +225,7 @@ function ReviewContent() {
       {/* ========== REVIEW PHASE ========== */}
       {phase === 'review' && (
         <>
+          <BackButton href={`/w/${slug}/capture`} label="Capture" />
           <h1
             className="text-2xl font-medium mb-6"
             style={{

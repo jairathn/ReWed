@@ -2,6 +2,7 @@
 
 import { useWedding } from '@/components/WeddingProvider';
 import BottomNav from '@/components/guest/BottomNav';
+import BackButton from '@/components/guest/BackButton';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import TravelPlanForm from '@/components/travel/TravelPlanForm';
@@ -66,6 +67,7 @@ export default function TravelPage() {
 
   return (
     <div className="pb-24 px-5 pt-8 max-w-lg mx-auto">
+      <BackButton href={`/w/${slug}/home`} label="Home" />
       <h1
         className="text-2xl font-medium mb-1"
         style={{

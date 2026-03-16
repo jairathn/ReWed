@@ -2,6 +2,7 @@
 
 import { useWedding } from '@/components/WeddingProvider';
 import BottomNav from '@/components/guest/BottomNav';
+import BackButton from '@/components/guest/BackButton';
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import type { MediaItem } from '@/lib/types/api';
@@ -116,6 +117,7 @@ export default function GalleryPage() {
 
   return (
     <div className="pb-24 px-5 pt-8 max-w-lg mx-auto">
+      <BackButton href={`/w/${slug}/home`} label="Home" />
       <h1
         className="text-2xl font-medium mb-2"
         style={{

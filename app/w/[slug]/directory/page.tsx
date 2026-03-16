@@ -1,5 +1,6 @@
 import { getPool } from '@/lib/db/client';
 import BottomNav from '@/components/guest/BottomNav';
+import BackButton from '@/components/guest/BackButton';
 
 type Params = { slug: string };
 
@@ -76,6 +77,7 @@ export default async function DirectoryPage({
 
   return (
     <div className="pb-24 px-5 pt-8 max-w-lg mx-auto relative">
+      <BackButton href={`/w/${slug}/home`} label="Home" />
       <h1
         className="text-2xl font-medium mb-4"
         style={{

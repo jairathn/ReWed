@@ -2,6 +2,7 @@
 
 import { useWedding } from '@/components/WeddingProvider';
 import BottomNav from '@/components/guest/BottomNav';
+import BackButton from '@/components/guest/BackButton';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
@@ -29,6 +30,7 @@ export default function CapturePage() {
 
   return (
     <div className="pb-24 px-5 pt-8 max-w-lg mx-auto">
+      <BackButton href={`/w/${slug}/home`} label="Home" />
       <h1
         className="text-2xl font-medium mb-2"
         style={{ fontFamily: 'var(--font-display)', color: 'var(--text-primary)' }}

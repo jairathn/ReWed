@@ -2,6 +2,7 @@
 
 import { useWedding } from '@/components/WeddingProvider';
 import BottomNav from '@/components/guest/BottomNav';
+import BackButton from '@/components/guest/BackButton';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, useCallback } from 'react';
 
@@ -335,6 +336,9 @@ export default function VideoRecordingPage() {
   if (permissionDenied && phase === 'viewfinder') {
     return (
       <div className="fixed inset-0 flex flex-col" style={{ background: '#000' }}>
+        <div className="px-4 pt-10">
+          <BackButton href={`/w/${slug}/capture`} label="Back" variant="dark" />
+        </div>
         <div className="flex-1 flex items-center justify-center px-8">
           <div className="text-center">
             <div
@@ -380,6 +384,13 @@ export default function VideoRecordingPage() {
             className="absolute inset-0 w-full h-full"
             style={{ objectFit: 'cover' }}
           />
+
+          {/* Back button (only when not recording) */}
+          {phase === 'viewfinder' && (
+            <div className="absolute top-10 left-4 z-20">
+              <BackButton href={`/w/${slug}/capture`} label="Back" variant="dark" />
+            </div>
+          )}
 
           {/* Recording indicator */}
           {phase === 'recording' && (
