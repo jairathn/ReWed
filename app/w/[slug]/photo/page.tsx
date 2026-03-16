@@ -51,7 +51,6 @@ export default function PhotoBoothPage() {
 
   // Start camera
   const startCamera = useCallback(async (facing: 'environment' | 'user') => {
-    // Stop any existing stream
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((t) => t.stop());
       streamRef.current = null;
@@ -68,7 +67,6 @@ export default function PhotoBoothPage() {
       }
       setPermissionDenied(false);
 
-      // Check torch/flash support
       const track = stream.getVideoTracks()[0];
       if (track) {
         const capabilities = track.getCapabilities?.() as Record<string, unknown> | undefined;
@@ -94,7 +92,6 @@ export default function PhotoBoothPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, facingMode, isLoading, isAuthenticated]);
 
-  // Cleanup captured URL on unmount
   useEffect(() => {
     return () => {
       if (capturedUrl) {
@@ -103,7 +100,6 @@ export default function PhotoBoothPage() {
     };
   }, [capturedUrl]);
 
-  // Toast auto-dismiss
   useEffect(() => {
     if (toastMessage) {
       const timer = setTimeout(() => setToastMessage(''), 3000);
@@ -117,18 +113,15 @@ export default function PhotoBoothPage() {
 
   const toggleFlash = async () => {
     if (flashSupported) {
-      // Hardware torch available — toggle it
       const track = streamRef.current?.getVideoTracks()[0];
       if (!track) return;
       try {
         await track.applyConstraints({ advanced: [{ torch: !flashOn } as MediaTrackConstraintSet] });
         setFlashOn(!flashOn);
       } catch {
-        // Torch failed, just toggle for screen flash fallback
         setFlashOn(!flashOn);
       }
     } else {
-      // No hardware torch — toggle screen flash mode
       setFlashOn(!flashOn);
     }
   };
@@ -152,12 +145,10 @@ export default function PhotoBoothPage() {
           const url = URL.createObjectURL(blob);
           setCapturedUrl(url);
 
-          // Stop camera stream to save battery
           if (streamRef.current) {
             streamRef.current.getTracks().forEach((t) => t.stop());
           }
 
-          // Hide screen flash after capture
           setScreenFlashing(false);
 
           if (mode === 'ai-portrait') {
@@ -171,10 +162,8 @@ export default function PhotoBoothPage() {
       );
     };
 
-    // Screen flash: when flash is on but no hardware torch (iPhone, front camera)
     if (flashOn && !flashSupported) {
       setScreenFlashing(true);
-      // Wait for the screen to brighten before capturing
       setTimeout(doCapture, 250);
     } else {
       doCapture();
@@ -199,7 +188,6 @@ export default function PhotoBoothPage() {
     setUploadProgress(0);
 
     try {
-      // Step 1: Get presigned URL
       const presignRes = await fetch(`/api/v1/w/${slug}/upload/presign`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -210,15 +198,12 @@ export default function PhotoBoothPage() {
         }),
       });
 
-      if (!presignRes.ok) {
-        throw new Error('Failed to get upload URL');
-      }
+      if (!presignRes.ok) throw new Error('Failed to get upload URL');
 
       const presignData = await presignRes.json();
       const { upload_id, presigned_url, storage_key } = presignData.data;
       setUploadProgress(20);
 
-      // Step 2: Upload blob to presigned URL with progress
       await new Promise<void>((resolve, reject) => {
         const xhr = new XMLHttpRequest();
         xhr.open('PUT', presigned_url);
@@ -232,11 +217,8 @@ export default function PhotoBoothPage() {
         };
 
         xhr.onload = () => {
-          if (xhr.status >= 200 && xhr.status < 300) {
-            resolve();
-          } else {
-            reject(new Error(`Upload failed with status ${xhr.status}`));
-          }
+          if (xhr.status >= 200 && xhr.status < 300) resolve();
+          else reject(new Error(`Upload failed with status ${xhr.status}`));
         };
 
         xhr.onerror = () => reject(new Error('Upload network error'));
@@ -245,23 +227,16 @@ export default function PhotoBoothPage() {
 
       setUploadProgress(85);
 
-      // Step 3: Mark upload as complete
       const completeRes = await fetch(`/api/v1/w/${slug}/upload/complete`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          upload_id,
-          storage_key,
-        }),
+        body: JSON.stringify({ upload_id, storage_key }),
       });
 
-      if (!completeRes.ok) {
-        throw new Error('Failed to complete upload');
-      }
+      if (!completeRes.ok) throw new Error('Failed to complete upload');
 
       setUploadProgress(100);
 
-      // Step 4: If AI portrait mode, trigger portrait generation
       if (styleId) {
         const completeData = await completeRes.json();
         const sourceUploadId = completeData.data?.upload?.id || upload_id;
@@ -282,10 +257,7 @@ export default function PhotoBoothPage() {
       setPhase('success');
       setToastMessage(styleId ? 'Photo saved! AI portrait is generating...' : 'Photo saved to gallery!');
 
-      // Return to viewfinder after short delay
-      setTimeout(() => {
-        retake();
-      }, 1500);
+      setTimeout(() => { retake(); }, 1500);
     } catch (err) {
       console.error('Upload failed:', err);
       setToastMessage('Upload failed. Please try again.');
@@ -296,7 +268,7 @@ export default function PhotoBoothPage() {
   // Loading state
   if (isLoading || !config || !guest) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: '#1a1a1a' }}>
+      <div className="fixed inset-0 flex items-center justify-center" style={{ background: '#000' }}>
         <div className="skeleton w-20 h-20 rounded-full" />
       </div>
     );
@@ -305,7 +277,7 @@ export default function PhotoBoothPage() {
   // Permission denied state
   if (permissionDenied && phase === 'viewfinder') {
     return (
-      <div className="min-h-screen flex flex-col relative" style={{ background: '#1a1a1a' }}>
+      <div className="fixed inset-0 flex flex-col" style={{ background: '#000' }}>
         <div className="flex-1 flex items-center justify-center px-8">
           <div className="text-center">
             <div
@@ -318,19 +290,13 @@ export default function PhotoBoothPage() {
                 <line x1="1" y1="1" x2="23" y2="23" />
               </svg>
             </div>
-            <h2
-              className="text-xl font-medium text-white mb-3"
-              style={{ fontFamily: 'var(--font-display)' }}
-            >
+            <h2 className="text-xl font-medium text-white mb-3" style={{ fontFamily: 'var(--font-display)' }}>
               Camera Access Needed
             </h2>
             <p className="text-white/60 text-sm mb-6 leading-relaxed">
-              To use the photo booth, please allow camera access in your browser settings. On iOS, go to Settings &gt; Safari &gt; Camera. On Android, tap the lock icon in the address bar.
+              To use the photo booth, please allow camera access in your browser settings.
             </p>
-            <button
-              onClick={() => startCamera(facingMode)}
-              className="btn-primary"
-            >
+            <button onClick={() => startCamera(facingMode)} className="btn-primary">
               Try Again
             </button>
           </div>
@@ -341,127 +307,186 @@ export default function PhotoBoothPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col relative" style={{ background: '#1a1a1a' }}>
+    <div className="fixed inset-0" style={{ background: '#000' }}>
       {/* Hidden canvas for capture */}
       <canvas ref={canvasRef} className="hidden" />
 
       {/* ========== VIEWFINDER PHASE ========== */}
       {phase === 'viewfinder' && (
         <>
-          {/* Camera viewfinder */}
-          <div className="flex-1 relative overflow-hidden">
-            <video
-              ref={videoRef}
-              autoPlay
-              playsInline
-              muted
-              className="absolute inset-0 w-full h-full"
-              style={{ objectFit: 'cover' }}
-            />
-          </div>
+          {/* Full-screen camera viewfinder */}
+          <video
+            ref={videoRef}
+            autoPlay
+            playsInline
+            muted
+            className="absolute inset-0 w-full h-full"
+            style={{ objectFit: 'cover' }}
+          />
 
-          {/* Mode Toggle */}
-          <div className="absolute top-6 left-0 right-0 flex justify-center z-10">
+          {/* Screen flash overlay */}
+          {screenFlashing && (
+            <div className="absolute inset-0 z-30" style={{ background: 'white' }} />
+          )}
+
+          {/* Top controls bar — glass morphism */}
+          <div className="absolute top-0 left-0 right-0 z-20 safe-top">
             <div
-              className="inline-flex rounded-full p-1"
+              className="flex items-center justify-between px-4 pt-12 pb-3"
               style={{
-                background: 'rgba(0, 0, 0, 0.3)',
-                backdropFilter: 'blur(20px)',
-                WebkitBackdropFilter: 'blur(20px)',
+                background: 'linear-gradient(to bottom, rgba(0,0,0,0.5), transparent)',
               }}
             >
+              {/* Flash toggle */}
               <button
-                onClick={() => setMode('photo')}
-                className="px-4 py-2 rounded-full text-sm font-medium transition-colors"
+                onClick={toggleFlash}
+                className="w-11 h-11 rounded-full flex items-center justify-center"
                 style={{
-                  background: mode === 'photo' ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
-                  color: mode === 'photo' ? 'white' : 'rgba(255, 255, 255, 0.5)',
+                  background: flashOn ? 'rgba(255, 214, 10, 0.25)' : 'rgba(255, 255, 255, 0.12)',
+                  backdropFilter: 'blur(16px)',
+                  WebkitBackdropFilter: 'blur(16px)',
                 }}
+                aria-label={flashOn ? 'Turn off flash' : 'Turn on flash'}
               >
-                Photo
+                <svg width="20" height="20" viewBox="0 0 24 24" fill={flashOn ? '#FFD60A' : 'none'} stroke={flashOn ? '#FFD60A' : 'white'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                </svg>
               </button>
-              <button
-                onClick={() => setMode('ai-portrait')}
-                className="px-4 py-2 rounded-full text-sm font-medium transition-colors"
+
+              {/* Mode Toggle */}
+              <div
+                className="inline-flex rounded-full p-1"
                 style={{
-                  background: mode === 'ai-portrait' ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
-                  color: mode === 'ai-portrait' ? 'white' : 'rgba(255, 255, 255, 0.5)',
+                  background: 'rgba(0, 0, 0, 0.35)',
+                  backdropFilter: 'blur(20px)',
+                  WebkitBackdropFilter: 'blur(20px)',
                 }}
               >
-                AI Portrait
+                <button
+                  onClick={() => setMode('photo')}
+                  className="px-5 py-2 rounded-full text-sm font-medium transition-all"
+                  style={{
+                    background: mode === 'photo' ? 'rgba(255, 255, 255, 0.22)' : 'transparent',
+                    color: mode === 'photo' ? 'white' : 'rgba(255, 255, 255, 0.5)',
+                  }}
+                >
+                  Photo
+                </button>
+                <button
+                  onClick={() => setMode('ai-portrait')}
+                  className="px-5 py-2 rounded-full text-sm font-medium transition-all"
+                  style={{
+                    background: mode === 'ai-portrait' ? 'rgba(255, 255, 255, 0.22)' : 'transparent',
+                    color: mode === 'ai-portrait' ? 'white' : 'rgba(255, 255, 255, 0.5)',
+                  }}
+                >
+                  AI Portrait
+                </button>
+              </div>
+
+              {/* Flip camera */}
+              <button
+                onClick={flipCamera}
+                className="w-11 h-11 rounded-full flex items-center justify-center"
+                style={{
+                  background: 'rgba(255, 255, 255, 0.12)',
+                  backdropFilter: 'blur(16px)',
+                  WebkitBackdropFilter: 'blur(16px)',
+                }}
+                aria-label="Flip camera"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M20 16v4H4v-4" />
+                  <path d="M4 8V4h16v4" />
+                  <polyline points="7 12 12 7 17 12" />
+                  <polyline points="17 12 12 17 7 12" />
+                </svg>
               </button>
             </div>
           </div>
 
-          {/* Screen flash overlay — full white for devices without hardware torch */}
-          {screenFlashing && (
+          {/* Bottom controls — Instagram style floating shutter */}
+          <div className="absolute bottom-0 left-0 right-0 z-20">
             <div
-              className="absolute inset-0 z-30"
+              className="flex items-center justify-center pb-28 pt-8"
               style={{
-                background: 'white',
-                opacity: 1,
+                background: 'linear-gradient(to top, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.3) 60%, transparent 100%)',
               }}
-            />
-          )}
-
-          {/* Flash toggle button — always visible (uses hardware torch or screen flash) */}
-          <button
-            onClick={toggleFlash}
-            className="absolute top-7 left-5 w-11 h-11 rounded-full flex items-center justify-center z-10"
-            style={{
-              background: flashOn ? 'rgba(255, 214, 10, 0.3)' : 'rgba(0, 0, 0, 0.3)',
-              backdropFilter: 'blur(20px)',
-              WebkitBackdropFilter: 'blur(20px)',
-            }}
-            aria-label={flashOn ? 'Turn off flash' : 'Turn on flash'}
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill={flashOn ? '#FFD60A' : 'none'} stroke={flashOn ? '#FFD60A' : 'white'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-            </svg>
-          </button>
-
-          {/* Camera flip button */}
-          <button
-            onClick={flipCamera}
-            className="absolute top-7 right-5 w-11 h-11 rounded-full flex items-center justify-center z-10"
-            style={{
-              background: 'rgba(0, 0, 0, 0.3)',
-              backdropFilter: 'blur(20px)',
-              WebkitBackdropFilter: 'blur(20px)',
-            }}
-            aria-label="Flip camera"
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M20 16v4H4v-4" />
-              <path d="M4 8V4h16v4" />
-              <polyline points="7 12 12 7 17 12" />
-              <polyline points="17 12 12 17 7 12" />
-            </svg>
-          </button>
-
-          {/* Shutter Button Area */}
-          <div
-            className="pb-28 pt-5 flex justify-center safe-bottom relative z-40 flex-shrink-0"
-            style={{
-              background: 'rgba(0, 0, 0, 0.6)',
-              backdropFilter: 'blur(20px)',
-              WebkitBackdropFilter: 'blur(20px)',
-            }}
-          >
-            <button
-              onClick={capturePhoto}
-              className="w-[76px] h-[76px] rounded-full flex items-center justify-center active:scale-95 transition-transform"
-              style={{
-                background: 'transparent',
-                border: '4px solid white',
-              }}
-              aria-label="Take photo"
             >
-              <div
-                className="w-[64px] h-[64px] rounded-full"
-                style={{ background: 'white' }}
-              />
-            </button>
+              {/* Gallery shortcut (left) */}
+              <button
+                onClick={() => router.push(`/w/${slug}/gallery`)}
+                className="absolute left-8 bottom-32 w-12 h-12 rounded-xl overflow-hidden"
+                style={{
+                  background: 'rgba(255, 255, 255, 0.12)',
+                  backdropFilter: 'blur(16px)',
+                  WebkitBackdropFilter: 'blur(16px)',
+                  border: '2px solid rgba(255,255,255,0.2)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+                aria-label="Gallery"
+              >
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                  <circle cx="8.5" cy="8.5" r="1.5" />
+                  <polyline points="21 15 16 10 5 21" />
+                </svg>
+              </button>
+
+              {/* Shutter button — Instagram style */}
+              <button
+                onClick={capturePhoto}
+                className="relative active:scale-95 transition-transform"
+                aria-label="Take photo"
+                style={{ WebkitTapHighlightColor: 'transparent' }}
+              >
+                {/* Outer ring */}
+                <div
+                  style={{
+                    width: 80,
+                    height: 80,
+                    borderRadius: '50%',
+                    border: '4px solid white',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    boxShadow: '0 2px 20px rgba(0,0,0,0.3)',
+                  }}
+                >
+                  {/* Inner fill */}
+                  <div
+                    style={{
+                      width: 66,
+                      height: 66,
+                      borderRadius: '50%',
+                      background: 'white',
+                      transition: 'transform 0.1s',
+                    }}
+                  />
+                </div>
+              </button>
+
+              {/* Flip camera shortcut (right) */}
+              <button
+                onClick={flipCamera}
+                className="absolute right-8 bottom-32 w-12 h-12 rounded-full flex items-center justify-center"
+                style={{
+                  background: 'rgba(255, 255, 255, 0.12)',
+                  backdropFilter: 'blur(16px)',
+                  WebkitBackdropFilter: 'blur(16px)',
+                  border: '2px solid rgba(255,255,255,0.2)',
+                }}
+                aria-label="Flip camera"
+              >
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="1 4 1 10 7 10" />
+                  <polyline points="23 20 23 14 17 14" />
+                  <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15" />
+                </svg>
+              </button>
+            </div>
           </div>
         </>
       )}
@@ -469,47 +494,47 @@ export default function PhotoBoothPage() {
       {/* ========== REVIEW PHASE ========== */}
       {phase === 'review' && capturedUrl && (
         <>
-          <div className="flex-1 relative overflow-hidden">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={capturedUrl}
-              alt="Captured photo"
-              className="absolute inset-0 w-full h-full"
-              style={{ objectFit: 'cover' }}
-            />
-          </div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={capturedUrl}
+            alt="Captured photo"
+            className="absolute inset-0 w-full h-full"
+            style={{ objectFit: 'cover' }}
+          />
 
-          {/* Review Actions */}
-          <div
-            className="pb-28 pt-6 px-6 flex gap-4 justify-center safe-bottom relative z-40 flex-shrink-0"
-            style={{
-              background: 'rgba(0, 0, 0, 0.3)',
-              backdropFilter: 'blur(20px)',
-              WebkitBackdropFilter: 'blur(20px)',
-            }}
-          >
-            <button
-              onClick={retake}
-              className="flex-1 py-4 rounded-full text-base font-semibold transition-transform active:scale-97"
+          {/* Review Actions — floating at bottom */}
+          <div className="absolute bottom-0 left-0 right-0 z-20">
+            <div
+              className="px-6 pb-28 pt-8 flex gap-4 justify-center"
               style={{
-                background: 'rgba(255, 255, 255, 0.15)',
-                color: 'white',
-                border: '1.5px solid rgba(255, 255, 255, 0.3)',
+                background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.3) 70%, transparent 100%)',
               }}
             >
-              Retake
-            </button>
-            <button
-              onClick={() => uploadPhoto()}
-              className="flex-1 py-4 rounded-full text-base font-semibold transition-transform active:scale-97"
-              style={{
-                background: 'var(--color-terracotta-gradient)',
-                color: 'white',
-                boxShadow: 'var(--shadow-terracotta)',
-              }}
-            >
-              Save
-            </button>
+              <button
+                onClick={retake}
+                className="flex-1 max-w-[160px] py-4 rounded-full text-base font-semibold transition-transform active:scale-95"
+                style={{
+                  background: 'rgba(255, 255, 255, 0.15)',
+                  color: 'white',
+                  border: '1.5px solid rgba(255, 255, 255, 0.3)',
+                  backdropFilter: 'blur(16px)',
+                  WebkitBackdropFilter: 'blur(16px)',
+                }}
+              >
+                Retake
+              </button>
+              <button
+                onClick={() => uploadPhoto()}
+                className="flex-1 max-w-[160px] py-4 rounded-full text-base font-semibold transition-transform active:scale-95"
+                style={{
+                  background: 'var(--color-terracotta-gradient)',
+                  color: 'white',
+                  boxShadow: 'var(--shadow-terracotta)',
+                }}
+              >
+                Save
+              </button>
+            </div>
           </div>
         </>
       )}
@@ -517,104 +542,102 @@ export default function PhotoBoothPage() {
       {/* ========== STYLE PICKER PHASE (AI Portrait) ========== */}
       {phase === 'style-picker' && capturedUrl && (
         <>
-          <div className="flex-1 relative overflow-hidden">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={capturedUrl}
-              alt="Captured photo"
-              className="absolute inset-0 w-full h-full"
-              style={{ objectFit: 'cover', filter: 'brightness(0.6)' }}
-            />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={capturedUrl}
+            alt="Captured photo"
+            className="absolute inset-0 w-full h-full"
+            style={{ objectFit: 'cover', filter: 'brightness(0.5)' }}
+          />
 
-            {/* Style picker overlay */}
-            <div className="absolute inset-0 flex flex-col justify-end">
-              <div
-                className="px-4 pt-6 pb-4"
-                style={{
-                  background: 'rgba(0, 0, 0, 0.5)',
-                  backdropFilter: 'blur(20px)',
-                  WebkitBackdropFilter: 'blur(20px)',
-                }}
+          {/* Style picker overlay */}
+          <div className="absolute inset-0 flex flex-col justify-end z-20">
+            <div
+              className="px-4 pt-6 pb-4"
+              style={{
+                background: 'rgba(0, 0, 0, 0.55)',
+                backdropFilter: 'blur(24px)',
+                WebkitBackdropFilter: 'blur(24px)',
+              }}
+            >
+              <h3
+                className="text-white text-lg font-medium mb-4 text-center"
+                style={{ fontFamily: 'var(--font-display)' }}
               >
-                <h3
-                  className="text-white text-lg font-medium mb-4 text-center"
-                  style={{ fontFamily: 'var(--font-display)' }}
-                >
-                  Choose a Portrait Style
-                </h3>
+                Choose a Portrait Style
+              </h3>
 
-                <div className="grid grid-cols-3 gap-3 max-h-[280px] overflow-y-auto">
-                  {(config.enabled_ai_styles.length > 0
-                    ? AI_STYLES.filter((s) => config.enabled_ai_styles.includes(s.id))
-                    : AI_STYLES
-                  ).map((style) => (
-                    <button
-                      key={style.id}
-                      onClick={() => setSelectedStyle(style.id)}
-                      className="flex flex-col items-center gap-2 p-3 rounded-2xl transition-colors"
-                      style={{
-                        background:
-                          selectedStyle === style.id
-                            ? 'rgba(196, 112, 75, 0.4)'
-                            : 'rgba(255, 255, 255, 0.08)',
-                        border:
-                          selectedStyle === style.id
-                            ? '2px solid var(--color-terracotta)'
-                            : '2px solid transparent',
-                      }}
-                    >
-                      <span className="text-2xl">{style.emoji}</span>
-                      <span className="text-white text-xs font-medium text-center leading-tight">
-                        {style.name}
-                      </span>
-                    </button>
-                  ))}
-                </div>
+              <div className="grid grid-cols-3 gap-3 max-h-[280px] overflow-y-auto">
+                {(config.enabled_ai_styles.length > 0
+                  ? AI_STYLES.filter((s) => config.enabled_ai_styles.includes(s.id))
+                  : AI_STYLES
+                ).map((style) => (
+                  <button
+                    key={style.id}
+                    onClick={() => setSelectedStyle(style.id)}
+                    className="flex flex-col items-center gap-2 p-3 rounded-2xl transition-all"
+                    style={{
+                      background:
+                        selectedStyle === style.id
+                          ? 'rgba(196, 112, 75, 0.4)'
+                          : 'rgba(255, 255, 255, 0.08)',
+                      border:
+                        selectedStyle === style.id
+                          ? '2px solid var(--color-terracotta)'
+                          : '2px solid transparent',
+                    }}
+                  >
+                    <span className="text-2xl">{style.emoji}</span>
+                    <span className="text-white text-xs font-medium text-center leading-tight">
+                      {style.name}
+                    </span>
+                  </button>
+                ))}
               </div>
             </div>
-          </div>
 
-          {/* Style picker actions */}
-          <div
-            className="pb-28 pt-4 px-6 flex gap-4 justify-center safe-bottom relative z-40 flex-shrink-0"
-            style={{
-              background: 'rgba(0, 0, 0, 0.5)',
-              backdropFilter: 'blur(20px)',
-              WebkitBackdropFilter: 'blur(20px)',
-            }}
-          >
-            <button
-              onClick={retake}
-              className="flex-1 py-4 rounded-full text-base font-semibold transition-transform active:scale-97"
+            {/* Style picker actions */}
+            <div
+              className="px-6 pb-28 pt-4 flex gap-4 justify-center"
               style={{
-                background: 'rgba(255, 255, 255, 0.15)',
-                color: 'white',
-                border: '1.5px solid rgba(255, 255, 255, 0.3)',
+                background: 'rgba(0, 0, 0, 0.6)',
+                backdropFilter: 'blur(24px)',
+                WebkitBackdropFilter: 'blur(24px)',
               }}
             >
-              Retake
-            </button>
-            <button
-              onClick={() => selectedStyle && uploadPhoto(selectedStyle)}
-              disabled={!selectedStyle}
-              className="flex-1 py-4 rounded-full text-base font-semibold transition-transform active:scale-97"
-              style={{
-                background: selectedStyle
-                  ? 'var(--color-terracotta-gradient)'
-                  : 'rgba(255, 255, 255, 0.1)',
-                color: selectedStyle ? 'white' : 'rgba(255, 255, 255, 0.3)',
-                boxShadow: selectedStyle ? 'var(--shadow-terracotta)' : 'none',
-              }}
-            >
-              Generate
-            </button>
+              <button
+                onClick={retake}
+                className="flex-1 max-w-[160px] py-4 rounded-full text-base font-semibold transition-transform active:scale-95"
+                style={{
+                  background: 'rgba(255, 255, 255, 0.15)',
+                  color: 'white',
+                  border: '1.5px solid rgba(255, 255, 255, 0.3)',
+                }}
+              >
+                Retake
+              </button>
+              <button
+                onClick={() => selectedStyle && uploadPhoto(selectedStyle)}
+                disabled={!selectedStyle}
+                className="flex-1 max-w-[160px] py-4 rounded-full text-base font-semibold transition-transform active:scale-95"
+                style={{
+                  background: selectedStyle
+                    ? 'var(--color-terracotta-gradient)'
+                    : 'rgba(255, 255, 255, 0.1)',
+                  color: selectedStyle ? 'white' : 'rgba(255, 255, 255, 0.3)',
+                  boxShadow: selectedStyle ? 'var(--shadow-terracotta)' : 'none',
+                }}
+              >
+                Generate
+              </button>
+            </div>
           </div>
         </>
       )}
 
       {/* ========== UPLOADING PHASE ========== */}
       {phase === 'uploading' && (
-        <div className="flex-1 flex items-center justify-center px-8">
+        <div className="absolute inset-0 flex items-center justify-center px-8" style={{ background: 'rgba(0,0,0,0.85)' }}>
           <div className="w-full max-w-xs text-center">
             <div
               className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6"
@@ -629,9 +652,8 @@ export default function PhotoBoothPage() {
             <p className="text-white text-base font-medium mb-4">
               Saving your photo...
             </p>
-            {/* Progress bar */}
             <div
-              className="w-full h-2 rounded-full overflow-hidden"
+              className="w-full h-1.5 rounded-full overflow-hidden"
               style={{ background: 'rgba(255, 255, 255, 0.1)' }}
             >
               <div
@@ -642,14 +664,14 @@ export default function PhotoBoothPage() {
                 }}
               />
             </div>
-            <p className="text-white/50 text-sm mt-2">{uploadProgress}%</p>
+            <p className="text-white/40 text-sm mt-2">{uploadProgress}%</p>
           </div>
         </div>
       )}
 
       {/* ========== SUCCESS PHASE ========== */}
       {phase === 'success' && (
-        <div className="flex-1 flex items-center justify-center px-8">
+        <div className="absolute inset-0 flex items-center justify-center px-8" style={{ background: 'rgba(0,0,0,0.85)' }}>
           <div className="text-center">
             <div
               className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6"
@@ -674,14 +696,11 @@ export default function PhotoBoothPage() {
 
       {/* Toast notification */}
       {toastMessage && (
-        <div
-          className="fixed top-8 left-4 right-4 z-50 flex justify-center"
-          style={{ pointerEvents: 'none' }}
-        >
+        <div className="fixed top-12 left-4 right-4 z-50 flex justify-center" style={{ pointerEvents: 'none' }}>
           <div
             className="px-5 py-3 rounded-2xl text-sm font-medium text-white"
             style={{
-              background: 'rgba(0, 0, 0, 0.7)',
+              background: 'rgba(0, 0, 0, 0.75)',
               backdropFilter: 'blur(20px)',
               WebkitBackdropFilter: 'blur(20px)',
               pointerEvents: 'auto',
@@ -692,7 +711,8 @@ export default function PhotoBoothPage() {
         </div>
       )}
 
-      <BottomNav />
+      {/* Bottom Nav — only show when not in viewfinder to keep camera clean */}
+      {phase !== 'viewfinder' && <BottomNav />}
     </div>
   );
 }

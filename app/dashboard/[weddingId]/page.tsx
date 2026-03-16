@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, use } from 'react';
+import { useState, useEffect, useCallback, use } from 'react';
 import Link from 'next/link';
 
 interface WeddingOverview {
@@ -32,6 +32,12 @@ export default function WeddingOverviewPage({
   const [data, setData] = useState<WeddingOverview | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // QR code state
+  const [qrUrl, setQrUrl] = useState<string | null>(null);
+  const [guestUrl, setGuestUrl] = useState<string | null>(null);
+  const [qrLoading, setQrLoading] = useState(false);
+  const [qrRegenerating, setQrRegenerating] = useState(false);
+
   useEffect(() => {
     fetch(`/api/v1/dashboard/weddings/${weddingId}/overview`)
       .then((res) => res.json())
@@ -39,6 +45,57 @@ export default function WeddingOverviewPage({
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [weddingId]);
+
+  const fetchQrCode = useCallback(async () => {
+    setQrLoading(true);
+    try {
+      const res = await fetch(`/api/v1/dashboard/weddings/${weddingId}/qr-code?format=json`);
+      if (res.ok) {
+        const json = await res.json();
+        setQrUrl(json.data?.qr_url || null);
+        setGuestUrl(json.data?.guest_url || null);
+      }
+    } catch {
+      // silently fail
+    } finally {
+      setQrLoading(false);
+    }
+  }, [weddingId]);
+
+  useEffect(() => { fetchQrCode(); }, [fetchQrCode]);
+
+  const regenerateQr = async () => {
+    setQrRegenerating(true);
+    try {
+      const res = await fetch(`/api/v1/dashboard/weddings/${weddingId}/qr-code`, { method: 'POST' });
+      if (res.ok) {
+        const json = await res.json();
+        setQrUrl(json.data?.qr_url || null);
+        setGuestUrl(json.data?.guest_url || null);
+      }
+    } catch {
+      // silently fail
+    } finally {
+      setQrRegenerating(false);
+    }
+  };
+
+  const downloadQr = async () => {
+    try {
+      const res = await fetch(`/api/v1/dashboard/weddings/${weddingId}/qr-code?format=png`);
+      if (res.ok) {
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${data?.wedding?.slug || 'wedding'}-qr-code.png`;
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+    } catch {
+      // silently fail
+    }
+  };
 
   if (loading) {
     return (
@@ -139,7 +196,7 @@ export default function WeddingOverviewPage({
       )}
 
       {/* Stats grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 32 }}>
         {statCards.map((card) => {
           const inner = (
             <div className="card" style={{ padding: '20px 24px', background: 'var(--bg-pure-white)' }}>
@@ -162,6 +219,107 @@ export default function WeddingOverviewPage({
           }
           return <div key={card.label}>{inner}</div>;
         })}
+      </div>
+
+      {/* QR Code / Share Section */}
+      <div className="card" style={{ padding: 24, background: 'var(--bg-pure-white)' }}>
+        <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 500, color: 'var(--text-primary)', margin: '0 0 4px' }}>
+          Share with Guests
+        </h2>
+        <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '0 0 20px' }}>
+          Share this QR code at your wedding so guests can access the app instantly.
+        </p>
+
+        <div style={{ display: 'flex', gap: 24, alignItems: 'flex-start' }}>
+          {/* QR Code image */}
+          <div
+            style={{
+              width: 180,
+              height: 180,
+              borderRadius: 16,
+              background: 'var(--bg-soft-cream)',
+              border: '1px solid var(--border-light)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+              overflow: 'hidden',
+            }}
+          >
+            {qrLoading ? (
+              <div className="skeleton" style={{ width: 140, height: 140 }} />
+            ) : qrUrl ? (
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img src={qrUrl} alt="Wedding QR Code" style={{ width: 160, height: 160, objectFit: 'contain' }} />
+            ) : (
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" />
+                <rect x="14" y="14" width="3" height="3" /><rect x="18" y="14" width="3" height="3" /><rect x="14" y="18" width="3" height="3" /><rect x="18" y="18" width="3" height="3" />
+              </svg>
+            )}
+          </div>
+
+          {/* Info + actions */}
+          <div style={{ flex: 1 }}>
+            {guestUrl && (
+              <div style={{ marginBottom: 16 }}>
+                <p style={{ fontSize: 12, color: 'var(--text-tertiary)', marginBottom: 4 }}>Guest URL</p>
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    padding: '8px 12px',
+                    borderRadius: 10,
+                    background: 'var(--bg-soft-cream)',
+                    border: '1px solid var(--border-light)',
+                  }}
+                >
+                  <code style={{ fontSize: 13, color: 'var(--text-primary)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {guestUrl}
+                  </code>
+                  <button
+                    onClick={() => { navigator.clipboard.writeText(guestUrl); }}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      fontSize: 12,
+                      color: 'var(--color-terracotta)',
+                      fontFamily: 'var(--font-body)',
+                      fontWeight: 500,
+                      flexShrink: 0,
+                    }}
+                  >
+                    Copy
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <button
+                onClick={downloadQr}
+                className="btn-primary"
+                style={{ fontSize: 13, padding: '8px 20px' }}
+              >
+                Download QR Code
+              </button>
+              <button
+                onClick={regenerateQr}
+                disabled={qrRegenerating}
+                className="btn-secondary"
+                style={{ fontSize: 13, padding: '8px 20px', opacity: qrRegenerating ? 0.6 : 1 }}
+              >
+                {qrRegenerating ? 'Regenerating...' : 'Regenerate QR'}
+              </button>
+            </div>
+
+            <p style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 12 }}>
+              Regenerate the QR code if you changed your wedding URL, or if you need a fresh code.
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );

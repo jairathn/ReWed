@@ -325,7 +325,7 @@ export default function VideoRecordingPage() {
   // Loading state
   if (isLoading || !config || !guest) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: '#1a1a1a' }}>
+      <div className="fixed inset-0 flex items-center justify-center" style={{ background: '#000' }}>
         <div className="skeleton w-20 h-20 rounded-full" />
       </div>
     );
@@ -334,7 +334,7 @@ export default function VideoRecordingPage() {
   // Permission denied state
   if (permissionDenied && phase === 'viewfinder') {
     return (
-      <div className="min-h-screen flex flex-col relative" style={{ background: '#1a1a1a' }}>
+      <div className="fixed inset-0 flex flex-col" style={{ background: '#000' }}>
         <div className="flex-1 flex items-center justify-center px-8">
           <div className="text-center">
             <div
@@ -356,10 +356,7 @@ export default function VideoRecordingPage() {
             <p className="text-white/60 text-sm mb-6 leading-relaxed">
               To record a video message, please allow camera and microphone access in your browser settings.
             </p>
-            <button
-              onClick={() => startCamera()}
-              className="btn-primary"
-            >
+            <button onClick={() => startCamera()} className="btn-primary">
               Try Again
             </button>
           </div>
@@ -370,48 +367,46 @@ export default function VideoRecordingPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col relative" style={{ background: '#1a1a1a' }}>
+    <div className="fixed inset-0" style={{ background: '#000' }}>
       {/* ========== VIEWFINDER / RECORDING PHASE ========== */}
       {(phase === 'viewfinder' || phase === 'recording') && (
         <>
-          {/* Camera viewfinder */}
-          <div className="flex-1 relative overflow-hidden">
-            <video
-              ref={videoRef}
-              autoPlay
-              playsInline
-              muted
-              className="absolute inset-0 w-full h-full"
-              style={{ objectFit: 'cover' }}
-            />
+          {/* Full-screen camera viewfinder */}
+          <video
+            ref={videoRef}
+            autoPlay
+            playsInline
+            muted
+            className="absolute inset-0 w-full h-full"
+            style={{ objectFit: 'cover' }}
+          />
 
-            {/* Recording indicator */}
-            {phase === 'recording' && (
+          {/* Recording indicator */}
+          {phase === 'recording' && (
+            <div
+              className="absolute top-14 left-1/2 -translate-x-1/2 flex items-center gap-2 px-4 py-2 rounded-full z-20"
+              style={{
+                background: 'rgba(0, 0, 0, 0.5)',
+                backdropFilter: 'blur(20px)',
+                WebkitBackdropFilter: 'blur(20px)',
+              }}
+            >
               <div
-                className="absolute top-5 left-1/2 -translate-x-1/2 flex items-center gap-2 px-4 py-2 rounded-full z-10"
-                style={{
-                  background: 'rgba(0, 0, 0, 0.5)',
-                  backdropFilter: 'blur(20px)',
-                  WebkitBackdropFilter: 'blur(20px)',
-                }}
-              >
-                <div
-                  className="w-2.5 h-2.5 rounded-full recording-dot"
-                  style={{ background: '#E53E3E' }}
-                />
-                <span className="text-white text-sm font-medium tabular-nums">
-                  {formatTime(elapsedSeconds)} / {formatTime(MAX_DURATION_SECONDS)}
-                </span>
-              </div>
-            )}
-          </div>
+                className="w-2.5 h-2.5 rounded-full recording-dot"
+                style={{ background: '#E53E3E' }}
+              />
+              <span className="text-white text-sm font-medium tabular-nums">
+                {formatTime(elapsedSeconds)} / {formatTime(MAX_DURATION_SECONDS)}
+              </span>
+            </div>
+          )}
 
-          {/* Prompt Card (only in with-prompt mode and viewfinder/recording) */}
+          {/* Prompt Card (only in with-prompt mode) */}
           {recordMode === 'with-prompt' && prompts.length > 0 && (
             <div
               className="absolute top-16 left-4 right-4 z-10"
               style={{
-                background: 'rgba(0, 0, 0, 0.3)',
+                background: 'rgba(0, 0, 0, 0.35)',
                 backdropFilter: 'blur(20px)',
                 WebkitBackdropFilter: 'blur(20px)',
                 borderRadius: '16px',
@@ -419,7 +414,6 @@ export default function VideoRecordingPage() {
               }}
             >
               <div className="px-4 py-4 flex items-center gap-3">
-                {/* Previous button */}
                 <button
                   onClick={prevPrompt}
                   disabled={phase === 'recording'}
@@ -435,7 +429,6 @@ export default function VideoRecordingPage() {
                   </svg>
                 </button>
 
-                {/* Prompt text */}
                 <p
                   className="text-white text-center text-base font-medium flex-1 leading-snug"
                   style={{ fontFamily: 'var(--font-display)' }}
@@ -443,7 +436,6 @@ export default function VideoRecordingPage() {
                   {currentPrompt}
                 </p>
 
-                {/* Next button */}
                 <button
                   onClick={nextPrompt}
                   disabled={phase === 'recording'}
@@ -460,7 +452,6 @@ export default function VideoRecordingPage() {
                 </button>
               </div>
 
-              {/* Prompt dots */}
               {prompts.length > 1 && (
                 <div className="flex justify-center gap-1.5 pb-3">
                   {prompts.slice(0, 7).map((_, i) => (
@@ -468,8 +459,7 @@ export default function VideoRecordingPage() {
                       key={i}
                       className="w-1.5 h-1.5 rounded-full transition-colors"
                       style={{
-                        background:
-                          i === promptIndex ? 'white' : 'rgba(255, 255, 255, 0.3)',
+                        background: i === promptIndex ? 'white' : 'rgba(255, 255, 255, 0.3)',
                       }}
                     />
                   ))}
@@ -483,90 +473,94 @@ export default function VideoRecordingPage() {
             </div>
           )}
 
-          {/* Controls area: mode toggle + record button */}
-          <div
-            className="pb-28 pt-4 flex flex-col items-center gap-4 safe-bottom relative z-40 flex-shrink-0"
-            style={{
-              background: 'rgba(0, 0, 0, 0.6)',
-              backdropFilter: 'blur(20px)',
-              WebkitBackdropFilter: 'blur(20px)',
-            }}
-          >
-            {/* Mode Toggle (only when not recording) */}
-            {phase === 'viewfinder' && (
-              <div
-                className="inline-flex rounded-full p-1"
-                style={{
-                  background: 'rgba(255, 255, 255, 0.1)',
-                }}
-              >
-                <button
-                  onClick={() => setRecordMode('with-prompt')}
-                  className="px-4 py-2 rounded-full text-sm font-medium transition-colors"
+          {/* Bottom controls — floating over camera */}
+          <div className="absolute bottom-0 left-0 right-0 z-20">
+            <div
+              className="flex flex-col items-center gap-4 pb-28 pt-6"
+              style={{
+                background: 'linear-gradient(to top, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.3) 60%, transparent 100%)',
+              }}
+            >
+              {/* Mode Toggle (only when not recording) */}
+              {phase === 'viewfinder' && (
+                <div
+                  className="inline-flex rounded-full p-1"
                   style={{
-                    background:
-                      recordMode === 'with-prompt'
-                        ? 'rgba(255, 255, 255, 0.2)'
-                        : 'transparent',
-                    color:
-                      recordMode === 'with-prompt'
-                        ? 'white'
-                        : 'rgba(255, 255, 255, 0.5)',
+                    background: 'rgba(0, 0, 0, 0.35)',
+                    backdropFilter: 'blur(20px)',
+                    WebkitBackdropFilter: 'blur(20px)',
                   }}
                 >
-                  With Prompt
-                </button>
-                <button
-                  onClick={() => setRecordMode('free')}
-                  className="px-4 py-2 rounded-full text-sm font-medium transition-colors"
-                  style={{
-                    background:
-                      recordMode === 'free'
-                        ? 'rgba(255, 255, 255, 0.2)'
-                        : 'transparent',
-                    color:
-                      recordMode === 'free'
-                        ? 'white'
-                        : 'rgba(255, 255, 255, 0.5)',
-                  }}
-                >
-                  Free Record
-                </button>
-              </div>
-            )}
+                  <button
+                    onClick={() => setRecordMode('with-prompt')}
+                    className="px-5 py-2 rounded-full text-sm font-medium transition-all"
+                    style={{
+                      background: recordMode === 'with-prompt' ? 'rgba(255, 255, 255, 0.22)' : 'transparent',
+                      color: recordMode === 'with-prompt' ? 'white' : 'rgba(255, 255, 255, 0.5)',
+                    }}
+                  >
+                    With Prompt
+                  </button>
+                  <button
+                    onClick={() => setRecordMode('free')}
+                    className="px-5 py-2 rounded-full text-sm font-medium transition-all"
+                    style={{
+                      background: recordMode === 'free' ? 'rgba(255, 255, 255, 0.22)' : 'transparent',
+                      color: recordMode === 'free' ? 'white' : 'rgba(255, 255, 255, 0.5)',
+                    }}
+                  >
+                    Free Record
+                  </button>
+                </div>
+              )}
 
-            {/* Record / Stop Button */}
-            {phase === 'viewfinder' ? (
-              <button
-                onClick={startRecording}
-                className="w-20 h-20 rounded-full flex items-center justify-center active:scale-95 transition-transform"
-                style={{
-                  background: 'transparent',
-                  border: '4px solid white',
-                }}
-                aria-label="Start recording"
-              >
-                <div
-                  className="w-16 h-16 rounded-full"
-                  style={{ background: '#E53E3E' }}
-                />
-              </button>
-            ) : (
-              <button
-                onClick={stopRecording}
-                className="w-20 h-20 rounded-full flex items-center justify-center active:scale-95 transition-transform"
-                style={{
-                  background: 'transparent',
-                  border: '4px solid #E53E3E',
-                }}
-                aria-label="Stop recording"
-              >
-                <div
-                  className="w-8 h-8 rounded-[4px]"
-                  style={{ background: '#E53E3E' }}
-                />
-              </button>
-            )}
+              {/* Record / Stop Button */}
+              {phase === 'viewfinder' ? (
+                <button
+                  onClick={startRecording}
+                  className="active:scale-95 transition-transform"
+                  aria-label="Start recording"
+                  style={{ WebkitTapHighlightColor: 'transparent' }}
+                >
+                  <div
+                    style={{
+                      width: 80,
+                      height: 80,
+                      borderRadius: '50%',
+                      border: '4px solid white',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      boxShadow: '0 2px 20px rgba(0,0,0,0.3)',
+                    }}
+                  >
+                    <div style={{ width: 66, height: 66, borderRadius: '50%', background: '#E53E3E' }} />
+                  </div>
+                </button>
+              ) : (
+                <button
+                  onClick={stopRecording}
+                  className="active:scale-95 transition-transform"
+                  aria-label="Stop recording"
+                  style={{ WebkitTapHighlightColor: 'transparent' }}
+                >
+                  <div
+                    style={{
+                      width: 80,
+                      height: 80,
+                      borderRadius: '50%',
+                      border: '4px solid #E53E3E',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      boxShadow: '0 2px 20px rgba(0,0,0,0.3)',
+                    }}
+                  >
+                    <div style={{ width: 32, height: 32, borderRadius: 4, background: '#E53E3E' }} />
+                  </div>
+                </button>
+              )}
+            </div>
           </div>
         </>
       )}
@@ -574,20 +568,18 @@ export default function VideoRecordingPage() {
       {/* ========== REVIEW PHASE ========== */}
       {phase === 'review' && recordedUrl && (
         <>
-          <div className="flex-1 relative overflow-hidden">
-            <video
-              ref={playbackRef}
-              src={recordedUrl}
-              controls
-              playsInline
-              className="absolute inset-0 w-full h-full"
-              style={{ objectFit: 'cover', background: '#000' }}
-            />
-          </div>
+          <video
+            ref={playbackRef}
+            src={recordedUrl}
+            controls
+            playsInline
+            className="absolute inset-0 w-full h-full"
+            style={{ objectFit: 'cover', background: '#000' }}
+          />
 
           {/* Duration badge */}
           <div
-            className="absolute top-5 left-1/2 -translate-x-1/2 px-4 py-2 rounded-full z-10"
+            className="absolute top-14 left-1/2 -translate-x-1/2 px-4 py-2 rounded-full z-20"
             style={{
               background: 'rgba(0, 0, 0, 0.5)',
               backdropFilter: 'blur(20px)',
@@ -599,44 +591,46 @@ export default function VideoRecordingPage() {
             </span>
           </div>
 
-          {/* Review Actions */}
-          <div
-            className="pb-28 pt-6 px-6 flex gap-4 justify-center safe-bottom relative z-40 flex-shrink-0"
-            style={{
-              background: 'rgba(0, 0, 0, 0.3)',
-              backdropFilter: 'blur(20px)',
-              WebkitBackdropFilter: 'blur(20px)',
-            }}
-          >
-            <button
-              onClick={reRecord}
-              className="flex-1 py-4 rounded-full text-base font-semibold transition-transform active:scale-97"
+          {/* Review Actions — floating at bottom */}
+          <div className="absolute bottom-0 left-0 right-0 z-20">
+            <div
+              className="px-6 pb-28 pt-8 flex gap-4 justify-center"
               style={{
-                background: 'rgba(255, 255, 255, 0.15)',
-                color: 'white',
-                border: '1.5px solid rgba(255, 255, 255, 0.3)',
+                background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.3) 70%, transparent 100%)',
               }}
             >
-              Re-record
-            </button>
-            <button
-              onClick={uploadVideo}
-              className="flex-1 py-4 rounded-full text-base font-semibold transition-transform active:scale-97"
-              style={{
-                background: 'var(--color-terracotta-gradient)',
-                color: 'white',
-                boxShadow: 'var(--shadow-terracotta)',
-              }}
-            >
-              Save
-            </button>
+              <button
+                onClick={reRecord}
+                className="flex-1 max-w-[160px] py-4 rounded-full text-base font-semibold transition-transform active:scale-95"
+                style={{
+                  background: 'rgba(255, 255, 255, 0.15)',
+                  color: 'white',
+                  border: '1.5px solid rgba(255, 255, 255, 0.3)',
+                  backdropFilter: 'blur(16px)',
+                  WebkitBackdropFilter: 'blur(16px)',
+                }}
+              >
+                Re-record
+              </button>
+              <button
+                onClick={uploadVideo}
+                className="flex-1 max-w-[160px] py-4 rounded-full text-base font-semibold transition-transform active:scale-95"
+                style={{
+                  background: 'var(--color-terracotta-gradient)',
+                  color: 'white',
+                  boxShadow: 'var(--shadow-terracotta)',
+                }}
+              >
+                Save
+              </button>
+            </div>
           </div>
         </>
       )}
 
       {/* ========== UPLOADING PHASE ========== */}
       {phase === 'uploading' && (
-        <div className="flex-1 flex items-center justify-center px-8">
+        <div className="absolute inset-0 flex items-center justify-center px-8" style={{ background: 'rgba(0,0,0,0.85)' }}>
           <div className="w-full max-w-xs text-center">
             <div
               className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6"
@@ -651,9 +645,8 @@ export default function VideoRecordingPage() {
             <p className="text-white text-base font-medium mb-4">
               Saving your video...
             </p>
-            {/* Progress bar */}
             <div
-              className="w-full h-2 rounded-full overflow-hidden"
+              className="w-full h-1.5 rounded-full overflow-hidden"
               style={{ background: 'rgba(255, 255, 255, 0.1)' }}
             >
               <div
@@ -664,14 +657,14 @@ export default function VideoRecordingPage() {
                 }}
               />
             </div>
-            <p className="text-white/50 text-sm mt-2">{uploadProgress}%</p>
+            <p className="text-white/40 text-sm mt-2">{uploadProgress}%</p>
           </div>
         </div>
       )}
 
       {/* ========== SUCCESS PHASE ========== */}
       {phase === 'success' && (
-        <div className="flex-1 flex items-center justify-center px-8">
+        <div className="absolute inset-0 flex items-center justify-center px-8" style={{ background: 'rgba(0,0,0,0.85)' }}>
           <div className="text-center">
             <div
               className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6"
@@ -696,14 +689,11 @@ export default function VideoRecordingPage() {
 
       {/* Toast notification */}
       {toastMessage && (
-        <div
-          className="fixed top-8 left-4 right-4 z-50 flex justify-center"
-          style={{ pointerEvents: 'none' }}
-        >
+        <div className="fixed top-12 left-4 right-4 z-50 flex justify-center" style={{ pointerEvents: 'none' }}>
           <div
             className="px-5 py-3 rounded-2xl text-sm font-medium text-white"
             style={{
-              background: 'rgba(0, 0, 0, 0.7)',
+              background: 'rgba(0, 0, 0, 0.75)',
               backdropFilter: 'blur(20px)',
               WebkitBackdropFilter: 'blur(20px)',
               pointerEvents: 'auto',
@@ -714,7 +704,8 @@ export default function VideoRecordingPage() {
         </div>
       )}
 
-      <BottomNav />
+      {/* Bottom Nav — hide during viewfinder/recording to keep camera immersive */}
+      {phase !== 'viewfinder' && phase !== 'recording' && <BottomNav />}
     </div>
   );
 }
