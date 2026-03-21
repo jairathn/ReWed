@@ -2,7 +2,6 @@
 
 import { useWedding } from '@/components/WeddingProvider';
 import BottomNav from '@/components/guest/BottomNav';
-import BackButton from '@/components/guest/BackButton';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, useCallback } from 'react';
 
@@ -279,8 +278,17 @@ export default function PhotoBoothPage() {
   if (permissionDenied && phase === 'viewfinder') {
     return (
       <div className="fixed inset-0 flex flex-col" style={{ background: '#000' }}>
-        <div className="px-4 pt-10">
-          <BackButton href={`/w/${slug}/capture`} label="Back" variant="dark" />
+        <div className="px-4 pt-12">
+          <button
+            onClick={() => router.push(`/w/${slug}/capture`)}
+            className="w-10 h-10 rounded-full flex items-center justify-center"
+            style={{ background: 'rgba(255,255,255,0.1)' }}
+            aria-label="Back"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="15 18 9 12 15 6" />
+            </svg>
+          </button>
         </div>
         <div className="flex-1 flex items-center justify-center px-8">
           <div className="text-center">
@@ -318,182 +326,205 @@ export default function PhotoBoothPage() {
       {/* ========== VIEWFINDER PHASE ========== */}
       {phase === 'viewfinder' && (
         <>
-          {/* Full-screen camera viewfinder */}
-          <video
-            ref={videoRef}
-            autoPlay
-            playsInline
-            muted
-            className="absolute inset-0 w-full h-full"
-            style={{ objectFit: 'cover' }}
-          />
+          {/* Camera feed with vignette */}
+          <div className="absolute inset-0 camera-vignette">
+            <video
+              ref={videoRef}
+              autoPlay
+              playsInline
+              muted
+              className="absolute inset-0 w-full h-full"
+              style={{ objectFit: 'cover' }}
+            />
+          </div>
+
+          {/* Corner bracket film frame overlay */}
+          <div className="film-frame">
+            <div className="film-frame-corner tl" />
+            <div className="film-frame-corner tr" />
+            <div className="film-frame-corner bl" />
+            <div className="film-frame-corner br" />
+          </div>
 
           {/* Screen flash overlay */}
           {screenFlashing && (
             <div className="absolute inset-0 z-30" style={{ background: 'white' }} />
           )}
 
-          {/* Top controls bar — glass morphism */}
-          <div className="absolute top-0 left-0 right-0 z-20 safe-top">
-            {/* Back button */}
-            <div className="px-4 pt-10 pb-0" style={{ background: 'transparent' }}>
-              <BackButton href={`/w/${slug}/capture`} label="Back" variant="dark" />
-            </div>
-            <div
-              className="flex items-center justify-between px-4 pt-2 pb-3"
+          {/* Back button — minimal chevron */}
+          <div className="absolute top-12 left-5 z-20">
+            <button
+              onClick={() => router.push(`/w/${slug}/capture`)}
+              className="w-10 h-10 rounded-full flex items-center justify-center"
               style={{
-                background: 'linear-gradient(to bottom, rgba(0,0,0,0.5), transparent)',
+                background: 'rgba(0, 0, 0, 0.2)',
+                backdropFilter: 'blur(12px)',
+                WebkitBackdropFilter: 'blur(12px)',
               }}
+              aria-label="Back"
             >
-              {/* Flash toggle */}
-              <button
-                onClick={toggleFlash}
-                className="w-11 h-11 rounded-full flex items-center justify-center"
-                style={{
-                  background: flashOn ? 'rgba(255, 214, 10, 0.25)' : 'rgba(255, 255, 255, 0.12)',
-                  backdropFilter: 'blur(16px)',
-                  WebkitBackdropFilter: 'blur(16px)',
-                }}
-                aria-label={flashOn ? 'Turn off flash' : 'Turn on flash'}
-              >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill={flashOn ? '#FFD60A' : 'none'} stroke={flashOn ? '#FFD60A' : 'white'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-                </svg>
-              </button>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.85)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="15 18 9 12 15 6" />
+              </svg>
+            </button>
+          </div>
 
-              {/* Mode Toggle */}
+          {/* Top-right controls row */}
+          <div className="absolute top-12 right-5 z-20 flex items-center gap-3">
+            {/* Flash toggle */}
+            <button
+              onClick={toggleFlash}
+              className="w-10 h-10 rounded-full flex items-center justify-center"
+              style={{
+                background: flashOn ? 'rgba(212, 168, 83, 0.3)' : 'rgba(0, 0, 0, 0.2)',
+                backdropFilter: 'blur(12px)',
+                WebkitBackdropFilter: 'blur(12px)',
+              }}
+              aria-label={flashOn ? 'Turn off flash' : 'Turn on flash'}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill={flashOn ? '#D4A853' : 'none'} stroke={flashOn ? '#D4A853' : 'rgba(255,255,255,0.85)'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+              </svg>
+            </button>
+
+            {/* Flip camera */}
+            <button
+              onClick={flipCamera}
+              className="w-10 h-10 rounded-full flex items-center justify-center"
+              style={{
+                background: 'rgba(0, 0, 0, 0.2)',
+                backdropFilter: 'blur(12px)',
+                WebkitBackdropFilter: 'blur(12px)',
+              }}
+              aria-label="Flip camera"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.85)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="1 4 1 10 7 10" />
+                <polyline points="23 20 23 14 17 14" />
+                <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15" />
+              </svg>
+            </button>
+          </div>
+
+          {/* Bottom controls */}
+          <div className="absolute bottom-0 left-0 right-0 z-20">
+            <div className="flex flex-col items-center gap-5 pb-10 pt-6">
+              {/* Mode Toggle — warm editorial pill */}
               <div
-                className="inline-flex rounded-full p-1"
+                className="inline-flex rounded-full"
                 style={{
-                  background: 'rgba(0, 0, 0, 0.35)',
-                  backdropFilter: 'blur(20px)',
-                  WebkitBackdropFilter: 'blur(20px)',
+                  background: 'rgba(20, 14, 8, 0.65)',
+                  border: '0.5px solid rgba(200, 174, 140, 0.35)',
+                  backdropFilter: 'blur(8px)',
+                  WebkitBackdropFilter: 'blur(8px)',
+                  padding: '3px',
                 }}
               >
                 <button
                   onClick={() => setMode('photo')}
-                  className="px-5 py-2 rounded-full text-sm font-medium transition-all"
+                  className="rounded-full text-xs transition-all"
                   style={{
-                    background: mode === 'photo' ? 'rgba(255, 255, 255, 0.22)' : 'transparent',
-                    color: mode === 'photo' ? 'white' : 'rgba(255, 255, 255, 0.5)',
+                    padding: '6px 18px',
+                    letterSpacing: '0.4px',
+                    background: mode === 'photo'
+                      ? 'rgba(200, 174, 140, 0.25)'
+                      : 'transparent',
+                    color: mode === 'photo' ? '#e8d5b8' : 'rgba(255,255,255,0.45)',
+                    border: mode === 'photo' ? '0.5px solid rgba(200, 174, 140, 0.5)' : '0.5px solid transparent',
+                    fontFamily: 'var(--font-body)',
                   }}
                 >
                   Photo
                 </button>
                 <button
                   onClick={() => setMode('ai-portrait')}
-                  className="px-5 py-2 rounded-full text-sm font-medium transition-all"
+                  className="rounded-full text-xs transition-all"
                   style={{
-                    background: mode === 'ai-portrait' ? 'rgba(255, 255, 255, 0.22)' : 'transparent',
-                    color: mode === 'ai-portrait' ? 'white' : 'rgba(255, 255, 255, 0.5)',
+                    padding: '6px 18px',
+                    letterSpacing: '0.4px',
+                    background: mode === 'ai-portrait'
+                      ? 'rgba(200, 174, 140, 0.25)'
+                      : 'transparent',
+                    color: mode === 'ai-portrait' ? '#e8d5b8' : 'rgba(255,255,255,0.45)',
+                    border: mode === 'ai-portrait' ? '0.5px solid rgba(200, 174, 140, 0.5)' : '0.5px solid transparent',
+                    fontFamily: 'var(--font-body)',
                   }}
                 >
                   AI Portrait
                 </button>
               </div>
 
-              {/* Flip camera */}
-              <button
-                onClick={flipCamera}
-                className="w-11 h-11 rounded-full flex items-center justify-center"
-                style={{
-                  background: 'rgba(255, 255, 255, 0.12)',
-                  backdropFilter: 'blur(16px)',
-                  WebkitBackdropFilter: 'blur(16px)',
-                }}
-                aria-label="Flip camera"
-              >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M20 16v4H4v-4" />
-                  <path d="M4 8V4h16v4" />
-                  <polyline points="7 12 12 7 17 12" />
-                  <polyline points="17 12 12 17 7 12" />
-                </svg>
-              </button>
-            </div>
-          </div>
-
-          {/* Bottom controls — Instagram style floating shutter */}
-          <div className="absolute bottom-0 left-0 right-0 z-20">
-            <div
-              className="flex items-center justify-center pb-28 pt-8"
-              style={{
-                background: 'linear-gradient(to top, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.3) 60%, transparent 100%)',
-              }}
-            >
-              {/* Gallery shortcut (left) */}
-              <button
-                onClick={() => router.push(`/w/${slug}/gallery`)}
-                className="absolute left-8 bottom-32 w-12 h-12 rounded-xl overflow-hidden"
-                style={{
-                  background: 'rgba(255, 255, 255, 0.12)',
-                  backdropFilter: 'blur(16px)',
-                  WebkitBackdropFilter: 'blur(16px)',
-                  border: '2px solid rgba(255,255,255,0.2)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-                aria-label="Gallery"
-              >
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                  <circle cx="8.5" cy="8.5" r="1.5" />
-                  <polyline points="21 15 16 10 5 21" />
-                </svg>
-              </button>
-
-              {/* Shutter button — Instagram style */}
-              <button
-                onClick={capturePhoto}
-                className="relative active:scale-95 transition-transform"
-                aria-label="Take photo"
-                style={{ WebkitTapHighlightColor: 'transparent' }}
-              >
-                {/* Outer ring */}
-                <div
+              {/* Shutter button — white with gold ring and shadow */}
+              <div className="flex items-center justify-center relative" style={{ width: '100%' }}>
+                {/* Gallery shortcut (left) */}
+                <button
+                  onClick={() => router.push(`/w/${slug}/gallery`)}
+                  className="absolute left-8 w-12 h-12 rounded-2xl overflow-hidden flex items-center justify-center"
                   style={{
-                    width: 80,
-                    height: 80,
-                    borderRadius: '50%',
-                    border: '4px solid white',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    boxShadow: '0 2px 20px rgba(0,0,0,0.3)',
+                    background: 'rgba(254, 252, 249, 0.1)',
+                    backdropFilter: 'blur(12px)',
+                    WebkitBackdropFilter: 'blur(12px)',
+                    border: '1.5px solid rgba(254, 252, 249, 0.15)',
                   }}
+                  aria-label="Gallery"
                 >
-                  {/* Inner fill */}
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.8)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                    <circle cx="8.5" cy="8.5" r="1.5" />
+                    <polyline points="21 15 16 10 5 21" />
+                  </svg>
+                </button>
+
+                <button
+                  onClick={capturePhoto}
+                  className="relative active:scale-95 transition-transform"
+                  aria-label="Take photo"
+                  style={{ WebkitTapHighlightColor: 'transparent' }}
+                >
+                  {/* Outer terracotta accent ring */}
                   <div
                     style={{
-                      width: 66,
-                      height: 66,
+                      width: 72,
+                      height: 72,
                       borderRadius: '50%',
-                      background: 'white',
-                      transition: 'transform 0.1s',
+                      border: '2px solid rgba(200, 174, 140, 0.5)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
                     }}
-                  />
-                </div>
-              </button>
+                  >
+                    {/* Inner white fill */}
+                    <div
+                      style={{
+                        width: 58,
+                        height: 58,
+                        borderRadius: '50%',
+                        background: 'rgba(255,255,255,0.92)',
+                        transition: 'transform 0.1s',
+                      }}
+                    />
+                  </div>
+                </button>
 
-              {/* Flip camera shortcut (right) */}
-              <button
-                onClick={flipCamera}
-                className="absolute right-8 bottom-32 w-12 h-12 rounded-full flex items-center justify-center"
-                style={{
-                  background: 'rgba(255, 255, 255, 0.12)',
-                  backdropFilter: 'blur(16px)',
-                  WebkitBackdropFilter: 'blur(16px)',
-                  border: '2px solid rgba(255,255,255,0.2)',
-                }}
-                aria-label="Flip camera"
-              >
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="1 4 1 10 7 10" />
-                  <polyline points="23 20 23 14 17 14" />
-                  <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15" />
-                </svg>
-              </button>
+                {/* Flip camera shortcut (right) */}
+                <button
+                  onClick={flipCamera}
+                  className="absolute right-8 w-12 h-12 rounded-full flex items-center justify-center"
+                  style={{
+                    background: 'rgba(254, 252, 249, 0.1)',
+                    backdropFilter: 'blur(12px)',
+                    WebkitBackdropFilter: 'blur(12px)',
+                    border: '1.5px solid rgba(254, 252, 249, 0.15)',
+                  }}
+                  aria-label="Flip camera"
+                >
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.8)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="1 4 1 10 7 10" />
+                    <polyline points="23 20 23 14 17 14" />
+                    <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15" />
+                  </svg>
+                </button>
+              </div>
             </div>
           </div>
         </>
@@ -510,23 +541,24 @@ export default function PhotoBoothPage() {
             style={{ objectFit: 'cover' }}
           />
 
-          {/* Review Actions — floating at bottom */}
+          {/* Review Actions — frosted bottom */}
           <div className="absolute bottom-0 left-0 right-0 z-20">
             <div
-              className="px-6 pb-28 pt-8 flex gap-4 justify-center"
+              className="px-6 pb-10 pt-8 flex gap-4 justify-center"
               style={{
-                background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.3) 70%, transparent 100%)',
+                background: 'linear-gradient(to top, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.2) 70%, transparent 100%)',
               }}
             >
               <button
                 onClick={retake}
                 className="flex-1 max-w-[160px] py-4 rounded-full text-base font-semibold transition-transform active:scale-95"
                 style={{
-                  background: 'rgba(255, 255, 255, 0.15)',
-                  color: 'white',
-                  border: '1.5px solid rgba(255, 255, 255, 0.3)',
+                  background: 'rgba(254, 252, 249, 0.12)',
+                  color: '#FEFCF9',
+                  border: '1.5px solid rgba(254, 252, 249, 0.25)',
                   backdropFilter: 'blur(16px)',
                   WebkitBackdropFilter: 'blur(16px)',
+                  fontFamily: 'var(--font-body)',
                 }}
               >
                 Retake
@@ -538,6 +570,7 @@ export default function PhotoBoothPage() {
                   background: 'var(--color-terracotta-gradient)',
                   color: 'white',
                   boxShadow: 'var(--shadow-terracotta)',
+                  fontFamily: 'var(--font-body)',
                 }}
               >
                 Save
@@ -563,14 +596,14 @@ export default function PhotoBoothPage() {
             <div
               className="px-4 pt-6 pb-4"
               style={{
-                background: 'rgba(0, 0, 0, 0.55)',
+                background: 'rgba(44, 40, 37, 0.5)',
                 backdropFilter: 'blur(24px)',
                 WebkitBackdropFilter: 'blur(24px)',
               }}
             >
               <h3
-                className="text-white text-lg font-medium mb-4 text-center"
-                style={{ fontFamily: 'var(--font-display)' }}
+                className="text-lg font-medium mb-4 text-center"
+                style={{ fontFamily: 'var(--font-display)', color: '#FEFCF9' }}
               >
                 Choose a Portrait Style
               </h3>
@@ -588,7 +621,7 @@ export default function PhotoBoothPage() {
                       background:
                         selectedStyle === style.id
                           ? 'rgba(196, 112, 75, 0.4)'
-                          : 'rgba(255, 255, 255, 0.08)',
+                          : 'rgba(254, 252, 249, 0.06)',
                       border:
                         selectedStyle === style.id
                           ? '2px solid var(--color-terracotta)'
@@ -596,7 +629,7 @@ export default function PhotoBoothPage() {
                     }}
                   >
                     <span className="text-2xl">{style.emoji}</span>
-                    <span className="text-white text-xs font-medium text-center leading-tight">
+                    <span className="text-xs font-medium text-center leading-tight" style={{ color: '#FEFCF9' }}>
                       {style.name}
                     </span>
                   </button>
@@ -606,9 +639,9 @@ export default function PhotoBoothPage() {
 
             {/* Style picker actions */}
             <div
-              className="px-6 pb-28 pt-4 flex gap-4 justify-center"
+              className="px-6 pb-10 pt-4 flex gap-4 justify-center"
               style={{
-                background: 'rgba(0, 0, 0, 0.6)',
+                background: 'rgba(44, 40, 37, 0.55)',
                 backdropFilter: 'blur(24px)',
                 WebkitBackdropFilter: 'blur(24px)',
               }}
@@ -617,9 +650,9 @@ export default function PhotoBoothPage() {
                 onClick={retake}
                 className="flex-1 max-w-[160px] py-4 rounded-full text-base font-semibold transition-transform active:scale-95"
                 style={{
-                  background: 'rgba(255, 255, 255, 0.15)',
-                  color: 'white',
-                  border: '1.5px solid rgba(255, 255, 255, 0.3)',
+                  background: 'rgba(254, 252, 249, 0.12)',
+                  color: '#FEFCF9',
+                  border: '1.5px solid rgba(254, 252, 249, 0.25)',
                 }}
               >
                 Retake
@@ -645,24 +678,24 @@ export default function PhotoBoothPage() {
 
       {/* ========== UPLOADING PHASE ========== */}
       {phase === 'uploading' && (
-        <div className="absolute inset-0 flex items-center justify-center px-8" style={{ background: 'rgba(0,0,0,0.85)' }}>
+        <div className="absolute inset-0 flex items-center justify-center px-8" style={{ background: 'rgba(44, 40, 37, 0.9)' }}>
           <div className="w-full max-w-xs text-center">
             <div
               className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6"
-              style={{ background: 'rgba(255, 255, 255, 0.1)' }}
+              style={{ background: 'rgba(196, 112, 75, 0.15)' }}
             >
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--color-terracotta-light)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                 <polyline points="17 8 12 3 7 8" />
                 <line x1="12" y1="3" x2="12" y2="15" />
               </svg>
             </div>
-            <p className="text-white text-base font-medium mb-4">
+            <p className="text-base font-medium mb-4" style={{ color: '#FEFCF9', fontFamily: 'var(--font-display)' }}>
               Saving your photo...
             </p>
             <div
               className="w-full h-1.5 rounded-full overflow-hidden"
-              style={{ background: 'rgba(255, 255, 255, 0.1)' }}
+              style={{ background: 'rgba(254, 252, 249, 0.1)' }}
             >
               <div
                 className="h-full rounded-full transition-all duration-300"
@@ -672,14 +705,14 @@ export default function PhotoBoothPage() {
                 }}
               />
             </div>
-            <p className="text-white/40 text-sm mt-2">{uploadProgress}%</p>
+            <p className="text-sm mt-2" style={{ color: 'rgba(254, 252, 249, 0.4)' }}>{uploadProgress}%</p>
           </div>
         </div>
       )}
 
       {/* ========== SUCCESS PHASE ========== */}
       {phase === 'success' && (
-        <div className="absolute inset-0 flex items-center justify-center px-8" style={{ background: 'rgba(0,0,0,0.85)' }}>
+        <div className="absolute inset-0 flex items-center justify-center px-8" style={{ background: 'rgba(44, 40, 37, 0.9)' }}>
           <div className="text-center">
             <div
               className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6"
@@ -693,8 +726,8 @@ export default function PhotoBoothPage() {
               </svg>
             </div>
             <p
-              className="text-white text-xl font-medium"
-              style={{ fontFamily: 'var(--font-display)' }}
+              className="text-xl font-medium"
+              style={{ fontFamily: 'var(--font-display)', color: '#FEFCF9' }}
             >
               Saved!
             </p>
@@ -706,12 +739,14 @@ export default function PhotoBoothPage() {
       {toastMessage && (
         <div className="fixed top-12 left-4 right-4 z-50 flex justify-center" style={{ pointerEvents: 'none' }}>
           <div
-            className="px-5 py-3 rounded-2xl text-sm font-medium text-white"
+            className="px-5 py-3 rounded-2xl text-sm font-medium"
             style={{
-              background: 'rgba(0, 0, 0, 0.75)',
+              background: 'rgba(44, 40, 37, 0.7)',
               backdropFilter: 'blur(20px)',
               WebkitBackdropFilter: 'blur(20px)',
+              color: '#FEFCF9',
               pointerEvents: 'auto',
+              fontFamily: 'var(--font-body)',
             }}
           >
             {toastMessage}
