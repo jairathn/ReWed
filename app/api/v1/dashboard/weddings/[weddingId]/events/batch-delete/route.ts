@@ -31,6 +31,9 @@ export async function POST(
       [weddingId, ...ids]
     );
 
+    // Clear FAQ cache since event details are used in chat answers
+    await pool.query('DELETE FROM faq_cache WHERE wedding_id = $1', [weddingId]);
+
     return Response.json({ deleted: result.rowCount });
   } catch (error) {
     return handleApiError(error);
