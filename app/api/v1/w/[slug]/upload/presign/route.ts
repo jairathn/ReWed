@@ -74,18 +74,22 @@ export async function POST(
     } else {
       // Auto-detect current event based on date/time
       const tz = wedding.timezone || 'UTC';
-      const detected = await pool.query(
-        `SELECT id, name FROM events
-         WHERE wedding_id = $1
-           AND date IS NOT NULL AND start_time IS NOT NULL
-           AND (date || ' ' || start_time)::timestamp <= (NOW() AT TIME ZONE $2)
-         ORDER BY date DESC, start_time DESC
-         LIMIT 1`,
-        [session.weddingId, tz]
-      );
-      if (detected.rows.length > 0) {
-        resolvedEventId = detected.rows[0].id;
-        eventName = detected.rows[0].name;
+      try {
+        const detected = await pool.query(
+          `SELECT id, name FROM events
+           WHERE wedding_id = $1
+             AND date IS NOT NULL AND start_time IS NOT NULL
+             AND (date + start_time) <= (NOW() AT TIME ZONE $2)
+           ORDER BY date DESC, start_time DESC
+           LIMIT 1`,
+          [session.weddingId, tz]
+        );
+        if (detected.rows.length > 0) {
+          resolvedEventId = detected.rows[0].id;
+          eventName = detected.rows[0].name;
+        }
+      } catch {
+        // Event detection is best-effort; don't block the upload
       }
       // If no event has started yet, eventName stays null → "pre-wedding" folder
     }
