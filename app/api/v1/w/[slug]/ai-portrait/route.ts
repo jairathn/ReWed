@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { v4 as uuidv4 } from 'uuid';
 import { getPool } from '@/lib/db/client';
 import { validateSession } from '@/lib/session';
-import { getCdnUrl } from '@/lib/storage/r2';
+import { getMediaUrl } from '@/lib/storage/r2';
 import { checkPortraitQuota } from '@/lib/ai/quota';
 import { getOpenAIClient, AI_PORTRAIT_STYLES, IMAGE_MODEL, type PortraitStyleId } from '@/lib/ai/openai';
 import { AppError, handleApiError } from '@/lib/errors';
@@ -151,7 +151,7 @@ async function processPortraitJob(
       outputUrl = `https://mock-cdn.example.com/ai/${jobId}/output.png`;
     } else {
       const openai = getOpenAIClient();
-      const sourceUrl = getCdnUrl(inputKey);
+      const sourceUrl = await getMediaUrl(inputKey);
 
       // Fetch source image as buffer for OpenAI API
       const imageResponse = await fetch(sourceUrl);

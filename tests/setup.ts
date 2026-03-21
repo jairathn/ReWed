@@ -25,6 +25,7 @@ vi.mock('@/lib/storage/r2', () => ({
     };
   }),
   getCdnUrl: vi.fn().mockImplementation((key: string) => `https://mock-cdn.example.com/${key}`),
+  getMediaUrl: vi.fn().mockImplementation(async (key: string) => `https://mock-cdn.example.com/${key}`),
   getThumbnailKey: vi.fn().mockImplementation((key: string) => {
     const lastDot = key.lastIndexOf('.');
     if (lastDot === -1) return `${key}-thumbnail`;

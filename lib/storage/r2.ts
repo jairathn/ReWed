@@ -27,8 +27,8 @@ function getBucketName(): string {
   return process.env.R2_BUCKET_NAME || 'wedding-media';
 }
 
-function getPublicUrl(): string {
-  return process.env.R2_PUBLIC_URL || 'https://media.yourplatform.com';
+function getPublicUrl(): string | null {
+  return process.env.R2_PUBLIC_URL || null;
 }
 
 function getExtension(contentType: string): string {
@@ -133,8 +133,22 @@ export async function deleteObject(storageKey: string): Promise<void> {
   }));
 }
 
-export function getCdnUrl(storageKey: string): string {
-  return `${getPublicUrl()}/${storageKey}`;
+export function getCdnUrl(storageKey: string): string | null {
+  const publicUrl = getPublicUrl();
+  if (!publicUrl) return null;
+  return `${publicUrl}/${storageKey}`;
+}
+
+export async function getMediaUrl(storageKey: string): Promise<string> {
+  const cdnUrl = getCdnUrl(storageKey);
+  if (cdnUrl) return cdnUrl;
+  // Fall back to presigned URL when R2_PUBLIC_URL is not configured
+  const client = getR2Client();
+  const command = new GetObjectCommand({
+    Bucket: getBucketName(),
+    Key: storageKey,
+  });
+  return getSignedUrl(client, command, { expiresIn: PRESIGN_EXPIRY });
 }
 
 export function getThumbnailKey(originalKey: string): string {

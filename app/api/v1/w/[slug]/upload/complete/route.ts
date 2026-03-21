@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server';
 import { z } from 'zod';
 import { getPool } from '@/lib/db/client';
 import { validateSession } from '@/lib/session';
-import { getCdnUrl, getThumbnailKey } from '@/lib/storage/r2';
+import { getMediaUrl, getThumbnailKey } from '@/lib/storage/r2';
 import { AppError, handleApiError } from '@/lib/errors';
 
 const completeSchema = z.object({
@@ -94,8 +94,8 @@ export async function POST(
         upload: {
           id: updated.id,
           type: updated.type,
-          url: getCdnUrl(updated.storage_key),
-          thumbnail_url: getCdnUrl(thumbnailKey),
+          url: await getMediaUrl(updated.storage_key),
+          thumbnail_url: await getMediaUrl(thumbnailKey),
           status: updated.status,
           created_at: updated.created_at,
         },

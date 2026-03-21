@@ -3,7 +3,7 @@ import { handleApiError } from '@/lib/errors';
 import { getPool } from '@/lib/db/client';
 import { getCoupleId, verifyWeddingOwnership } from '@/lib/dashboard-auth';
 import { generateWeddingQrCode, uploadQrCodeToR2 } from '@/lib/qr';
-import { getCdnUrl } from '@/lib/storage/r2';
+import { getMediaUrl } from '@/lib/storage/r2';
 
 /**
  * GET /api/v1/dashboard/weddings/[weddingId]/qr-code
@@ -69,7 +69,7 @@ export async function GET(
 
     return Response.json({
       data: {
-        qr_url: getCdnUrl(qrKey),
+        qr_url: await getMediaUrl(qrKey),
         guest_url: `${appUrl}/w/${slug}`,
       },
     });
@@ -104,7 +104,7 @@ export async function POST(
       const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
       return Response.json({
         data: {
-          qr_url: getCdnUrl(qrKey),
+          qr_url: await getMediaUrl(qrKey),
           guest_url: `${appUrl}/w/${slug}`,
         },
       });
