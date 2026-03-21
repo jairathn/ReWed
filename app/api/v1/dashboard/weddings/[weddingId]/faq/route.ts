@@ -85,6 +85,9 @@ export async function POST(
         values
       );
 
+      // Clear FAQ cache so new entries are used for answers
+      await pool.query('DELETE FROM faq_cache WHERE wedding_id = $1', [weddingId]);
+
       return Response.json({ entries: result.rows, count: result.rows.length }, { status: 201 });
     }
 
@@ -96,6 +99,9 @@ export async function POST(
        RETURNING id, question, answer, source, created_at`,
       [weddingId, parsed.question.trim(), parsed.answer.trim(), parsed.source || 'manual']
     );
+
+    // Clear FAQ cache so new entries are used for answers
+    await pool.query('DELETE FROM faq_cache WHERE wedding_id = $1', [weddingId]);
 
     return Response.json({ entry: result.rows[0] }, { status: 201 });
   } catch (error) {

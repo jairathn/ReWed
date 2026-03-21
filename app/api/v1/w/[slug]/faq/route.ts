@@ -129,13 +129,15 @@ export async function POST(
       answer = chatResponse.choices[0]?.message?.content || "I'm not sure about that. You might want to ask the couple directly!";
     }
 
-    // Cache the answer
-    await pool.query(
-      `INSERT INTO faq_cache (wedding_id, question_hash, answer)
-       VALUES ($1, $2, $3)
-       ON CONFLICT (wedding_id, question_hash) DO UPDATE SET hit_count = faq_cache.hit_count + 1`,
-      [session.weddingId, questionHash, answer]
-    );
+    // Only cache AI-generated answers, not fallback messages
+    if (faqResult.rows.length > 0) {
+      await pool.query(
+        `INSERT INTO faq_cache (wedding_id, question_hash, answer)
+         VALUES ($1, $2, $3)
+         ON CONFLICT (wedding_id, question_hash) DO UPDATE SET hit_count = faq_cache.hit_count + 1`,
+        [session.weddingId, questionHash, answer]
+      );
+    }
 
     return Response.json({
       data: {
