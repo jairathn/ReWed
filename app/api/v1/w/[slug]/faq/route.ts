@@ -58,14 +58,24 @@ export async function POST(
 
     const question = sanitizeText(parsed.data.question);
 
-    // Check cache first
+    // Get FAQ entries for this wedding
+    const faqResult = await pool.query(
+      `SELECT id, question, answer FROM faq_entries WHERE wedding_id = $1`,
+      [session.weddingId]
+    );
+
+    // Check cache (but skip stale fallback responses when entries now exist)
     const questionHash = createHash('sha256').update(question.toLowerCase().trim()).digest('hex');
     const cacheResult = await pool.query(
       `SELECT answer FROM faq_cache WHERE wedding_id = $1 AND question_hash = $2`,
       [session.weddingId, questionHash]
     );
 
-    if (cacheResult.rows.length > 0) {
+    const NO_ENTRIES_FALLBACK = "I don't have specific information about that yet.";
+    const cachedAnswer = cacheResult.rows[0]?.answer;
+    const isStaleFallback = cachedAnswer?.startsWith(NO_ENTRIES_FALLBACK) && faqResult.rows.length > 0;
+
+    if (cachedAnswer && !isStaleFallback) {
       // Increment hit count
       await pool.query(
         `UPDATE faq_cache SET hit_count = hit_count + 1 WHERE wedding_id = $1 AND question_hash = $2`,
@@ -74,18 +84,20 @@ export async function POST(
 
       return Response.json({
         data: {
-          answer: cacheResult.rows[0].answer,
+          answer: cachedAnswer,
           cached: true,
           sources: [],
         },
       });
     }
 
-    // Get FAQ entries for this wedding
-    const faqResult = await pool.query(
-      `SELECT id, question, answer FROM faq_entries WHERE wedding_id = $1`,
-      [session.weddingId]
-    );
+    // Delete stale fallback from cache
+    if (isStaleFallback) {
+      await pool.query(
+        `DELETE FROM faq_cache WHERE wedding_id = $1 AND question_hash = $2`,
+        [session.weddingId, questionHash]
+      );
+    }
 
     const weddingName = weddingResult.rows[0].display_name;
     let answer: string;
