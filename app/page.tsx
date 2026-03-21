@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import GuestFinder from "@/components/GuestFinder";
 
 export const metadata: Metadata = {
   title: "ReWed — Every Guest. Every Moment. Every Message.",
@@ -49,6 +50,23 @@ export default function LandingPage() {
         <p className="mt-8 text-sm" style={{ color: "var(--text-tertiary)" }}>
           Trusted by couples who want to remember everything
         </p>
+
+        {/* Guest Login */}
+        <div
+          className="mt-10 pt-8"
+          style={{ borderTop: "1px solid var(--border-light)" }}
+        >
+          <p
+            className="text-sm font-medium mb-3"
+            style={{
+              fontFamily: "var(--font-display)",
+              color: "var(--text-secondary)",
+            }}
+          >
+            Already a guest? Enter your wedding code to find your event.
+          </p>
+          <GuestFinder />
+        </div>
       </section>
 
       {/* How It Works */}
