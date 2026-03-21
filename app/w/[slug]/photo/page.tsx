@@ -2,6 +2,7 @@
 
 import { useWedding } from '@/components/WeddingProvider';
 import BottomNav from '@/components/guest/BottomNav';
+import BackButton from '@/components/guest/BackButton';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, useCallback } from 'react';
 
@@ -278,6 +279,9 @@ export default function PhotoBoothPage() {
   if (permissionDenied && phase === 'viewfinder') {
     return (
       <div className="fixed inset-0 flex flex-col" style={{ background: '#000' }}>
+        <div className="px-4 pt-10">
+          <BackButton href={`/w/${slug}/capture`} label="Back" variant="dark" />
+        </div>
         <div className="flex-1 flex items-center justify-center px-8">
           <div className="text-center">
             <div
@@ -331,8 +335,12 @@ export default function PhotoBoothPage() {
 
           {/* Top controls bar — glass morphism */}
           <div className="absolute top-0 left-0 right-0 z-20 safe-top">
+            {/* Back button */}
+            <div className="px-4 pt-10 pb-0" style={{ background: 'transparent' }}>
+              <BackButton href={`/w/${slug}/capture`} label="Back" variant="dark" />
+            </div>
             <div
-              className="flex items-center justify-between px-4 pt-12 pb-3"
+              className="flex items-center justify-between px-4 pt-2 pb-3"
               style={{
                 background: 'linear-gradient(to bottom, rgba(0,0,0,0.5), transparent)',
               }}

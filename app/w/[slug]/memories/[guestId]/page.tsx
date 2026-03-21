@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { getPool } from '@/lib/db/client';
+import BackButton from '@/components/guest/BackButton';
 
 type Params = { slug: string; guestId: string };
 
@@ -109,6 +110,7 @@ export default async function ReelViewingPage({
       style={{ background: 'var(--bg-warm-gradient)' }}
     >
       <div className="w-full max-w-md">
+        <BackButton href={`/w/${slug}/home`} label="Home" />
         <h1
           className="text-2xl font-medium text-center mb-2"
           style={{

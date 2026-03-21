@@ -1,6 +1,7 @@
 'use client';
 
 import BottomNav from '@/components/guest/BottomNav';
+import BackButton from '@/components/guest/BackButton';
 import { useWedding } from '@/components/WeddingProvider';
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -93,6 +94,7 @@ export default function FaqPage() {
   return (
     <div className="pb-24 pt-8 max-w-lg mx-auto flex flex-col" style={{ minHeight: 'calc(100vh - 80px)' }}>
       <div className="px-5">
+        <BackButton href={`/w/${slug}/home`} label="Home" />
         <h1
           className="text-2xl font-medium mb-2"
           style={{ fontFamily: 'var(--font-display)', color: 'var(--text-primary)' }}

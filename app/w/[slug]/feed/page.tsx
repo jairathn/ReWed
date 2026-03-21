@@ -2,6 +2,7 @@
 
 import { useWedding } from '@/components/WeddingProvider';
 import BottomNav from '@/components/guest/BottomNav';
+import BackButton from '@/components/guest/BackButton';
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 
@@ -310,6 +311,7 @@ export default function FeedPage() {
 
   return (
     <div className="pb-24 px-5 pt-8 max-w-lg mx-auto">
+      <BackButton href={`/w/${slug}/home`} label="Home" />
       <div className="flex items-center justify-between mb-6">
         <h1
           className="text-2xl font-medium"
