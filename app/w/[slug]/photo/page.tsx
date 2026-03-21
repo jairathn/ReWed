@@ -1,7 +1,6 @@
 'use client';
 
 import { useWedding } from '@/components/WeddingProvider';
-import BottomNav from '@/components/guest/BottomNav';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, useCallback } from 'react';
 
@@ -313,7 +312,6 @@ export default function PhotoBoothPage() {
             </button>
           </div>
         </div>
-        <BottomNav />
       </div>
     );
   }
@@ -754,8 +752,6 @@ export default function PhotoBoothPage() {
         </div>
       )}
 
-      {/* Bottom Nav — only show when not in viewfinder to keep camera clean */}
-      {phase !== 'viewfinder' && <BottomNav />}
     </div>
   );
 }
