@@ -2,7 +2,6 @@
 
 import { useWedding } from '@/components/WeddingProvider';
 import BottomNav from '@/components/guest/BottomNav';
-import BackButton from '@/components/guest/BackButton';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, useCallback } from 'react';
 
@@ -326,7 +325,7 @@ export default function VideoRecordingPage() {
   // Loading state
   if (isLoading || !config || !guest) {
     return (
-      <div className="fixed inset-0 flex items-center justify-center" style={{ background: '#000' }}>
+      <div className="fixed inset-0 flex items-center justify-center" style={{ background: '#1a1410' }}>
         <div className="skeleton w-20 h-20 rounded-full" />
       </div>
     );
@@ -335,29 +334,38 @@ export default function VideoRecordingPage() {
   // Permission denied state
   if (permissionDenied && phase === 'viewfinder') {
     return (
-      <div className="fixed inset-0 flex flex-col" style={{ background: '#000' }}>
-        <div className="px-4 pt-10">
-          <BackButton href={`/w/${slug}/capture`} label="Back" variant="dark" />
+      <div className="fixed inset-0 flex flex-col" style={{ background: '#1a1410' }}>
+        <div className="px-5 pt-12">
+          <button
+            onClick={() => router.push(`/w/${slug}/capture`)}
+            className="w-10 h-10 rounded-full flex items-center justify-center"
+            style={{ background: 'rgba(255,255,255,0.12)', border: '0.5px solid rgba(255,255,255,0.18)' }}
+            aria-label="Back"
+          >
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M10 4L6 8L10 12" stroke="rgba(255,255,255,0.75)" strokeWidth="1.5" strokeLinecap="round" />
+            </svg>
+          </button>
         </div>
         <div className="flex-1 flex items-center justify-center px-8">
           <div className="text-center">
             <div
               className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6"
-              style={{ background: 'rgba(255, 255, 255, 0.1)' }}
+              style={{ background: 'rgba(200, 174, 140, 0.1)' }}
             >
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="rgba(200,174,140,0.7)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                 <polygon points="23 7 16 12 23 17 23 7" />
                 <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
                 <line x1="1" y1="1" x2="23" y2="23" />
               </svg>
             </div>
             <h2
-              className="text-xl font-medium text-white mb-3"
-              style={{ fontFamily: 'var(--font-display)' }}
+              className="text-xl font-medium mb-3"
+              style={{ fontFamily: 'var(--font-display)', color: '#e8d5b8' }}
             >
               Camera &amp; Microphone Needed
             </h2>
-            <p className="text-white/60 text-sm mb-6 leading-relaxed">
+            <p className="text-sm mb-6 leading-relaxed" style={{ color: 'rgba(232, 213, 184, 0.5)' }}>
               To record a video message, please allow camera and microphone access in your browser settings.
             </p>
             <button onClick={() => startCamera()} className="btn-primary">
@@ -371,111 +379,145 @@ export default function VideoRecordingPage() {
   }
 
   return (
-    <div className="fixed inset-0" style={{ background: '#000' }}>
+    <div className="fixed inset-0" style={{ background: '#1a1410' }}>
       {/* ========== VIEWFINDER / RECORDING PHASE ========== */}
       {(phase === 'viewfinder' || phase === 'recording') && (
         <>
-          {/* Full-screen camera viewfinder */}
-          <video
-            ref={videoRef}
-            autoPlay
-            playsInline
-            muted
-            className="absolute inset-0 w-full h-full"
-            style={{ objectFit: 'cover' }}
-          />
+          {/* Camera feed with vignette */}
+          <div className="absolute inset-0 camera-vignette">
+            <video
+              ref={videoRef}
+              autoPlay
+              playsInline
+              muted
+              className="absolute inset-0 w-full h-full"
+              style={{ objectFit: 'cover' }}
+            />
+          </div>
 
-          {/* Back button (only when not recording) */}
+          {/* Corner bracket film frame overlay */}
+          <div className="film-frame">
+            <div className="film-frame-corner tl" />
+            <div className="film-frame-corner tr" />
+            <div className="film-frame-corner bl" />
+            <div className="film-frame-corner br" />
+          </div>
+
+          {/* Back button — minimal chevron (only when not recording) */}
           {phase === 'viewfinder' && (
-            <div className="absolute top-10 left-4 z-20">
-              <BackButton href={`/w/${slug}/capture`} label="Back" variant="dark" />
+            <div className="absolute top-4 left-4 z-20 safe-top" style={{ paddingTop: '12px' }}>
+              <button
+                onClick={() => router.push(`/w/${slug}/capture`)}
+                className="flex items-center gap-1"
+                style={{ color: 'rgba(255,255,255,0.85)' }}
+                aria-label="Back"
+              >
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                  <path d="M10 4L6 8L10 12" stroke="rgba(255,255,255,0.75)" strokeWidth="1.5" strokeLinecap="round" />
+                </svg>
+              </button>
             </div>
           )}
 
           {/* Recording indicator */}
           {phase === 'recording' && (
             <div
-              className="absolute top-14 left-1/2 -translate-x-1/2 flex items-center gap-2 px-4 py-2 rounded-full z-20"
+              className="absolute top-4 left-1/2 -translate-x-1/2 flex items-center gap-2 px-4 py-2 rounded-full z-20 safe-top"
               style={{
-                background: 'rgba(0, 0, 0, 0.5)',
-                backdropFilter: 'blur(20px)',
-                WebkitBackdropFilter: 'blur(20px)',
+                marginTop: '12px',
+                background: 'rgba(18, 12, 6, 0.72)',
+                border: '0.5px solid rgba(200, 174, 140, 0.3)',
+                backdropFilter: 'blur(12px)',
+                WebkitBackdropFilter: 'blur(12px)',
               }}
             >
               <div
-                className="w-2.5 h-2.5 rounded-full recording-dot"
-                style={{ background: '#E53E3E' }}
+                className="w-2 h-2 rounded-full recording-dot"
+                style={{ background: '#c4503c' }}
               />
-              <span className="text-white text-sm font-medium tabular-nums">
+              <span className="text-xs font-normal tabular-nums" style={{ color: '#e8d5b8', letterSpacing: '0.3px' }}>
                 {formatTime(elapsedSeconds)} / {formatTime(MAX_DURATION_SECONDS)}
               </span>
             </div>
           )}
 
-          {/* Prompt Card (only in with-prompt mode) */}
+          {/* Frosted glass prompt card (only in with-prompt mode) */}
           {recordMode === 'with-prompt' && prompts.length > 0 && (
             <div
-              className="absolute top-16 left-4 right-4 z-10"
+              className="absolute left-3 right-3 z-10"
               style={{
-                background: 'rgba(0, 0, 0, 0.35)',
-                backdropFilter: 'blur(20px)',
-                WebkitBackdropFilter: 'blur(20px)',
-                borderRadius: '16px',
-                border: '1px solid rgba(255, 255, 255, 0.08)',
+                top: phase === 'recording' ? '56px' : '52px',
+                background: 'rgba(18, 12, 6, 0.72)',
+                border: '0.5px solid rgba(200, 174, 140, 0.3)',
+                borderRadius: '18px',
+                padding: '16px 32px 14px',
+                backdropFilter: 'blur(12px)',
+                WebkitBackdropFilter: 'blur(12px)',
               }}
             >
-              <div className="px-4 py-4 flex items-center gap-3">
-                <button
-                  onClick={prevPrompt}
-                  disabled={phase === 'recording'}
-                  className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
-                  style={{
-                    background: 'rgba(255, 255, 255, 0.1)',
-                    opacity: phase === 'recording' ? 0.3 : 1,
-                  }}
-                  aria-label="Previous prompt"
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="15 18 9 12 15 6" />
-                  </svg>
-                </button>
+              {/* Prev/next nav buttons */}
+              <button
+                onClick={prevPrompt}
+                disabled={phase === 'recording'}
+                className="absolute left-2 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full flex items-center justify-center"
+                style={{
+                  background: 'rgba(200, 174, 140, 0.15)',
+                  border: '0.5px solid rgba(200, 174, 140, 0.3)',
+                  opacity: phase === 'recording' ? 0.3 : 1,
+                }}
+                aria-label="Previous prompt"
+              >
+                <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+                  <path d="M10 4L6 8L10 12" stroke="rgba(200,174,140,0.8)" strokeWidth="1.5" strokeLinecap="round" />
+                </svg>
+              </button>
 
-                <p
-                  className="text-white text-center text-base font-medium flex-1 leading-snug"
-                  style={{ fontFamily: 'var(--font-display)' }}
-                >
-                  {currentPrompt}
-                </p>
+              <button
+                onClick={nextPrompt}
+                disabled={phase === 'recording'}
+                className="absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full flex items-center justify-center"
+                style={{
+                  background: 'rgba(200, 174, 140, 0.15)',
+                  border: '0.5px solid rgba(200, 174, 140, 0.3)',
+                  opacity: phase === 'recording' ? 0.3 : 1,
+                }}
+                aria-label="Next prompt"
+              >
+                <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+                  <path d="M6 4L10 8L6 12" stroke="rgba(200,174,140,0.8)" strokeWidth="1.5" strokeLinecap="round" />
+                </svg>
+              </button>
 
-                <button
-                  onClick={nextPrompt}
-                  disabled={phase === 'recording'}
-                  className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
-                  style={{
-                    background: 'rgba(255, 255, 255, 0.1)',
-                    opacity: phase === 'recording' ? 0.3 : 1,
-                  }}
-                  aria-label="Next prompt"
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="9 18 15 12 9 6" />
-                  </svg>
-                </button>
-              </div>
+              {/* Prompt question — Playfair Display italic */}
+              <p
+                className="text-center leading-relaxed mb-3"
+                style={{
+                  fontFamily: 'var(--font-display)',
+                  fontSize: '15px',
+                  color: '#e8d5b8',
+                  fontStyle: 'italic',
+                  fontWeight: 400,
+                }}
+              >
+                {currentPrompt}
+              </p>
 
+              {/* Pagination dots — active extends to pill */}
               {prompts.length > 1 && (
-                <div className="flex justify-center gap-1.5 pb-3">
+                <div className="flex justify-center items-center gap-1.5">
                   {prompts.slice(0, 7).map((_, i) => (
                     <div
                       key={i}
-                      className="w-1.5 h-1.5 rounded-full transition-colors"
+                      className="h-1.5 rounded-full transition-all duration-200"
                       style={{
-                        background: i === promptIndex ? 'white' : 'rgba(255, 255, 255, 0.3)',
+                        width: i === promptIndex ? '16px' : '5px',
+                        borderRadius: i === promptIndex ? '3px' : '50%',
+                        background: i === promptIndex ? '#c8ae8c' : 'rgba(200, 174, 140, 0.3)',
                       }}
                     />
                   ))}
                   {prompts.length > 7 && (
-                    <span className="text-white/30 text-[10px] ml-1">
+                    <span className="text-[10px] ml-1" style={{ color: 'rgba(200, 174, 140, 0.4)' }}>
                       +{prompts.length - 7}
                     </span>
                   )}
@@ -484,40 +526,47 @@ export default function VideoRecordingPage() {
             </div>
           )}
 
-          {/* Bottom controls — floating over camera */}
+          {/* Bottom controls */}
           <div className="absolute bottom-0 left-0 right-0 z-20">
-            <div
-              className="flex flex-col items-center gap-4 pb-28 pt-6"
-              style={{
-                background: 'linear-gradient(to top, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.3) 60%, transparent 100%)',
-              }}
-            >
+            <div className="flex flex-col items-center gap-4 pb-8 pt-4">
               {/* Mode Toggle (only when not recording) */}
               {phase === 'viewfinder' && (
                 <div
-                  className="inline-flex rounded-full p-1"
+                  className="inline-flex rounded-full"
                   style={{
-                    background: 'rgba(0, 0, 0, 0.35)',
-                    backdropFilter: 'blur(20px)',
-                    WebkitBackdropFilter: 'blur(20px)',
+                    background: 'rgba(20, 14, 8, 0.65)',
+                    border: '0.5px solid rgba(200, 174, 140, 0.35)',
+                    backdropFilter: 'blur(8px)',
+                    WebkitBackdropFilter: 'blur(8px)',
+                    padding: '3px',
                   }}
                 >
                   <button
                     onClick={() => setRecordMode('with-prompt')}
-                    className="px-5 py-2 rounded-full text-sm font-medium transition-all"
+                    className="rounded-full transition-all"
                     style={{
-                      background: recordMode === 'with-prompt' ? 'rgba(255, 255, 255, 0.22)' : 'transparent',
-                      color: recordMode === 'with-prompt' ? 'white' : 'rgba(255, 255, 255, 0.5)',
+                      padding: '5px 14px',
+                      fontSize: '11px',
+                      letterSpacing: '0.4px',
+                      fontFamily: 'var(--font-body)',
+                      background: recordMode === 'with-prompt' ? 'rgba(200, 174, 140, 0.25)' : 'transparent',
+                      color: recordMode === 'with-prompt' ? '#e8d5b8' : 'rgba(255,255,255,0.45)',
+                      border: recordMode === 'with-prompt' ? '0.5px solid rgba(200, 174, 140, 0.5)' : '0.5px solid transparent',
                     }}
                   >
                     With Prompt
                   </button>
                   <button
                     onClick={() => setRecordMode('free')}
-                    className="px-5 py-2 rounded-full text-sm font-medium transition-all"
+                    className="rounded-full transition-all"
                     style={{
-                      background: recordMode === 'free' ? 'rgba(255, 255, 255, 0.22)' : 'transparent',
-                      color: recordMode === 'free' ? 'white' : 'rgba(255, 255, 255, 0.5)',
+                      padding: '5px 14px',
+                      fontSize: '11px',
+                      letterSpacing: '0.4px',
+                      fontFamily: 'var(--font-body)',
+                      background: recordMode === 'free' ? 'rgba(200, 174, 140, 0.25)' : 'transparent',
+                      color: recordMode === 'free' ? '#e8d5b8' : 'rgba(255,255,255,0.45)',
+                      border: recordMode === 'free' ? '0.5px solid rgba(200, 174, 140, 0.5)' : '0.5px solid transparent',
                     }}
                   >
                     Free Record
@@ -534,18 +583,28 @@ export default function VideoRecordingPage() {
                   style={{ WebkitTapHighlightColor: 'transparent' }}
                 >
                   <div
+                    className="relative"
                     style={{
-                      width: 80,
-                      height: 80,
+                      width: 70,
+                      height: 70,
                       borderRadius: '50%',
-                      border: '4px solid white',
+                      border: '2px solid rgba(200, 174, 140, 0.5)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      boxShadow: '0 2px 20px rgba(0,0,0,0.3)',
                     }}
                   >
-                    <div style={{ width: 66, height: 66, borderRadius: '50%', background: '#E53E3E' }} />
+                    {/* Breathing pulse ring */}
+                    <div
+                      className="record-pulse-ring"
+                      style={{
+                        position: 'absolute',
+                        inset: '-6px',
+                        borderRadius: '50%',
+                        border: '1.5px solid rgba(196, 80, 60, 0.4)',
+                      }}
+                    />
+                    <div style={{ width: 56, height: 56, borderRadius: '50%', background: '#c4503c' }} />
                   </div>
                 </button>
               ) : (
@@ -556,18 +615,28 @@ export default function VideoRecordingPage() {
                   style={{ WebkitTapHighlightColor: 'transparent' }}
                 >
                   <div
+                    className="relative"
                     style={{
-                      width: 80,
-                      height: 80,
+                      width: 70,
+                      height: 70,
                       borderRadius: '50%',
-                      border: '4px solid #E53E3E',
+                      border: '2px solid rgba(196, 80, 60, 0.5)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      boxShadow: '0 2px 20px rgba(0,0,0,0.3)',
                     }}
                   >
-                    <div style={{ width: 32, height: 32, borderRadius: 4, background: '#E53E3E' }} />
+                    {/* Breathing pulse ring when recording */}
+                    <div
+                      className="record-pulse-ring"
+                      style={{
+                        position: 'absolute',
+                        inset: '-6px',
+                        borderRadius: '50%',
+                        border: '1.5px solid rgba(196, 80, 60, 0.4)',
+                      }}
+                    />
+                    <div style={{ width: 28, height: 28, borderRadius: 4, background: '#c4503c' }} />
                   </div>
                 </button>
               )}
@@ -579,46 +648,50 @@ export default function VideoRecordingPage() {
       {/* ========== REVIEW PHASE ========== */}
       {phase === 'review' && recordedUrl && (
         <>
-          <video
-            ref={playbackRef}
-            src={recordedUrl}
-            controls
-            playsInline
-            className="absolute inset-0 w-full h-full"
-            style={{ objectFit: 'cover', background: '#000' }}
-          />
+          <div className="absolute inset-0 camera-vignette">
+            <video
+              ref={playbackRef}
+              src={recordedUrl}
+              controls
+              playsInline
+              className="absolute inset-0 w-full h-full"
+              style={{ objectFit: 'cover', background: '#1a1410' }}
+            />
+          </div>
 
           {/* Duration badge */}
           <div
             className="absolute top-14 left-1/2 -translate-x-1/2 px-4 py-2 rounded-full z-20"
             style={{
-              background: 'rgba(0, 0, 0, 0.5)',
-              backdropFilter: 'blur(20px)',
-              WebkitBackdropFilter: 'blur(20px)',
+              background: 'rgba(18, 12, 6, 0.72)',
+              border: '0.5px solid rgba(200, 174, 140, 0.3)',
+              backdropFilter: 'blur(12px)',
+              WebkitBackdropFilter: 'blur(12px)',
             }}
           >
-            <span className="text-white text-sm font-medium tabular-nums">
+            <span className="text-xs font-normal tabular-nums" style={{ color: '#e8d5b8' }}>
               {formatTime(elapsedSeconds)}
             </span>
           </div>
 
-          {/* Review Actions — floating at bottom */}
+          {/* Review Actions */}
           <div className="absolute bottom-0 left-0 right-0 z-20">
             <div
-              className="px-6 pb-28 pt-8 flex gap-4 justify-center"
+              className="px-6 pb-10 pt-8 flex gap-4 justify-center"
               style={{
-                background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.3) 70%, transparent 100%)',
+                background: 'linear-gradient(to top, rgba(26,20,16,0.8) 0%, rgba(26,20,16,0.4) 70%, transparent 100%)',
               }}
             >
               <button
                 onClick={reRecord}
                 className="flex-1 max-w-[160px] py-4 rounded-full text-base font-semibold transition-transform active:scale-95"
                 style={{
-                  background: 'rgba(255, 255, 255, 0.15)',
-                  color: 'white',
-                  border: '1.5px solid rgba(255, 255, 255, 0.3)',
+                  background: 'rgba(200, 174, 140, 0.1)',
+                  color: '#e8d5b8',
+                  border: '1px solid rgba(200, 174, 140, 0.3)',
                   backdropFilter: 'blur(16px)',
                   WebkitBackdropFilter: 'blur(16px)',
+                  fontFamily: 'var(--font-body)',
                 }}
               >
                 Re-record
@@ -630,6 +703,7 @@ export default function VideoRecordingPage() {
                   background: 'var(--color-terracotta-gradient)',
                   color: 'white',
                   boxShadow: 'var(--shadow-terracotta)',
+                  fontFamily: 'var(--font-body)',
                 }}
               >
                 Save
@@ -641,24 +715,24 @@ export default function VideoRecordingPage() {
 
       {/* ========== UPLOADING PHASE ========== */}
       {phase === 'uploading' && (
-        <div className="absolute inset-0 flex items-center justify-center px-8" style={{ background: 'rgba(0,0,0,0.85)' }}>
+        <div className="absolute inset-0 flex items-center justify-center px-8" style={{ background: 'rgba(26, 20, 16, 0.92)' }}>
           <div className="w-full max-w-xs text-center">
             <div
               className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6"
-              style={{ background: 'rgba(255, 255, 255, 0.1)' }}
+              style={{ background: 'rgba(200, 174, 140, 0.1)' }}
             >
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="rgba(200,174,140,0.7)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                 <polyline points="17 8 12 3 7 8" />
                 <line x1="12" y1="3" x2="12" y2="15" />
               </svg>
             </div>
-            <p className="text-white text-base font-medium mb-4">
+            <p className="text-base font-medium mb-4" style={{ color: '#e8d5b8', fontFamily: 'var(--font-display)', fontStyle: 'italic' }}>
               Saving your video...
             </p>
             <div
               className="w-full h-1.5 rounded-full overflow-hidden"
-              style={{ background: 'rgba(255, 255, 255, 0.1)' }}
+              style={{ background: 'rgba(200, 174, 140, 0.1)' }}
             >
               <div
                 className="h-full rounded-full transition-all duration-300"
@@ -668,19 +742,19 @@ export default function VideoRecordingPage() {
                 }}
               />
             </div>
-            <p className="text-white/40 text-sm mt-2">{uploadProgress}%</p>
+            <p className="text-sm mt-2" style={{ color: 'rgba(200, 174, 140, 0.4)' }}>{uploadProgress}%</p>
           </div>
         </div>
       )}
 
       {/* ========== SUCCESS PHASE ========== */}
       {phase === 'success' && (
-        <div className="absolute inset-0 flex items-center justify-center px-8" style={{ background: 'rgba(0,0,0,0.85)' }}>
+        <div className="absolute inset-0 flex items-center justify-center px-8" style={{ background: 'rgba(26, 20, 16, 0.92)' }}>
           <div className="text-center">
             <div
               className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6"
               style={{
-                background: 'rgba(122, 139, 92, 0.2)',
+                background: 'rgba(122, 139, 92, 0.15)',
                 border: '2px solid var(--color-olive)',
               }}
             >
@@ -689,8 +763,8 @@ export default function VideoRecordingPage() {
               </svg>
             </div>
             <p
-              className="text-white text-xl font-medium"
-              style={{ fontFamily: 'var(--font-display)' }}
+              className="text-xl font-medium"
+              style={{ fontFamily: 'var(--font-display)', color: '#e8d5b8', fontStyle: 'italic' }}
             >
               Saved!
             </p>
@@ -702,12 +776,15 @@ export default function VideoRecordingPage() {
       {toastMessage && (
         <div className="fixed top-12 left-4 right-4 z-50 flex justify-center" style={{ pointerEvents: 'none' }}>
           <div
-            className="px-5 py-3 rounded-2xl text-sm font-medium text-white"
+            className="px-5 py-3 rounded-2xl text-sm font-medium"
             style={{
-              background: 'rgba(0, 0, 0, 0.75)',
-              backdropFilter: 'blur(20px)',
-              WebkitBackdropFilter: 'blur(20px)',
+              background: 'rgba(18, 12, 6, 0.72)',
+              backdropFilter: 'blur(12px)',
+              WebkitBackdropFilter: 'blur(12px)',
+              border: '0.5px solid rgba(200, 174, 140, 0.3)',
+              color: '#e8d5b8',
               pointerEvents: 'auto',
+              fontFamily: 'var(--font-body)',
             }}
           >
             {toastMessage}
