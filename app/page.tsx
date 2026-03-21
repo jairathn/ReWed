@@ -63,7 +63,7 @@ export default function LandingPage() {
               color: "var(--text-secondary)",
             }}
           >
-            Already a guest? Search for your wedding to get started.
+            Find your wedding
           </p>
           <GuestFinder />
         </div>
