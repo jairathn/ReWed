@@ -69,6 +69,9 @@ export async function PUT(
       throw new AppError('WEDDING_NOT_FOUND', 'Event not found');
     }
 
+    // Clear FAQ cache since event details are used in chat answers
+    await pool.query('DELETE FROM faq_cache WHERE wedding_id = $1', [weddingId]);
+
     return Response.json({ event: result.rows[0] });
   } catch (error) {
     return handleApiError(error);
@@ -96,6 +99,9 @@ export async function DELETE(
     if (result.rows.length === 0) {
       throw new AppError('WEDDING_NOT_FOUND', 'Event not found');
     }
+
+    // Clear FAQ cache since event details are used in chat answers
+    await pool.query('DELETE FROM faq_cache WHERE wedding_id = $1', [weddingId]);
 
     return Response.json({ deleted: true });
   } catch (error) {

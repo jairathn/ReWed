@@ -101,6 +101,11 @@ export async function POST(
         }
       }
 
+      // Clear FAQ cache since event details are used in chat answers
+      if (imported > 0) {
+        await pool.query('DELETE FROM faq_cache WHERE wedding_id = $1', [weddingId]);
+      }
+
       return Response.json({ imported, total: providedEvents.length, errors: errors.slice(0, 10) }, { status: 201 });
     }
 

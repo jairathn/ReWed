@@ -34,7 +34,9 @@ export async function POST(
 
     // Check FAQ feature is enabled
     const weddingResult = await pool.query(
-      `SELECT id, package_config, display_name, config FROM weddings WHERE slug = $1`,
+      `SELECT id, package_config, display_name, config, wedding_date, timezone,
+              venue_city, venue_country
+       FROM weddings WHERE slug = $1`,
       [slug]
     );
     if (weddingResult.rows.length === 0) {
@@ -58,11 +60,19 @@ export async function POST(
 
     const question = sanitizeText(parsed.data.question);
 
-    // Get FAQ entries for this wedding
-    const faqResult = await pool.query(
-      `SELECT id, question, answer FROM faq_entries WHERE wedding_id = $1`,
-      [session.weddingId]
-    );
+    // Get FAQ entries and events for this wedding
+    const [faqResult, eventsResult] = await Promise.all([
+      pool.query(
+        `SELECT id, question, answer FROM faq_entries WHERE wedding_id = $1`,
+        [session.weddingId]
+      ),
+      pool.query(
+        `SELECT name, date, start_time, end_time, venue_name, venue_address,
+                dress_code, description, logistics
+         FROM events WHERE wedding_id = $1 ORDER BY sort_order ASC, date ASC`,
+        [session.weddingId]
+      ),
+    ]);
 
     // Check cache (but skip stale fallback responses when entries now exist)
     const questionHash = createHash('sha256').update(question.toLowerCase().trim()).digest('hex');
@@ -99,39 +109,78 @@ export async function POST(
       );
     }
 
-    const weddingName = weddingResult.rows[0].display_name;
+    const wedding = weddingResult.rows[0];
+    const weddingName = wedding.display_name;
+    const hasContext = faqResult.rows.length > 0 || eventsResult.rows.length > 0;
     let answer: string;
     let sources: { question: string; answer: string }[] = [];
 
     if (isTestMode()) {
       answer = `Here's what I know about "${question}" for ${weddingName}: This is a mock FAQ response. Please check with the couple for specific details.`;
       sources = faqResult.rows.slice(0, 2).map((r) => ({ question: r.question, answer: r.answer }));
-    } else if (faqResult.rows.length === 0) {
+    } else if (!hasContext) {
       answer = `I don't have specific information about that yet. The couple hasn't added FAQ entries. You might want to reach out to them directly!`;
     } else {
-      // Use GPT to answer from the FAQ context
+      // Build rich context from FAQ entries + events + wedding details
       const openai = getOpenAIClient();
 
-      // Use all FAQ entries as context for the AI
       sources = faqResult.rows.slice(0, 3).map((r) => ({
         question: r.question,
         answer: r.answer,
       }));
 
-      const context = faqResult.rows
-        .map((r) => `Q: ${r.question}\nA: ${r.answer}`)
-        .join('\n\n');
+      const contextParts: string[] = [];
+
+      // Wedding details
+      const weddingConfig = wedding.config || {};
+      const coupleNames = weddingConfig.couple_names;
+      const weddingDetails: string[] = [];
+      if (coupleNames?.name1 && coupleNames?.name2) {
+        weddingDetails.push(`Couple: ${coupleNames.name1} & ${coupleNames.name2}`);
+      }
+      if (wedding.wedding_date) weddingDetails.push(`Wedding date: ${wedding.wedding_date}`);
+      if (wedding.timezone) weddingDetails.push(`Timezone: ${wedding.timezone}`);
+      if (wedding.venue_city) weddingDetails.push(`Location: ${wedding.venue_city}${wedding.venue_country ? `, ${wedding.venue_country}` : ''}`);
+      if (weddingDetails.length > 0) {
+        contextParts.push(`Wedding Details:\n${weddingDetails.join('\n')}`);
+      }
+
+      // Events/schedule
+      if (eventsResult.rows.length > 0) {
+        const eventsContext = eventsResult.rows.map((e: Record<string, unknown>) => {
+          const parts: string[] = [`Event: ${e.name}`];
+          if (e.date) parts.push(`  Date: ${e.date}`);
+          if (e.start_time) parts.push(`  Start time: ${e.start_time}${e.end_time ? ` - End time: ${e.end_time}` : ''}`);
+          if (e.venue_name) parts.push(`  Venue: ${e.venue_name}`);
+          if (e.venue_address) parts.push(`  Address: ${e.venue_address}`);
+          if (e.dress_code) parts.push(`  Dress code: ${e.dress_code}`);
+          if (e.description) parts.push(`  Description: ${e.description}`);
+          if (e.logistics) parts.push(`  Logistics: ${e.logistics}`);
+          return parts.join('\n');
+        }).join('\n\n');
+        contextParts.push(`Schedule/Events:\n${eventsContext}`);
+      }
+
+      // FAQ entries
+      if (faqResult.rows.length > 0) {
+        const faqContext = faqResult.rows
+          .map((r) => `Q: ${r.question}\nA: ${r.answer}`)
+          .join('\n\n');
+        contextParts.push(`FAQ:\n${faqContext}`);
+      }
+
+      const fullContext = contextParts.join('\n\n---\n\n');
 
       const chatResponse = await openai.chat.completions.create({
         model: CHAT_MODEL_MINI,
         messages: [
           {
             role: 'system',
-            content: `You are a friendly, helpful FAQ assistant for ${weddingName}. Answer guest questions based on the provided FAQ context. Be warm, concise, and conversational. If you're not sure, say so honestly and suggest they ask the couple directly. Never make up specific details like times, addresses, or dress codes that aren't in the context.`,
+            content: `You are a friendly, helpful assistant for ${weddingName}. Answer guest questions based on the provided wedding information, event schedule, and FAQ entries. Be warm, concise, and conversational. If you're not sure, say so honestly and suggest they ask the couple directly. Never make up specific details that aren't in the context.`,
           },
           {
             role: 'user',
-            content: `FAQ Context:\n${context}\n\nGuest Question: ${question}`,
+            content: `${fullContext}\n\nGuest Question: ${question}`,
           },
         ],
         max_tokens: 300,
@@ -142,7 +191,7 @@ export async function POST(
     }
 
     // Only cache AI-generated answers, not fallback messages
-    if (faqResult.rows.length > 0) {
+    if (hasContext) {
       await pool.query(
         `INSERT INTO faq_cache (wedding_id, question_hash, answer)
          VALUES ($1, $2, $3)
