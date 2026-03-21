@@ -54,6 +54,9 @@ export async function PUT(
       throw new AppError('WEDDING_NOT_FOUND', 'FAQ entry not found');
     }
 
+    // Clear FAQ cache so updated answers are used
+    await pool.query('DELETE FROM faq_cache WHERE wedding_id = $1', [weddingId]);
+
     return Response.json({ entry: result.rows[0] });
   } catch (error) {
     return handleApiError(error);

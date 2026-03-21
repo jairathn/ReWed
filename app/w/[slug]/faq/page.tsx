@@ -87,9 +87,9 @@ export default function FaqPage() {
     );
   }
 
-  const coupleName = config?.couple_names
+  const coupleName = config?.couple_names?.name1 && config?.couple_names?.name2
     ? `${config.couple_names.name1} & ${config.couple_names.name2}`
-    : 'the couple';
+    : config?.display_name || 'the couple';
 
   return (
     <div className="pb-24 pt-8 max-w-lg mx-auto flex flex-col" style={{ minHeight: 'calc(100vh - 80px)' }}>
