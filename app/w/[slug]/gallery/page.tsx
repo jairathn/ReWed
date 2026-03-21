@@ -100,7 +100,7 @@ export default function GalleryPage() {
   const handleFavorite = async (item: MediaItem) => {
     setActionLoading('favorite');
     try {
-      const res = await fetch(`/api/v1/w/${slug}/media/${item.id}/favorite`, {
+      const res = await fetch(`/api/v1/w/${slug}/upload/${item.id}/favorite`, {
         method: 'POST',
       });
       const data = await res.json();
@@ -121,7 +121,7 @@ export default function GalleryPage() {
   const handleDownload = async (item: MediaItem) => {
     setActionLoading('download');
     try {
-      const res = await fetch(`/api/v1/w/${slug}/media/${item.id}/download`);
+      const res = await fetch(`/api/v1/w/${slug}/upload/${item.id}/download`);
       const data = await res.json();
       if (data.data?.download_url) {
         const a = document.createElement('a');
@@ -142,7 +142,7 @@ export default function GalleryPage() {
   const handleDelete = async (item: MediaItem) => {
     setActionLoading('delete');
     try {
-      const res = await fetch(`/api/v1/w/${slug}/media/${item.id}`, {
+      const res = await fetch(`/api/v1/w/${slug}/upload/${item.id}`, {
         method: 'DELETE',
       });
       const data = await res.json();
