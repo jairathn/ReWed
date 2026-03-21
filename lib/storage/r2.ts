@@ -1,4 +1,4 @@
-import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 const MAX_PHOTO_SIZE = 25_000_000; // 25MB
@@ -43,6 +43,17 @@ function getExtension(contentType: string): string {
   return map[contentType] || 'bin';
 }
 
+/** Convert a name to a filesystem-safe slug */
+function slugify(name: string): string {
+  return name
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '') // strip diacritics
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    || 'unknown';
+}
+
 export interface PresignedUrlResult {
   url: string;
   key: string;
@@ -56,8 +67,10 @@ export async function generatePresignedPutUrl(params: {
   uploadId: string;
   contentType: string;
   contentLength: number;
+  guestName?: string;
+  eventName?: string;
 }): Promise<PresignedUrlResult> {
-  const { weddingId, uploadId, contentType, contentLength } = params;
+  const { weddingId, uploadId, contentType, contentLength, guestName, eventName } = params;
 
   // Validate file size
   const isVideo = contentType.startsWith('video/');
@@ -66,10 +79,12 @@ export async function generatePresignedPutUrl(params: {
     throw new Error(`File too large (max ${maxSize / 1_000_000}MB)`);
   }
 
-  const now = new Date();
-  const yearMonth = `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, '0')}`;
   const ext = getExtension(contentType);
-  const key = `weddings/${weddingId}/uploads/${yearMonth}/${uploadId}/original.${ext}`;
+
+  // Build guest/event folder structure
+  const guestFolder = guestName ? slugify(guestName) : 'unknown-guest';
+  const eventFolder = eventName ? slugify(eventName) : 'pre-wedding';
+  const key = `weddings/${weddingId}/by-guest/${guestFolder}/${eventFolder}/${uploadId}.${ext}`;
 
   // For large videos, use multipart upload
   if (contentLength > MULTIPART_THRESHOLD) {
@@ -99,10 +114,31 @@ export async function generatePresignedPutUrl(params: {
   };
 }
 
+export async function generatePresignedGetUrl(storageKey: string): Promise<string> {
+  const client = getR2Client();
+  const command = new GetObjectCommand({
+    Bucket: getBucketName(),
+    Key: storageKey,
+    ResponseContentDisposition: `attachment; filename="${storageKey.split('/').pop()}"`,
+  });
+  return getSignedUrl(client, command, { expiresIn: PRESIGN_EXPIRY });
+}
+
+export async function deleteObject(storageKey: string): Promise<void> {
+  const client = getR2Client();
+  await client.send(new DeleteObjectCommand({
+    Bucket: getBucketName(),
+    Key: storageKey,
+  }));
+}
+
 export function getCdnUrl(storageKey: string): string {
   return `${getPublicUrl()}/${storageKey}`;
 }
 
 export function getThumbnailKey(originalKey: string): string {
-  return originalKey.replace('/original.', '/thumbnail.');
+  // Insert /thumbnail before the file extension
+  const lastDot = originalKey.lastIndexOf('.');
+  if (lastDot === -1) return `${originalKey}-thumbnail`;
+  return `${originalKey.substring(0, lastDot)}-thumbnail${originalKey.substring(lastDot)}`;
 }

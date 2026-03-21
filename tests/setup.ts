@@ -25,7 +25,13 @@ vi.mock('@/lib/storage/r2', () => ({
     };
   }),
   getCdnUrl: vi.fn().mockImplementation((key: string) => `https://mock-cdn.example.com/${key}`),
-  getThumbnailKey: vi.fn().mockImplementation((key: string) => key.replace('/original.', '/thumbnail.')),
+  getThumbnailKey: vi.fn().mockImplementation((key: string) => {
+    const lastDot = key.lastIndexOf('.');
+    if (lastDot === -1) return `${key}-thumbnail`;
+    return `${key.substring(0, lastDot)}-thumbnail${key.substring(lastDot)}`;
+  }),
+  generatePresignedGetUrl: vi.fn().mockImplementation(async (key: string) => `https://mock-r2.example.com/download/${key}`),
+  deleteObject: vi.fn().mockResolvedValue(undefined),
 }));
 
 // Mock OpenAI
