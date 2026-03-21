@@ -9,6 +9,7 @@ const updateEventSchema = z.object({
   date: z.string().optional().or(z.null()),
   start_time: z.string().optional().or(z.null()),
   end_time: z.string().optional().or(z.null()),
+  end_date: z.string().optional().or(z.null()),
   venue_name: z.string().max(200).optional().or(z.null()),
   venue_address: z.string().max(500).optional().or(z.null()),
   dress_code: z.string().max(100).optional().or(z.null()),
@@ -39,7 +40,7 @@ export async function PUT(
     let idx = 1;
 
     const fields: (keyof typeof parsed)[] = [
-      'name', 'date', 'start_time', 'end_time', 'venue_name', 'venue_address',
+      'name', 'date', 'start_time', 'end_time', 'end_date', 'venue_name', 'venue_address',
       'dress_code', 'description', 'logistics', 'accent_color', 'sort_order',
     ];
 
@@ -59,7 +60,7 @@ export async function PUT(
     const result = await pool.query(
       `UPDATE events SET ${sets.join(', ')}
        WHERE id = $${idx++} AND wedding_id = $${idx}
-       RETURNING id, name, date, start_time, end_time, venue_name, venue_address,
+       RETURNING id, name, date, start_time, end_time, end_date, venue_name, venue_address,
                  dress_code, description, logistics, accent_color, sort_order, created_at`,
       values
     );

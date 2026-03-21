@@ -9,6 +9,7 @@ interface ParsedEvent {
   date?: string | null;
   start_time?: string | null;
   end_time?: string | null;
+  end_date?: string | null;
   venue_name?: string | null;
   venue_address?: string | null;
   dress_code?: string | null;
@@ -76,15 +77,16 @@ export async function POST(
 
         try {
           await pool.query(
-            `INSERT INTO events (wedding_id, name, date, start_time, end_time, venue_name, venue_address,
+            `INSERT INTO events (wedding_id, name, date, start_time, end_time, end_date, venue_name, venue_address,
                                  dress_code, description, logistics, sort_order)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
             [
               weddingId,
               ev.name.trim(),
               ev.date || null,
               ev.start_time || null,
               ev.end_time || null,
+              ev.end_date || null,
               ev.venue_name?.trim() || null,
               ev.venue_address?.trim() || null,
               ev.dress_code?.trim() || null,
@@ -127,9 +129,10 @@ async function parseEventsWithLLM(rawText: string): Promise<ParsedEvent[]> {
 
 For each event found, return a JSON object with these fields:
 - name: string (required) — event name like "Ceremony", "Reception", "Sangeet", "Haldi", "Mehndi"
-- date: string | null — ISO date format YYYY-MM-DD if a date is mentioned
+- date: string | null — ISO date format YYYY-MM-DD for the START date
 - start_time: string | null — 24-hour format HH:MM (e.g., "15:30" for 3:30 PM)
 - end_time: string | null — 24-hour format HH:MM
+- end_date: string | null — ISO date format YYYY-MM-DD if the event ends on a DIFFERENT day than it starts (e.g., a reception from Friday 3:30 PM to Saturday 2:00 AM). Set to null if same-day event.
 - venue_name: string | null — name of the venue
 - venue_address: string | null — full address, cleaned of any markdown formatting (remove __ or ** markers)
 - dress_code: string | null — any dress code or attire guidance mentioned
@@ -139,6 +142,7 @@ For each event found, return a JSON object with these fields:
 CRITICAL: Do NOT rephrase, reword, summarize, or re-interpret ANY of the text. The users wrote their event descriptions with specific wording for a reason — preserve it verbatim. Only extract and categorize the text into the correct fields.
 
 Important:
+- Date-time ranges like "Fri, Sep 11, 2026, 3:30 pm - Sat, Sep 12, 2026, 2:00 am" mean the event starts on the first date/time and ends on the second. Extract both dates and times correctly.
 - The text may have inconsistent formatting — handle markdown like __text__, **text**, bullet points, etc.
 - Remove markdown formatting characters only (**, __, etc.) but keep the underlying text exactly as written
 - If text mentions clothing suggestions, links, or tips, put them in logistics (not description)
@@ -186,19 +190,46 @@ function basicParse(rawText: string): ParsedEvent[] {
 
     const firstLine = lines[0];
 
-    // Detect time pattern like "3:30 pm - 7:30 pm"
-    const timeMatch = firstLine.match(/^(\d{1,2}:\d{2}\s*(?:am|pm))\s*[-–]\s*(\d{1,2}:\d{2}\s*(?:am|pm))$/i);
+    // Detect full date-time range like "Fri, Sep 11, 2026, 3:30 pm - Sat, Sep 12, 2026, 2:00 am"
+    const fullDateTimeRange = firstLine.match(
+      /^(?:\w+,\s+)?(\w+)\s+(\d{1,2}),?\s*(\d{4}),?\s+(\d{1,2}:\d{2}\s*(?:am|pm))\s*[-–]\s*(?:\w+,\s+)?(\w+)\s+(\d{1,2}),?\s*(\d{4}),?\s+(\d{1,2}:\d{2}\s*(?:am|pm))$/i
+    );
 
-    if (timeMatch && current) {
-      // This is a time line for the current event
-      current.start_time = convertTo24h(timeMatch[1]);
-      current.end_time = convertTo24h(timeMatch[2]);
-      // Rest of lines are description/venue
+    // Detect single date with time range like "Fri, Sep 11, 2026, 3:30 pm - 7:30 pm"
+    const singleDateTimeRange = !fullDateTimeRange && firstLine.match(
+      /^(?:\w+,\s+)?(\w+)\s+(\d{1,2}),?\s*(\d{4}),?\s+(\d{1,2}:\d{2}\s*(?:am|pm))\s*[-–]\s*(\d{1,2}:\d{2}\s*(?:am|pm))$/i
+    );
+
+    // Detect time-only pattern like "3:30 pm - 7:30 pm"
+    const timeMatch = !fullDateTimeRange && !singleDateTimeRange &&
+      firstLine.match(/^(\d{1,2}:\d{2}\s*(?:am|pm))\s*[-–]\s*(\d{1,2}:\d{2}\s*(?:am|pm))$/i);
+
+    if (fullDateTimeRange && current) {
+      current.date = parseMonthDayYear(fullDateTimeRange[1], fullDateTimeRange[2], fullDateTimeRange[3]);
+      current.start_time = convertTo24h(fullDateTimeRange[4]);
+      const endDate = parseMonthDayYear(fullDateTimeRange[5], fullDateTimeRange[6], fullDateTimeRange[7]);
+      current.end_date = endDate !== current.date ? endDate : null;
+      current.end_time = convertTo24h(fullDateTimeRange[8]);
       const rest = lines.slice(1).join('\n').replace(/__/g, '').trim();
       if (rest) {
         current.description = (current.description ? current.description + '\n' : '') + rest;
       }
-    } else if (!timeMatch && firstLine.length < 80 && !firstLine.includes('.') && !firstLine.startsWith('http')) {
+    } else if (singleDateTimeRange && current) {
+      current.date = parseMonthDayYear(singleDateTimeRange[1], singleDateTimeRange[2], singleDateTimeRange[3]);
+      current.start_time = convertTo24h(singleDateTimeRange[4]);
+      current.end_time = convertTo24h(singleDateTimeRange[5]);
+      const rest = lines.slice(1).join('\n').replace(/__/g, '').trim();
+      if (rest) {
+        current.description = (current.description ? current.description + '\n' : '') + rest;
+      }
+    } else if (timeMatch && current) {
+      current.start_time = convertTo24h(timeMatch[1]);
+      current.end_time = convertTo24h(timeMatch[2]);
+      const rest = lines.slice(1).join('\n').replace(/__/g, '').trim();
+      if (rest) {
+        current.description = (current.description ? current.description + '\n' : '') + rest;
+      }
+    } else if (!timeMatch && !fullDateTimeRange && !singleDateTimeRange && firstLine.length < 80 && !firstLine.includes('.') && !firstLine.startsWith('http')) {
       // Looks like an event name
       if (current) events.push(current);
       current = { name: firstLine };
@@ -214,6 +245,26 @@ function basicParse(rawText: string): ParsedEvent[] {
 
   if (current) events.push(current);
   return events;
+}
+
+const MONTH_MAP: Record<string, string> = {
+  jan: '01', january: '01',
+  feb: '02', february: '02',
+  mar: '03', march: '03',
+  apr: '04', april: '04',
+  may: '05',
+  jun: '06', june: '06',
+  jul: '07', july: '07',
+  aug: '08', august: '08',
+  sep: '09', september: '09',
+  oct: '10', october: '10',
+  nov: '11', november: '11',
+  dec: '12', december: '12',
+};
+
+function parseMonthDayYear(month: string, day: string, year: string): string {
+  const m = MONTH_MAP[month.toLowerCase()] || '01';
+  return `${year}-${m}-${day.padStart(2, '0')}`;
 }
 
 function convertTo24h(time: string): string {
