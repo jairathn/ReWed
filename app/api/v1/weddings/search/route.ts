@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
     const result = await pool.query(
       `SELECT slug, display_name, wedding_date
        FROM weddings
-       WHERE status = 'active'
+       WHERE status != 'archived'
          AND (
            display_name ILIKE $1
            OR slug ILIKE $1
