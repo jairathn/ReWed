@@ -187,6 +187,7 @@ export default function PhotoBoothPage() {
     setUploadProgress(0);
 
     try {
+      console.log('[upload] Step 1: Requesting presigned URL, blob size:', capturedBlob.size);
       const presignRes = await fetch(`/api/v1/w/${slug}/upload/presign`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -197,12 +198,19 @@ export default function PhotoBoothPage() {
         }),
       });
 
-      if (!presignRes.ok) throw new Error('Failed to get upload URL');
+      if (!presignRes.ok) {
+        const errText = await presignRes.text();
+        console.error('[upload] Presign failed:', presignRes.status, errText);
+        throw new Error(`Presign failed (${presignRes.status}): ${errText}`);
+      }
 
       const presignData = await presignRes.json();
+      console.log('[upload] Step 2: Presign response:', JSON.stringify(presignData.data, null, 2));
       const { upload_id, presigned_url, storage_key } = presignData.data;
+      console.log('[upload] Presigned URL host:', new URL(presigned_url).hostname);
       setUploadProgress(20);
 
+      console.log('[upload] Step 3: Uploading blob to R2...');
       await new Promise<void>((resolve, reject) => {
         const xhr = new XMLHttpRequest();
         xhr.open('PUT', presigned_url);
@@ -216,14 +224,19 @@ export default function PhotoBoothPage() {
         };
 
         xhr.onload = () => {
+          console.log('[upload] XHR complete, status:', xhr.status, 'response:', xhr.responseText.substring(0, 200));
           if (xhr.status >= 200 && xhr.status < 300) resolve();
-          else reject(new Error(`Upload failed with status ${xhr.status}`));
+          else reject(new Error(`Upload failed with status ${xhr.status}: ${xhr.responseText.substring(0, 200)}`));
         };
 
-        xhr.onerror = () => reject(new Error('Upload network error'));
+        xhr.onerror = () => {
+          console.error('[upload] XHR network error');
+          reject(new Error('Upload network error'));
+        };
         xhr.send(capturedBlob);
       });
 
+      console.log('[upload] Step 4: R2 upload success, confirming...');
       setUploadProgress(85);
 
       const completeRes = await fetch(`/api/v1/w/${slug}/upload/complete`, {
@@ -232,7 +245,12 @@ export default function PhotoBoothPage() {
         body: JSON.stringify({ upload_id, storage_key }),
       });
 
-      if (!completeRes.ok) throw new Error('Failed to complete upload');
+      if (!completeRes.ok) {
+        const errText = await completeRes.text();
+        console.error('[upload] Complete failed:', completeRes.status, errText);
+        throw new Error(`Complete failed (${completeRes.status}): ${errText}`);
+      }
+      console.log('[upload] Step 5: Upload complete confirmed');
 
       setUploadProgress(100);
 
