@@ -27,7 +27,7 @@ export async function POST(
 
     // Verify wedding slug matches session
     const weddingResult = await pool.query(
-      `SELECT id, status FROM weddings WHERE slug = $1`,
+      `SELECT id, status, timezone FROM weddings WHERE slug = $1`,
       [slug]
     );
     if (weddingResult.rows.length === 0) {
@@ -50,15 +50,44 @@ export async function POST(
 
     const { type, mime_type, size_bytes, event_id } = parsed.data;
 
-    // If event_id provided, verify it belongs to this wedding
+    // Get guest name for folder structure
+    const guestResult = await pool.query(
+      `SELECT display_name FROM guests WHERE id = $1`,
+      [session.guestId]
+    );
+    const guestName = guestResult.rows[0]?.display_name || 'unknown-guest';
+
+    // Determine event name for folder structure
+    let eventName: string | null = null;
+    let resolvedEventId = event_id || null;
+
     if (event_id) {
+      // Explicit event_id provided — verify and get name
       const eventResult = await pool.query(
-        `SELECT id FROM events WHERE id = $1 AND wedding_id = $2`,
+        `SELECT id, name FROM events WHERE id = $1 AND wedding_id = $2`,
         [event_id, session.weddingId]
       );
       if (eventResult.rows.length === 0) {
         throw new AppError('VALIDATION_ERROR', 'Event not found');
       }
+      eventName = eventResult.rows[0].name;
+    } else {
+      // Auto-detect current event based on date/time
+      const tz = wedding.timezone || 'UTC';
+      const detected = await pool.query(
+        `SELECT id, name FROM events
+         WHERE wedding_id = $1
+           AND date IS NOT NULL AND start_time IS NOT NULL
+           AND (date || ' ' || start_time)::timestamp <= (NOW() AT TIME ZONE $2)
+         ORDER BY date DESC, start_time DESC
+         LIMIT 1`,
+        [session.weddingId, tz]
+      );
+      if (detected.rows.length > 0) {
+        resolvedEventId = detected.rows[0].id;
+        eventName = detected.rows[0].name;
+      }
+      // If no event has started yet, eventName stays null → "pre-wedding" folder
     }
 
     const uploadId = uuidv4();
@@ -67,15 +96,17 @@ export async function POST(
     await pool.query(
       `INSERT INTO uploads (id, wedding_id, guest_id, event_id, type, storage_key, mime_type, size_bytes, status)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'pending')`,
-      [uploadId, session.weddingId, session.guestId, event_id || null, type, '', mime_type, size_bytes]
+      [uploadId, session.weddingId, session.guestId, resolvedEventId, type, '', mime_type, size_bytes]
     );
 
-    // Generate presigned URL
+    // Generate presigned URL with guest/event folder structure
     const presigned = await generatePresignedPutUrl({
       weddingId: session.weddingId,
       uploadId,
       contentType: mime_type,
       contentLength: size_bytes,
+      guestName,
+      eventName: eventName || undefined,
     });
 
     // Update upload with storage key

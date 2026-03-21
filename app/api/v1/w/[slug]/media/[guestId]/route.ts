@@ -47,10 +47,16 @@ export async function GET(
     const queryParams: (string | number)[] = [session.weddingId, guestId];
     let paramIndex = 3;
 
+    const isFavoriteFilter = typeFilter === 'favorite';
+
     if (typeFilter && ['photo', 'video'].includes(typeFilter)) {
       conditions.push(`u.type = $${paramIndex}`);
       queryParams.push(typeFilter);
       paramIndex++;
+    }
+
+    if (isFavoriteFilter) {
+      conditions.push(`EXISTS (SELECT 1 FROM favorites fav WHERE fav.upload_id = u.id AND fav.guest_id = u.guest_id)`);
     }
 
     if (eventId) {
@@ -69,9 +75,11 @@ export async function GET(
 
     const uploadsQuery = `
       SELECT u.id, u.type, u.storage_key, u.thumbnail_key, u.filter_applied,
-             u.duration_ms, u.created_at, e.name as event_name
+             u.duration_ms, u.created_at, e.name as event_name,
+             CASE WHEN f.id IS NOT NULL THEN true ELSE false END as favorited
       FROM uploads u
       LEFT JOIN events e ON u.event_id = e.id
+      LEFT JOIN favorites f ON f.upload_id = u.id AND f.guest_id = u.guest_id
       WHERE ${conditions.join(' AND ')}
       ORDER BY u.created_at DESC
       LIMIT $${paramIndex}
@@ -130,6 +138,7 @@ export async function GET(
       event_name: row.event_name || null,
       filter_applied: row.filter_applied || null,
       duration_ms: row.duration_ms || null,
+      favorited: row.favorited === true,
       created_at: row.created_at,
     }));
 
