@@ -12,18 +12,22 @@ export async function POST(
 ) {
   try {
     const { slug } = await params;
+    console.log('[presign] Starting presign for slug:', slug);
     const pool = getPool();
 
     // Validate guest session
     const sessionToken = request.cookies.get('wedding_session')?.value;
     if (!sessionToken) {
+      console.log('[presign] No session token found');
       throw new AppError('AUTH_NOT_REGISTERED');
     }
 
     const session = await validateSession(pool, sessionToken);
     if (!session) {
+      console.log('[presign] Session validation failed');
       throw new AppError('AUTH_TOKEN_EXPIRED');
     }
+    console.log('[presign] Session valid, guestId:', session.guestId, 'weddingId:', session.weddingId);
 
     // Verify wedding slug matches session
     const weddingResult = await pool.query(
@@ -31,10 +35,12 @@ export async function POST(
       [slug]
     );
     if (weddingResult.rows.length === 0) {
+      console.log('[presign] Wedding not found for slug:', slug);
       throw new AppError('WEDDING_NOT_FOUND');
     }
     const wedding = weddingResult.rows[0];
     if (wedding.id !== session.weddingId) {
+      console.log('[presign] Wedding ID mismatch:', wedding.id, '!==', session.weddingId);
       throw new AppError('AUTH_NOT_REGISTERED');
     }
     if (wedding.status === 'archived') {
@@ -43,12 +49,15 @@ export async function POST(
 
     // Validate request body
     const body = await request.json();
+    console.log('[presign] Request body:', JSON.stringify(body));
     const parsed = uploadPresignSchema.safeParse(body);
     if (!parsed.success) {
+      console.log('[presign] Validation failed:', parsed.error.issues);
       throw new AppError('VALIDATION_ERROR', parsed.error.issues[0]?.message);
     }
 
     const { type, mime_type, size_bytes, event_id } = parsed.data;
+    console.log('[presign] Parsed:', { type, mime_type, size_bytes, event_id });
 
     // Get guest name for folder structure
     const guestResult = await pool.query(
@@ -56,6 +65,7 @@ export async function POST(
       [session.guestId]
     );
     const guestName = guestResult.rows[0]?.display_name || 'unknown-guest';
+    console.log('[presign] Guest name:', guestName);
 
     // Determine event name for folder structure
     let eventName: string | null = null;
@@ -95,6 +105,7 @@ export async function POST(
     }
 
     const uploadId = uuidv4();
+    console.log('[presign] Upload ID:', uploadId, 'eventName:', eventName, 'resolvedEventId:', resolvedEventId);
 
     // Create upload record in pending state
     await pool.query(
@@ -102,6 +113,7 @@ export async function POST(
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'pending')`,
       [uploadId, session.weddingId, session.guestId, resolvedEventId, type, '', mime_type, size_bytes]
     );
+    console.log('[presign] Upload record created');
 
     // Generate presigned URL with guest/event folder structure
     const presigned = await generatePresignedPutUrl({
@@ -112,6 +124,7 @@ export async function POST(
       guestName,
       eventName: eventName || undefined,
     });
+    console.log('[presign] Presigned URL generated, key:', presigned.key, 'url starts with:', presigned.url.substring(0, 80));
 
     // Update upload with storage key
     await pool.query(
@@ -119,6 +132,7 @@ export async function POST(
       [presigned.key, uploadId]
     );
 
+    console.log('[presign] Success — returning presigned URL');
     return Response.json({
       data: {
         upload_id: uploadId,
@@ -129,6 +143,7 @@ export async function POST(
       },
     });
   } catch (error) {
+    console.error('[presign] ERROR:', error);
     return handleApiError(error);
   }
 }

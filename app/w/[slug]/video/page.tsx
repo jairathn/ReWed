@@ -1,7 +1,6 @@
 'use client';
 
 import { useWedding } from '@/components/WeddingProvider';
-import BottomNav from '@/components/guest/BottomNav';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, useCallback } from 'react';
 
@@ -373,7 +372,6 @@ export default function VideoRecordingPage() {
             </button>
           </div>
         </div>
-        <BottomNav />
       </div>
     );
   }
@@ -792,8 +790,6 @@ export default function VideoRecordingPage() {
         </div>
       )}
 
-      {/* Bottom Nav — hide during viewfinder/recording to keep camera immersive */}
-      {phase !== 'viewfinder' && phase !== 'recording' && <BottomNav />}
     </div>
   );
 }
