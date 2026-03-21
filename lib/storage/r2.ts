@@ -125,6 +125,26 @@ export async function generatePresignedGetUrl(storageKey: string): Promise<strin
   return getSignedUrl(client, command, { expiresIn: PRESIGN_EXPIRY });
 }
 
+export async function uploadObject(storageKey: string, body: Buffer, contentType: string): Promise<void> {
+  const client = getR2Client();
+  await client.send(new PutObjectCommand({
+    Bucket: getBucketName(),
+    Key: storageKey,
+    Body: body,
+    ContentType: contentType,
+  }));
+}
+
+export async function getObject(storageKey: string): Promise<Buffer> {
+  const client = getR2Client();
+  const response = await client.send(new GetObjectCommand({
+    Bucket: getBucketName(),
+    Key: storageKey,
+  }));
+  const bytes = await response.Body!.transformToByteArray();
+  return Buffer.from(bytes);
+}
+
 export async function deleteObject(storageKey: string): Promise<void> {
   const client = getR2Client();
   await client.send(new DeleteObjectCommand({

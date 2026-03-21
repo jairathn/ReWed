@@ -32,7 +32,14 @@ vi.mock('@/lib/storage/r2', () => ({
     return `${key.substring(0, lastDot)}-thumbnail${key.substring(lastDot)}`;
   }),
   generatePresignedGetUrl: vi.fn().mockImplementation(async (key: string) => `https://mock-r2.example.com/download/${key}`),
+  getObject: vi.fn().mockImplementation(async () => Buffer.from('mock-image-data')),
+  uploadObject: vi.fn().mockResolvedValue(undefined),
   deleteObject: vi.fn().mockResolvedValue(undefined),
+}));
+
+// Mock photo processor
+vi.mock('@/lib/media/photo-processor', () => ({
+  generateThumbnail: vi.fn().mockImplementation(async () => Buffer.from('mock-thumbnail-data')),
 }));
 
 // Mock OpenAI

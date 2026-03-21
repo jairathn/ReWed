@@ -277,6 +277,12 @@ export default function GalleryPage() {
                   alt=""
                   className="w-full h-full object-cover"
                   loading="lazy"
+                  onError={(e) => {
+                    const img = e.currentTarget;
+                    if (img.src !== item.url) {
+                      img.src = item.url;
+                    }
+                  }}
                 />
 
                 {/* Favorite indicator */}

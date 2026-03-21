@@ -2,7 +2,8 @@ import { NextRequest } from 'next/server';
 import { z } from 'zod';
 import { getPool } from '@/lib/db/client';
 import { validateSession } from '@/lib/session';
-import { getMediaUrl, getThumbnailKey } from '@/lib/storage/r2';
+import { getMediaUrl, getThumbnailKey, getObject, uploadObject } from '@/lib/storage/r2';
+import { generateThumbnail } from '@/lib/media/photo-processor';
 import { AppError, handleApiError } from '@/lib/errors';
 
 const completeSchema = z.object({
@@ -64,6 +65,18 @@ export async function POST(
 
     // Generate thumbnail key
     const thumbnailKey = getThumbnailKey(storage_key);
+
+    // Generate and upload thumbnail for photos
+    const isPhoto = !duration_ms; // videos have duration_ms
+    if (isPhoto) {
+      try {
+        const original = await getObject(storage_key);
+        const thumbnailBuffer = await generateThumbnail(original);
+        await uploadObject(thumbnailKey, thumbnailBuffer, 'image/webp');
+      } catch (err) {
+        console.warn('[upload-complete] Thumbnail generation failed, using original:', err);
+      }
+    }
 
     // Update upload to ready status
     const result = await pool.query(
