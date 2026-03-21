@@ -150,7 +150,7 @@ export default function DashboardHomePage() {
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return 'Date not set';
     try {
-      return new Date(dateStr).toLocaleDateString('en-US', {
+      return new Date(dateStr + 'T12:00:00').toLocaleDateString('en-US', {
         month: 'long',
         day: 'numeric',
         year: 'numeric',

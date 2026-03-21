@@ -17,7 +17,7 @@ async function getScheduleData(slug: string) {
   const wedding = weddingResult.rows[0];
 
   const eventsResult = await pool.query(
-    `SELECT id, name, date, start_time, end_time, venue_name, venue_address,
+    `SELECT id, name, date, start_time, end_time, end_date, venue_name, venue_address,
             dress_code, description, logistics, accent_color
      FROM events WHERE wedding_id = $1
      ORDER BY sort_order ASC, date ASC, start_time ASC`,
@@ -136,6 +136,7 @@ export default async function SchedulePage({
                 date: string | null;
                 start_time: string | null;
                 end_time: string | null;
+                end_date: string | null;
                 venue_name: string | null;
                 venue_address: string | null;
                 dress_code: string | null;
@@ -188,6 +189,9 @@ export default async function SchedulePage({
                             style={{ color: 'var(--text-secondary)' }}
                           >
                             {formatDate(event.date, timezone)}
+                            {event.end_date && event.end_date !== event.date && (
+                              <> &ndash; {formatDate(event.end_date, timezone)}</>
+                            )}
                           </p>
                         )}
                       </div>

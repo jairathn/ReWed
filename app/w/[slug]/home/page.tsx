@@ -112,7 +112,7 @@ export default function GuestHomePage() {
     const nowInTz = new Date(new Date().toLocaleString('en-US', { timeZone: tz }));
     const todayStr = `${nowInTz.getFullYear()}-${String(nowInTz.getMonth() + 1).padStart(2, '0')}-${String(nowInTz.getDate()).padStart(2, '0')}`;
     const todayMs = new Date(todayStr).getTime();
-    const weddingMs = new Date(config.wedding_date).getTime();
+    const weddingMs = new Date(config.wedding_date + 'T12:00:00').getTime();
     return Math.max(0, Math.ceil((weddingMs - todayMs) / (1000 * 60 * 60 * 24)));
   }, [config]);
 

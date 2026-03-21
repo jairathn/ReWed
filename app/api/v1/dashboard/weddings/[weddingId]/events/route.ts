@@ -9,6 +9,7 @@ const createEventSchema = z.object({
   date: z.string().optional(),
   start_time: z.string().optional(),
   end_time: z.string().optional(),
+  end_date: z.string().optional(),
   venue_name: z.string().max(200).optional(),
   venue_address: z.string().max(500).optional(),
   dress_code: z.string().max(100).optional(),
@@ -33,7 +34,7 @@ export async function GET(
 
     const pool = getPool();
     const result = await pool.query(
-      `SELECT id, name, date, start_time, end_time, venue_name, venue_address,
+      `SELECT id, name, date, start_time, end_time, end_date, venue_name, venue_address,
               dress_code, description, logistics, accent_color, sort_order, created_at
        FROM events WHERE wedding_id = $1
        ORDER BY sort_order, date, start_time`,
@@ -64,10 +65,10 @@ export async function POST(
     const pool = getPool();
 
     const result = await pool.query(
-      `INSERT INTO events (wedding_id, name, date, start_time, end_time, venue_name, venue_address,
+      `INSERT INTO events (wedding_id, name, date, start_time, end_time, end_date, venue_name, venue_address,
                            dress_code, description, logistics, accent_color, sort_order)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-       RETURNING id, name, date, start_time, end_time, venue_name, venue_address,
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+       RETURNING id, name, date, start_time, end_time, end_date, venue_name, venue_address,
                  dress_code, description, logistics, accent_color, sort_order, created_at`,
       [
         weddingId,
@@ -75,6 +76,7 @@ export async function POST(
         parsed.date || null,
         parsed.start_time || null,
         parsed.end_time || null,
+        parsed.end_date || null,
         parsed.venue_name?.trim() || null,
         parsed.venue_address?.trim() || null,
         parsed.dress_code?.trim() || null,

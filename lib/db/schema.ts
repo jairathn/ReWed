@@ -64,6 +64,7 @@ export interface Event {
   date: string | null;
   start_time: string | null;
   end_time: string | null;
+  end_date: string | null;
   venue_name: string | null;
   venue_address: string | null;
   dress_code: string | null;
