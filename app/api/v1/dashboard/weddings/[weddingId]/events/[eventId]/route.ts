@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { z } from 'zod';
 import { handleApiError, AppError } from '@/lib/errors';
 import { getPool } from '@/lib/db/client';
+import { toDateString } from '@/lib/db/format';
 import { getCoupleId, verifyWeddingOwnership } from '@/lib/dashboard-auth';
 
 const updateEventSchema = z.object({
@@ -72,7 +73,8 @@ export async function PUT(
     // Clear FAQ cache since event details are used in chat answers
     await pool.query('DELETE FROM faq_cache WHERE wedding_id = $1', [weddingId]);
 
-    return Response.json({ event: result.rows[0] });
+    const event = { ...result.rows[0], date: toDateString(result.rows[0].date), end_date: toDateString(result.rows[0].end_date) };
+    return Response.json({ event });
   } catch (error) {
     return handleApiError(error);
   }

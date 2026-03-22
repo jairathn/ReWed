@@ -29,9 +29,9 @@ describe('BottomNav', () => {
     render(<BottomNav />);
 
     expect(screen.getByText('Home')).toBeDefined();
-    expect(screen.getByText('Video')).toBeDefined();
-    expect(screen.getByText('Photo')).toBeDefined();
+    expect(screen.getByText('Capture')).toBeDefined();
     expect(screen.getByText('Travel')).toBeDefined();
+    expect(screen.getByText('Gallery')).toBeDefined();
     expect(screen.getByText('Events')).toBeDefined();
   });
 
@@ -41,31 +41,29 @@ describe('BottomNav', () => {
     const homeLink = screen.getByText('Home').closest('a');
     expect(homeLink?.getAttribute('href')).toBe('/w/test-wedding/home');
 
-    const videoLink = screen.getByText('Video').closest('a');
-    expect(videoLink?.getAttribute('href')).toBe('/w/test-wedding/video');
-
-    const photoLink = screen.getByText('Photo').closest('a');
-    expect(photoLink?.getAttribute('href')).toBe('/w/test-wedding/photo');
+    const captureLink = screen.getByText('Capture').closest('a');
+    expect(captureLink?.getAttribute('href')).toBe('/w/test-wedding/capture');
 
     const travelLink = screen.getByText('Travel').closest('a');
     expect(travelLink?.getAttribute('href')).toBe('/w/test-wedding/travel');
+
+    const galleryLink = screen.getByText('Gallery').closest('a');
+    expect(galleryLink?.getAttribute('href')).toBe('/w/test-wedding/gallery');
 
     const eventsLink = screen.getByText('Events').closest('a');
     expect(eventsLink?.getAttribute('href')).toBe('/w/test-wedding/schedule');
   });
 
-  it('renders the Photo tab as elevated (with gradient circle)', () => {
-    const { container } = render(<BottomNav />);
+  it('renders the Travel tab as elevated (with gradient circle)', () => {
+    render(<BottomNav />);
 
-    // The Photo tab should have a larger rounded-full container
-    const photoLink = screen.getByText('Photo').closest('a');
-    expect(photoLink?.className).toContain('-mt-5'); // elevated
+    const travelLink = screen.getByText('Travel').closest('a');
+    expect(travelLink?.className).toContain('-mt-5'); // elevated
   });
 
   it('all tabs have accessible labels', () => {
     render(<BottomNav />);
 
-    // Each link should have aria-label
     const links = screen.getAllByRole('link');
     expect(links.length).toBe(5);
     links.forEach((link) => {

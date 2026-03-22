@@ -4,11 +4,26 @@ import BackButton from '@/components/guest/BackButton';
 
 type Params = { slug: string };
 
+interface EventRow {
+  id: string;
+  name: string;
+  date: unknown;
+  start_time: string | null;
+  end_time: string | null;
+  end_date: unknown;
+  venue_name: string | null;
+  venue_address: string | null;
+  dress_code: string | null;
+  description: string | null;
+  logistics: string | null;
+  accent_color: string | null;
+}
+
 async function getScheduleData(slug: string) {
   const pool = getPool();
 
   const weddingResult = await pool.query(
-    'SELECT id, display_name, config, timezone FROM weddings WHERE slug = $1',
+    'SELECT id, display_name, config, timezone, venue_city, venue_country FROM weddings WHERE slug = $1',
     [slug]
   );
 
@@ -26,15 +41,25 @@ async function getScheduleData(slug: string) {
 
   return {
     wedding,
-    events: eventsResult.rows,
+    events: eventsResult.rows as EventRow[],
     timezone: wedding.timezone || 'America/New_York',
+    venueCity: wedding.venue_city || null,
+    venueCountry: wedding.venue_country || null,
   };
 }
 
-function formatTime(time: string | null, tz: string): string {
+function normalizeDate(date: unknown): string | null {
+  if (!date) return null;
+  if (date instanceof Date) return date.toISOString().slice(0, 10);
+  const s = String(date);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  if (s.includes('T')) return s.slice(0, 10);
+  return s;
+}
+
+function formatTime(time: string | null): string {
   if (!time) return '';
   try {
-    // Create a date in the wedding timezone to get proper AM/PM
     const [hours, minutes] = time.split(':');
     const h = parseInt(hours, 10);
     const ampm = h >= 12 ? 'PM' : 'AM';
@@ -45,16 +70,34 @@ function formatTime(time: string | null, tz: string): string {
   }
 }
 
-function formatDate(date: string | null, tz: string): string {
-  if (!date) return '';
-  // Parse as local date in the wedding timezone
-  const d = new Date(date + 'T12:00:00');
+function formatDayHeader(date: unknown, tz: string): string {
+  const ds = normalizeDate(date);
+  if (!ds) return '';
+  const d = new Date(ds + 'T12:00:00');
   return d.toLocaleDateString('en-US', {
     weekday: 'long',
     month: 'long',
     day: 'numeric',
     timeZone: tz,
   });
+}
+
+function formatShortDate(date: unknown, tz: string): string {
+  const ds = normalizeDate(date);
+  if (!ds) return '';
+  const d = new Date(ds + 'T12:00:00');
+  return d.toLocaleDateString('en-US', {
+    month: 'long',
+    day: 'numeric',
+    timeZone: tz,
+  });
+}
+
+function isDatePast(date: unknown): boolean {
+  const ds = normalizeDate(date);
+  if (!ds) return false;
+  const eventDate = new Date(ds + 'T23:59:59');
+  return eventDate < new Date();
 }
 
 function getTimezoneAbbr(tz: string): string {
@@ -66,22 +109,21 @@ function getTimezoneAbbr(tz: string): string {
   }
 }
 
-// Event color map for emojis
-const eventEmojis: Record<string, string> = {
-  haldi: '\u{1F33B}',
-  sangeet: '\u{1F3A4}',
-  wedding: '\u{1F48D}',
-  reception: '\u{1F37E}',
-  mehndi: '\u{270B}',
-  ceremony: '\u{1F492}',
-};
-
-function getEventEmoji(name: string): string {
-  const lower = name.toLowerCase();
-  for (const [key, emoji] of Object.entries(eventEmojis)) {
-    if (lower.includes(key)) return emoji;
+/** Group events by their date string */
+function groupByDate(events: EventRow[]): { dateKey: string; date: unknown; events: EventRow[] }[] {
+  const groups: Map<string, { date: unknown; events: EventRow[] }> = new Map();
+  for (const ev of events) {
+    const key = normalizeDate(ev.date) || 'no-date';
+    if (!groups.has(key)) {
+      groups.set(key, { date: ev.date, events: [] });
+    }
+    groups.get(key)!.events.push(ev);
   }
-  return '\u{2728}';
+  return Array.from(groups.entries()).map(([dateKey, { date, events }]) => ({
+    dateKey,
+    date,
+    events,
+  }));
 }
 
 export default async function SchedulePage({
@@ -100,14 +142,33 @@ export default async function SchedulePage({
     );
   }
 
-  const { events, timezone } = data;
+  const { events, timezone, venueCity, venueCountry } = data;
   const tzAbbr = getTimezoneAbbr(timezone);
+  const dayGroups = groupByDate(events);
+
+  // Compute date range for subtitle
+  const allDates = events.map((e) => normalizeDate(e.date)).filter(Boolean) as string[];
+  const sortedDates = [...new Set(allDates)].sort();
+  let dateRangeStr = '';
+  if (sortedDates.length > 0) {
+    const first = formatShortDate(sortedDates[0], timezone);
+    if (sortedDates.length === 1) {
+      dateRangeStr = first + ', ' + new Date(sortedDates[0] + 'T12:00:00').getFullYear();
+    } else {
+      const last = sortedDates[sortedDates.length - 1];
+      const lastDay = new Date(last + 'T12:00:00').toLocaleDateString('en-US', { day: 'numeric', timeZone: timezone });
+      const year = new Date(last + 'T12:00:00').getFullYear();
+      dateRangeStr = `${first} – ${lastDay}, ${year}`;
+    }
+  }
 
   return (
     <div className="pb-24 px-5 pt-8 max-w-lg mx-auto">
       <BackButton href={`/w/${slug}/home`} label="Home" />
+
+      {/* Header */}
       <h1
-        className="text-2xl font-medium mb-6"
+        className="text-2xl font-medium"
         style={{
           fontFamily: 'var(--font-display)',
           color: 'var(--text-primary)',
@@ -116,161 +177,225 @@ export default async function SchedulePage({
         Schedule
       </h1>
 
+      {/* Subtitle: city + date range */}
+      {(venueCity || dateRangeStr) && (
+        <div className="flex items-center gap-2 mt-2 mb-1">
+          <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+            <path d="M5 0L9.33 4.5L5 10L0.67 4.5L5 0Z" fill="var(--color-golden)" opacity="0.5" />
+          </svg>
+          <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+            {venueCity && <>{venueCity}{venueCountry ? `, ${venueCountry}` : ''}</>}
+            {venueCity && dateRangeStr && ' · '}
+            {dateRangeStr}
+          </span>
+        </div>
+      )}
+
+      {/* Divider */}
+      <div
+        className="mt-4 mb-6"
+        style={{
+          height: 1,
+          background: 'linear-gradient(90deg, transparent, var(--color-golden) 30%, var(--color-golden) 70%, transparent)',
+          opacity: 0.3,
+        }}
+      />
+
       {/* Timeline */}
-      <div className="relative">
-        {/* Gradient line */}
-        <div
-          className="absolute left-[18px] top-4 bottom-4 w-0.5"
-          style={{
-            background:
-              'linear-gradient(180deg, var(--color-terracotta) 0%, var(--color-golden) 50%, var(--color-olive) 100%)',
-          }}
-        />
+      {events.length === 0 ? (
+        <div className="text-center py-12">
+          <p className="text-4xl mb-4">&#128197;</p>
+          <p style={{ color: 'var(--text-secondary)' }}>
+            The schedule will be posted soon!
+          </p>
+        </div>
+      ) : (
+        <div className="relative" style={{ paddingLeft: 24 }}>
+          {/* Vertical timeline line */}
+          <div
+            className="absolute top-0 bottom-0"
+            style={{
+              left: 4.5,
+              width: 1,
+              background: 'linear-gradient(180deg, var(--color-terracotta), var(--color-golden) 50%, var(--color-terracotta))',
+              opacity: 0.3,
+            }}
+          />
 
-        <div className="space-y-4">
-          {events.map(
-            (
-              event: {
-                id: string;
-                name: string;
-                date: string | null;
-                start_time: string | null;
-                end_time: string | null;
-                end_date: string | null;
-                venue_name: string | null;
-                venue_address: string | null;
-                dress_code: string | null;
-                description: string | null;
-                logistics: string | null;
-                accent_color: string | null;
-              },
-              index: number
-            ) => {
-              const isFirst = index === 0;
-              const accentColor =
-                event.accent_color || 'var(--color-terracotta)';
+          {dayGroups.map((group, gi) => {
+            const past = isDatePast(group.date);
 
-              return (
-                <div key={event.id} className="relative flex gap-4">
+            return (
+              <div key={group.dateKey} style={{ marginBottom: 40 }}>
+                {/* Day header with timeline dot */}
+                <div className="relative" style={{ marginLeft: -24, paddingLeft: 24, marginBottom: 18 }}>
                   {/* Timeline dot */}
-                  <div className="flex-shrink-0 w-9 flex justify-center pt-5">
-                    <div
-                      className="w-3 h-3 rounded-full z-10"
-                      style={{
-                        background: accentColor,
-                        boxShadow: isFirst
-                          ? `0 0 0 4px ${accentColor}30`
-                          : 'none',
-                      }}
-                    />
-                  </div>
-
-                  {/* Event card */}
                   <div
-                    className="flex-1 card p-5"
+                    className="absolute rounded-full"
                     style={{
-                      borderLeft: `3px solid ${accentColor}`,
+                      left: 0,
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      width: 10,
+                      height: 10,
+                      ...(past
+                        ? {
+                            background: 'linear-gradient(145deg, var(--color-terracotta), var(--color-golden))',
+                            boxShadow: '0 0 8px rgba(196, 112, 75, 0.3)',
+                          }
+                        : {
+                            border: '1.5px solid var(--color-golden)',
+                            background: 'var(--bg-soft-cream)',
+                          }),
+                    }}
+                  />
+                  <p
+                    style={{
+                      fontSize: 10,
+                      fontWeight: 500,
+                      letterSpacing: '0.14em',
+                      textTransform: 'uppercase',
+                      color: 'var(--color-golden)',
+                      fontFamily: 'var(--font-body)',
+                      margin: 0,
                     }}
                   >
-                    <div className="flex items-start justify-between mb-2">
-                      <div>
-                        <p
-                          className="text-lg font-medium"
-                          style={{
-                            fontFamily: 'var(--font-display)',
-                            color: 'var(--text-primary)',
-                          }}
-                        >
-                          {getEventEmoji(event.name)} {event.name}
-                        </p>
-                        {event.date && (
-                          <p
-                            className="text-sm"
-                            style={{ color: 'var(--text-secondary)' }}
-                          >
-                            {formatDate(event.date, timezone)}
-                            {event.end_date && event.end_date !== event.date && (
-                              <> &ndash; {formatDate(event.end_date, timezone)}</>
-                            )}
-                          </p>
-                        )}
-                      </div>
-                    </div>
+                    {formatDayHeader(group.date, timezone)}
+                  </p>
+                </div>
 
+                {/* Events for this day */}
+                {group.events.map((event, ei) => (
+                  <div
+                    key={event.id}
+                    style={{
+                      marginBottom: 20,
+                      paddingBottom: ei < group.events.length - 1 ? 20 : 0,
+                      borderBottom: ei < group.events.length - 1 ? '0.5px solid var(--border-light)' : 'none',
+                    }}
+                  >
+                    {/* Event name */}
+                    <p
+                      style={{
+                        fontFamily: 'var(--font-display)',
+                        fontSize: 22,
+                        fontWeight: 400,
+                        color: 'var(--text-primary)',
+                        lineHeight: 1.2,
+                        margin: 0,
+                      }}
+                    >
+                      {event.name}
+                    </p>
+
+                    {/* Subtitle / description snippet */}
+                    {event.description && (
+                      <p
+                        style={{
+                          fontFamily: 'var(--font-display)',
+                          fontSize: 14,
+                          fontStyle: 'italic',
+                          color: 'var(--text-secondary)',
+                          marginTop: 3,
+                        }}
+                      >
+                        {event.description.length > 80 ? event.description.slice(0, 80) + '...' : event.description}
+                      </p>
+                    )}
+
+                    {/* Time */}
                     {(event.start_time || event.end_time) && (
                       <p
-                        className="text-sm mb-2"
-                        style={{ color: 'var(--text-secondary)' }}
+                        style={{
+                          fontSize: 13,
+                          color: 'var(--color-terracotta)',
+                          fontWeight: 500,
+                          marginTop: 12,
+                          marginBottom: 14,
+                        }}
                       >
-                        {formatTime(event.start_time, timezone)}
-                        {event.end_time && ` \u2013 ${formatTime(event.end_time, timezone)}`}
+                        {formatTime(event.start_time)}
+                        {event.end_time && ` \u2013 ${formatTime(event.end_time)}`}
                         {tzAbbr && ` ${tzAbbr}`}
                       </p>
                     )}
 
+                    {/* Venue */}
                     {event.venue_name && (
-                      <p
-                        className="text-sm mb-1"
-                        style={{ color: 'var(--text-primary)' }}
-                      >
-                        {event.venue_name}
-                      </p>
-                    )}
-
-                    {event.venue_address && (
-                      <p
-                        className="text-xs mb-2"
-                        style={{ color: 'var(--text-tertiary)' }}
-                      >
-                        {event.venue_address}
-                      </p>
-                    )}
-
-                    {event.dress_code && (
-                      <div
-                        className="inline-block px-3 py-1 rounded-full text-xs font-medium mb-2"
-                        style={{
-                          background: `${accentColor}15`,
-                          color: accentColor,
-                        }}
-                      >
-                        {event.dress_code}
+                      <div className="flex items-start gap-1.5 mb-0.5">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--color-terracotta)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="mt-0.5 flex-shrink-0">
+                          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" />
+                        </svg>
+                        <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-primary)' }}>
+                          {event.venue_name}
+                        </span>
                       </div>
                     )}
-
-                    {event.description && (
-                      <p
-                        className="text-sm mt-2"
-                        style={{ color: 'var(--text-secondary)', whiteSpace: 'pre-line' }}
-                      >
-                        {event.description}
-                      </p>
-                    )}
-
                     {event.logistics && (
-                      <p
-                        className="text-xs mt-2 italic"
-                        style={{ color: 'var(--text-tertiary)', whiteSpace: 'pre-line' }}
-                      >
+                      <p style={{ fontSize: 12, color: 'var(--text-secondary)', marginLeft: 18, marginTop: 2 }}>
                         {event.logistics}
                       </p>
                     )}
-                  </div>
-                </div>
-              );
-            }
-          )}
-        </div>
 
-        {events.length === 0 && (
-          <div className="text-center py-12">
-            <p className="text-4xl mb-4">&#128197;</p>
-            <p style={{ color: 'var(--text-secondary)' }}>
-              The schedule will be posted soon!
-            </p>
-          </div>
-        )}
-      </div>
+                    {/* What to Wear card */}
+                    {event.dress_code && (
+                      <div
+                        className="relative"
+                        style={{
+                          marginTop: 20,
+                          padding: '18px 20px',
+                          background: 'var(--bg-soft-cream)',
+                          borderRadius: 12,
+                          border: '0.5px solid rgba(196, 112, 75, 0.12)',
+                        }}
+                      >
+                        {/* Corner ornaments */}
+                        <div style={{ position: 'absolute', top: 8, left: 8, width: 12, height: 1, background: 'rgba(196, 112, 75, 0.25)' }} />
+                        <div style={{ position: 'absolute', top: 8, left: 8, width: 1, height: 12, background: 'rgba(196, 112, 75, 0.25)' }} />
+                        <div style={{ position: 'absolute', bottom: 8, right: 8, width: 12, height: 1, background: 'rgba(196, 112, 75, 0.25)' }} />
+                        <div style={{ position: 'absolute', bottom: 8, right: 8, width: 1, height: 12, background: 'rgba(196, 112, 75, 0.25)' }} />
+
+                        <p
+                          style={{
+                            fontSize: 10,
+                            fontWeight: 500,
+                            letterSpacing: '0.14em',
+                            textTransform: 'uppercase',
+                            color: 'var(--color-golden)',
+                            marginBottom: 10,
+                          }}
+                        >
+                          What to Wear
+                        </p>
+                        <p style={{ fontSize: 13, color: 'var(--text-primary)', lineHeight: 1.6, whiteSpace: 'pre-line' }}>
+                          {event.dress_code}
+                        </p>
+
+                        {/* Venue address as secondary info in attire card */}
+                        {event.venue_address && (
+                          <>
+                            <div
+                              style={{
+                                height: 1,
+                                margin: '14px 0',
+                                background: 'linear-gradient(90deg, transparent, var(--color-golden) 30%, var(--color-golden) 70%, transparent)',
+                                opacity: 0.2,
+                              }}
+                            />
+                            <p style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                              {event.venue_address}
+                            </p>
+                          </>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       <BottomNav />
     </div>

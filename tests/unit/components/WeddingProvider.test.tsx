@@ -71,6 +71,10 @@ describe('WeddingProvider', () => {
       enabled_filters: [],
       enabled_ai_styles: [],
       events: [],
+      venue_city: null,
+      venue_country: null,
+      venue_lat: null,
+      venue_lng: null,
       features: {
         social_feed: false,
         faq_chatbot: false,
@@ -166,7 +170,12 @@ describe('WeddingProvider', () => {
         couple_names: { name1: 'X', name2: 'Y' },
         hashtag: '#Fetched',
         wedding_date: null,
+        timezone: 'America/New_York',
         status: 'active',
+        venue_city: null,
+        venue_country: null,
+        venue_lat: null,
+        venue_lng: null,
         theme: {
           preset: 'mediterranean',
           colors: { primary: '#C4704B', secondary: '#2B5F8A', bg: '#FEFCF9', text: '#2C2825' },
@@ -187,6 +196,7 @@ describe('WeddingProvider', () => {
     };
 
     global.fetch = vi.fn().mockResolvedValueOnce({
+      ok: true,
       json: () => Promise.resolve(mockResponse),
     });
 

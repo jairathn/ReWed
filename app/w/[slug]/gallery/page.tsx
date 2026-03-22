@@ -160,7 +160,7 @@ export default function GalleryPage() {
 
   if (isLoading || !guest) {
     return (
-      <div className="pb-24 px-5 pt-8">
+      <div className="pb-24 px-7 pt-8">
         <div className="skeleton h-8 w-40 mb-6" />
         <div className="grid grid-cols-3 gap-[3px]">
           {Array.from({ length: 9 }).map((_, i) => (
@@ -177,58 +177,74 @@ export default function GalleryPage() {
     { id: 'photo', label: 'Photos' },
     { id: 'video', label: 'Videos' },
     { id: 'portrait', label: 'Portraits' },
-    { id: 'favorite', label: 'Favorites' },
   ];
 
   return (
-    <div className="pb-24 px-5 pt-8 max-w-lg mx-auto">
+    <div className="pb-24 px-7 pt-8 max-w-lg mx-auto">
       <BackButton href={`/w/${slug}/home`} label="Home" />
+
       <h1
-        className="text-2xl font-medium mb-2"
+        className="text-[32px] font-normal mb-1"
         style={{
           fontFamily: 'var(--font-display)',
           color: 'var(--text-primary)',
+          letterSpacing: '-0.01em',
         }}
       >
         My Memories
       </h1>
 
-      {/* Stats Row */}
-      <div className="flex gap-4 mb-6">
+      {/* Gold divider */}
+      <div className="gold-divider" style={{ margin: '12px 0 20px' }} />
+
+      {/* Stats Row — shimmer gold numbers */}
+      <div className="flex gap-6 mb-6">
         {[
-          { label: 'Photos', count: counts.photos },
-          { label: 'Videos', count: counts.videos },
-          { label: 'Portraits', count: counts.portraits },
-        ].map((stat) => (
-          <div key={stat.label} className="text-center">
-            <p
-              className="text-lg font-semibold"
-              style={{ color: 'var(--color-terracotta)' }}
+          { n: counts.photos, l: 'Photos' },
+          { n: counts.videos, l: 'Videos' },
+          { n: counts.portraits, l: 'Portraits' },
+        ].map((s) => (
+          <div key={s.l}>
+            <span
+              className="shimmer-text"
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontSize: 26,
+                fontWeight: 400,
+                display: 'inline-block',
+              }}
             >
-              {stat.count}
-            </p>
-            <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-              {stat.label}
-            </p>
+              {s.n}
+            </span>
+            <span className="text-[11px] ml-1.5" style={{ color: 'var(--text-secondary)' }}>
+              {s.l}
+            </span>
           </div>
         ))}
       </div>
 
-      {/* Filter Tabs */}
-      <div className="flex gap-2 mb-6 overflow-x-auto">
+      {/* Filter Tabs — underline style */}
+      <div
+        className="flex -mx-7 px-7"
+        style={{ borderBottom: '0.5px solid var(--border-light)' }}
+      >
         {tabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className="px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors"
+            className="text-[11px] font-medium uppercase tracking-wide whitespace-nowrap transition-colors"
             style={{
-              background:
-                activeTab === tab.id ? 'var(--color-terracotta)' : 'transparent',
-              color: activeTab === tab.id ? 'white' : 'var(--text-secondary)',
-              border:
-                activeTab === tab.id
-                  ? 'none'
-                  : '1px solid var(--border-light)',
+              padding: '12px 20px',
+              color: activeTab === tab.id ? 'var(--color-gold)' : 'var(--text-secondary)',
+              borderBottom: activeTab === tab.id ? '1.5px solid var(--color-gold)' : '1.5px solid transparent',
+              marginBottom: '-0.5px',
+              background: 'none',
+              border: 'none',
+              borderBottomWidth: '1.5px',
+              borderBottomStyle: 'solid',
+              borderBottomColor: activeTab === tab.id ? 'var(--color-gold)' : 'transparent',
+              cursor: 'pointer',
+              letterSpacing: '0.06em',
             }}
           >
             {tab.label}
@@ -238,37 +254,55 @@ export default function GalleryPage() {
 
       {/* Media Grid */}
       {loadingMedia ? (
-        <div className="grid grid-cols-3 gap-[3px]">
+        <div className="grid grid-cols-3 gap-[2px] mt-5">
           {Array.from({ length: 9 }).map((_, i) => (
             <div key={i} className="skeleton aspect-square" />
           ))}
         </div>
       ) : items.length === 0 ? (
         <div className="text-center py-16">
-          <p className="text-5xl mb-4">&#128247;</p>
           <p
-            className="text-lg font-medium mb-2"
+            className="text-lg font-normal mb-2"
             style={{
               fontFamily: 'var(--font-display)',
-              color: 'var(--text-primary)',
+              fontStyle: 'italic',
+              color: 'var(--text-secondary)',
             }}
           >
-            {activeTab === 'favorite' ? 'No favorites yet' : 'No memories yet'}
+            {activeTab === 'favorite' ? 'No favorites yet' : 'Capture more moments'}
           </p>
-          <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-            {activeTab === 'favorite'
-              ? 'Tap the heart on any photo to save it here!'
-              : 'Take a photo or record a video to start building your gallery!'}
-          </p>
+          <button
+            onClick={() => router.push(`/w/${slug}/capture`)}
+            className="inline-flex items-center gap-2 text-xs font-medium uppercase tracking-wide mt-4"
+            style={{
+              padding: '12px 28px',
+              background: 'transparent',
+              border: '0.5px solid var(--color-gold-rule)',
+              color: 'var(--color-gold)',
+              borderRadius: 50,
+              cursor: 'pointer',
+              letterSpacing: '0.04em',
+            }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-gold)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" />
+              <circle cx="12" cy="13" r="3" />
+            </svg>
+            Open Camera
+          </button>
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-3 gap-[3px]">
-            {items.map((item) => (
+          <div className="grid grid-cols-3 gap-[2px] mt-5">
+            {items.map((item, i) => (
               <div
                 key={item.id}
-                className="aspect-square relative overflow-hidden rounded-sm cursor-pointer"
-                style={{ background: 'var(--bg-soft-cream)' }}
+                className="aspect-square relative overflow-hidden cursor-pointer"
+                style={{
+                  background: 'var(--bg-soft-cream)',
+                  borderRadius: i === 0 ? '10px 2px 2px 2px' : i === 2 ? '2px 10px 2px 2px' : 2,
+                  ...(i === 0 ? { gridColumn: 'span 2', gridRow: 'span 2' } : {}),
+                }}
                 onClick={() => { setSelectedItem(item); setShowDeleteConfirm(false); }}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -285,6 +319,33 @@ export default function GalleryPage() {
                   }}
                 />
 
+                {/* Hero image gold corner accent */}
+                {i === 0 && (
+                  <>
+                    <div className="absolute top-0 left-0 w-10" style={{ height: 1, background: 'linear-gradient(90deg, var(--color-gold), transparent)', opacity: 0.4 }} />
+                    <div className="absolute top-0 left-0 h-10" style={{ width: 1, background: 'linear-gradient(180deg, var(--color-gold), transparent)', opacity: 0.4 }} />
+                  </>
+                )}
+
+                {/* Portrait badge */}
+                {item.type === 'portrait' && (
+                  <div className="absolute bottom-3 left-3">
+                    <div
+                      className="text-[8.5px] font-medium uppercase tracking-wider"
+                      style={{
+                        padding: '4px 10px',
+                        background: 'rgba(26, 23, 20, 0.55)',
+                        backdropFilter: 'blur(12px)',
+                        borderRadius: 4,
+                        color: 'rgba(255, 255, 255, 0.85)',
+                        letterSpacing: '0.1em',
+                      }}
+                    >
+                      Portrait
+                    </div>
+                  </div>
+                )}
+
                 {/* Favorite indicator */}
                 {item.favorited && (
                   <div className="absolute top-1 left-1 text-red-500 text-sm drop-shadow">
@@ -294,36 +355,31 @@ export default function GalleryPage() {
                   </div>
                 )}
 
+                {/* Video play icon */}
+                {item.type === 'video' && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div
+                      className="w-7 h-7 rounded-full flex items-center justify-center"
+                      style={{ border: '1px solid rgba(255, 255, 255, 0.5)' }}
+                    >
+                      <div
+                        style={{
+                          width: 0, height: 0,
+                          borderTop: '4px solid transparent',
+                          borderBottom: '4px solid transparent',
+                          borderLeft: '7px solid rgba(255, 255, 255, 0.7)',
+                          marginLeft: 2,
+                        }}
+                      />
+                    </div>
+                  </div>
+                )}
+
                 {/* Video duration badge */}
                 {item.type === 'video' && item.duration_ms && (
                   <div className="absolute bottom-1 right-1 bg-black/60 text-white text-[10px] px-1.5 py-0.5 rounded">
                     {Math.floor(item.duration_ms / 60000)}:
                     {String(Math.floor((item.duration_ms % 60000) / 1000)).padStart(2, '0')}
-                  </div>
-                )}
-
-                {/* Video play icon */}
-                {item.type === 'video' && (
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="w-8 h-8 bg-white/80 rounded-full flex items-center justify-center">
-                      <svg width="12" height="14" viewBox="0 0 12 14" fill="var(--text-primary)">
-                        <polygon points="0,0 12,7 0,14" />
-                      </svg>
-                    </div>
-                  </div>
-                )}
-
-                {/* Portrait badge */}
-                {item.type === 'portrait' && (
-                  <div className="absolute top-1 left-1 bg-black/60 text-white text-[10px] px-1.5 py-0.5 rounded">
-                    AI
-                  </div>
-                )}
-
-                {/* Event badge */}
-                {item.event_name && (
-                  <div className="absolute top-1 right-1 bg-black/60 text-white text-[10px] px-1.5 py-0.5 rounded max-w-[80px] truncate">
-                    {item.event_name}
                   </div>
                 )}
               </div>
@@ -338,14 +394,44 @@ export default function GalleryPage() {
                 disabled={loadingMore}
                 className="px-6 py-2 rounded-full text-sm font-medium transition-colors"
                 style={{
-                  background: 'rgba(196, 112, 75, 0.08)',
-                  color: 'var(--color-terracotta)',
+                  background: 'var(--color-gold-faint)',
+                  color: 'var(--color-gold)',
+                  border: '0.5px solid var(--color-gold-rule)',
                 }}
               >
                 {loadingMore ? 'Loading...' : 'Load more'}
               </button>
             </div>
           )}
+
+          {/* Capture CTA at bottom */}
+          <div className="text-center mt-10">
+            <p
+              className="text-[15px] mb-5"
+              style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', color: 'var(--text-secondary)' }}
+            >
+              Capture more moments
+            </p>
+            <button
+              onClick={() => router.push(`/w/${slug}/capture`)}
+              className="inline-flex items-center gap-2 text-xs font-medium uppercase tracking-wide"
+              style={{
+                padding: '12px 28px',
+                background: 'transparent',
+                border: '0.5px solid var(--color-gold-rule)',
+                color: 'var(--color-gold)',
+                borderRadius: 50,
+                cursor: 'pointer',
+                letterSpacing: '0.04em',
+              }}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-gold)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" />
+                <circle cx="12" cy="13" r="3" />
+              </svg>
+              Open Camera
+            </button>
+          </div>
         </>
       )}
 
@@ -395,7 +481,6 @@ export default function GalleryPage() {
 
           {/* Action Bar */}
           <div className="flex items-center justify-center gap-8 px-4 py-5 flex-shrink-0">
-            {/* Favorite */}
             <button
               onClick={() => handleFavorite(selectedItem)}
               disabled={actionLoading === 'favorite'}
@@ -413,7 +498,6 @@ export default function GalleryPage() {
               </span>
             </button>
 
-            {/* Download */}
             <button
               onClick={() => handleDownload(selectedItem)}
               disabled={actionLoading === 'download'}
@@ -427,7 +511,6 @@ export default function GalleryPage() {
               <span className="text-white/70 text-[11px]">Download</span>
             </button>
 
-            {/* Delete */}
             <button
               onClick={() => setShowDeleteConfirm(true)}
               disabled={actionLoading === 'delete'}
