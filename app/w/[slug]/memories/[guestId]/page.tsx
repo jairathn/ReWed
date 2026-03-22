@@ -296,7 +296,7 @@ export default function GuestMemoirPage() {
   return (
     <>
       {/* Background audio */}
-      <audio ref={audioRef} src="/wedding-audio.mp3" loop muted preload="none" />
+      <audio ref={audioRef} src="/audio/background-music.mp3" loop muted preload="none" />
 
       <div
         className="min-h-screen relative overflow-hidden"
