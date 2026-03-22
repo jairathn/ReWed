@@ -40,6 +40,13 @@
   --event-wedding: #2B5F8A;
   --event-reception: #7A8B5C;
 
+  /* ── Gold Palette ── */
+  --color-gold: #C6A355;
+  --color-gold-light: #D4B76A;
+  --color-gold-dark: #A8883F;
+  --color-gold-faint: rgba(198, 163, 85, 0.08);
+  --color-gold-rule: rgba(198, 163, 85, 0.25);
+
   /* ── Fonts ── */
   --font-display: 'Playfair Display', Georgia, serif;
   --font-body: 'DM Sans', -apple-system, sans-serif;
@@ -222,6 +229,48 @@ body {
 .film-frame-corner.tr { top: -1px; right: -1px; border-width: 2px 2px 0 0; border-radius: 0 8px 0 0; }
 .film-frame-corner.bl { bottom: -1px; left: -1px; border-width: 0 0 2px 2px; border-radius: 0 0 0 8px; }
 .film-frame-corner.br { bottom: -1px; right: -1px; border-width: 0 2px 2px 0; border-radius: 0 0 8px 0; }
+
+/* ── Gold shimmer text ── */
+.shimmer-text {
+  background: linear-gradient(
+    120deg,
+    #A8883F 0%,
+    #D4B76A 25%,
+    #EDD9A3 50%,
+    #D4B76A 75%,
+    #A8883F 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: gold-shimmer 4s linear infinite;
+}
+
+/* ── Gold shimmer line/divider ── */
+.gold-divider {
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    rgba(198, 163, 85, 0.0) 0%,
+    rgba(198, 163, 85, 0.3) 20%,
+    rgba(212, 183, 106, 0.6) 50%,
+    rgba(198, 163, 85, 0.3) 80%,
+    rgba(198, 163, 85, 0.0) 100%
+  );
+  background-size: 200% 100%;
+  animation: gold-shimmer 3s ease-in-out infinite;
+}
+
+/* ── Gold glow shadow ── */
+.gold-glow {
+  box-shadow: 0 0 20px rgba(198, 163, 85, 0.08), 0 0 40px rgba(198, 163, 85, 0.04);
+}
+
+@keyframes gold-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
 
 /* ── Respect reduced motion ── */
 @media (prefers-reduced-motion: reduce) {

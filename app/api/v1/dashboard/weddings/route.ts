@@ -6,6 +6,7 @@ import { slugSchema } from '@/lib/validation';
 import { z } from 'zod';
 import { generateWeddingQrCode, uploadQrCodeToR2 } from '@/lib/qr';
 import { getMediaUrl } from '@/lib/storage/r2';
+import { toDateString } from '@/lib/db/format';
 
 function getJwtSecret(): string {
   return process.env.JWT_SECRET || 'dev-jwt-secret-change-in-production-min-32-chars!!';
@@ -58,6 +59,7 @@ export async function GET(request: NextRequest) {
 
     const weddings = await Promise.all(result.rows.map(async (w: Record<string, unknown>) => ({
       ...w,
+      wedding_date: toDateString(w.wedding_date),
       qr_code_url: w.qr_code_key ? await getMediaUrl(w.qr_code_key as string) : null,
     })));
 
@@ -121,6 +123,7 @@ export async function POST(request: NextRequest) {
       console.warn('[wedding-create] QR code generation failed:', err);
     }
 
+    wedding.wedding_date = toDateString(wedding.wedding_date);
     return Response.json({ wedding }, { status: 201 });
   } catch (error) {
     return handleApiError(error);

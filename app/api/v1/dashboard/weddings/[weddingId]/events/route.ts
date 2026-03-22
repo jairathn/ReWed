@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { z } from 'zod';
 import { handleApiError } from '@/lib/errors';
 import { getPool } from '@/lib/db/client';
+import { toDateString } from '@/lib/db/format';
 import { getCoupleId, verifyWeddingOwnership } from '@/lib/dashboard-auth';
 
 const createEventSchema = z.object({
@@ -41,7 +42,14 @@ export async function GET(
       [weddingId]
     );
 
-    return Response.json({ events: result.rows });
+    // Normalize date fields to YYYY-MM-DD strings
+    const events = result.rows.map((row: Record<string, unknown>) => ({
+      ...row,
+      date: toDateString(row.date),
+      end_date: toDateString(row.end_date),
+    }));
+
+    return Response.json({ events });
   } catch (error) {
     return handleApiError(error);
   }
@@ -90,7 +98,8 @@ export async function POST(
     // Clear FAQ cache since event details are used in chat answers
     await pool.query('DELETE FROM faq_cache WHERE wedding_id = $1', [weddingId]);
 
-    return Response.json({ event: result.rows[0] }, { status: 201 });
+    const event = { ...result.rows[0], date: toDateString(result.rows[0].date), end_date: toDateString(result.rows[0].end_date) };
+    return Response.json({ event }, { status: 201 });
   } catch (error) {
     return handleApiError(error);
   }

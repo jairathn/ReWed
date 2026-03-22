@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { handleApiError } from '@/lib/errors';
 import { getPool } from '@/lib/db/client';
+import { toDateString } from '@/lib/db/format';
 import { getCoupleId, verifyWeddingOwnership } from '@/lib/dashboard-auth';
 
 /**
@@ -22,7 +23,8 @@ export async function GET(
     const [weddingRes, guestRes, eventRes, uploadRes, faqRes, feedRes] = await Promise.all([
       pool.query(
         `SELECT id, slug, display_name, wedding_date, timezone, status, config, package_config,
-                storage_used_bytes, ai_portraits_used, created_at
+                storage_used_bytes, ai_portraits_used, created_at,
+                venue_city, venue_country, venue_lat, venue_lng
          FROM weddings WHERE id = $1`,
         [weddingId]
       ),
@@ -52,6 +54,9 @@ export async function GET(
     const uploads = uploadRes.rows[0];
     const faqs = faqRes.rows[0];
     const feeds = feedRes.rows[0];
+
+    // Normalize date fields so the frontend receives YYYY-MM-DD strings
+    wedding.wedding_date = toDateString(wedding.wedding_date);
 
     return Response.json({
       wedding,
