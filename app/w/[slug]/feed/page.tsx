@@ -11,6 +11,8 @@ interface FeedPost {
   type: 'text' | 'photo' | 'memory';
   content: string | null;
   photo_url: string | null;
+  video_url: string | null;
+  media_type: 'photo' | 'video' | null;
   like_count: number;
   comment_count: number;
   is_pinned: boolean;
@@ -42,6 +44,8 @@ export default function FeedPage() {
   const [commentText, setCommentText] = useState('');
   const [postingComment, setPostingComment] = useState(false);
   const [fetchError, setFetchError] = useState('');
+  const [feedBlocked, setFeedBlocked] = useState(false);
+  const [blockedMessage, setBlockedMessage] = useState('');
   const [mediaFile, setMediaFile] = useState<File | null>(null);
   const [mediaPreview, setMediaPreview] = useState('');
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -70,6 +74,11 @@ export default function FeedPage() {
             setPosts(data.data.items);
           }
           setNextCursor(data.data.next_cursor);
+        }
+        // Check event-blocking status
+        setFeedBlocked(data.is_blocked === true);
+        if (data.blocked_message) {
+          setBlockedMessage(data.blocked_message);
         }
       } catch (err) {
         console.error('Failed to fetch feed:', err);
@@ -182,6 +191,11 @@ export default function FeedPage() {
 
       const data = await res.json();
       if (!res.ok) {
+        if (data.error?.code === 'FEED_BLOCKED') {
+          setFeedBlocked(true);
+          setBlockedMessage(data.error.message);
+          setShowCompose(false);
+        }
         setPostError(data.error?.message || 'Could not create post. Please try again.');
         return;
       }
@@ -319,21 +333,55 @@ export default function FeedPage() {
         >
           Feed
         </h1>
-        <button
-          onClick={() => setShowCompose(true)}
-          className="px-4 py-2 text-sm rounded-full font-semibold"
-          style={{
-            background: 'var(--color-terracotta-gradient)',
-            color: 'white',
-            border: 'none',
-          }}
-        >
-          + Post
-        </button>
+        {!feedBlocked && (
+          <button
+            onClick={() => setShowCompose(true)}
+            className="px-4 py-2 text-sm rounded-full font-semibold"
+            style={{
+              background: 'var(--color-terracotta-gradient)',
+              color: 'white',
+              border: 'none',
+            }}
+          >
+            + Post
+          </button>
+        )}
       </div>
 
+      {/* Event Blocked Card */}
+      {feedBlocked && (
+        <div
+          className="p-5 mb-5 text-center"
+          style={{
+            background: 'linear-gradient(135deg, #FFF8F0, #FFFDF7)',
+            borderRadius: '16px',
+            border: '1.5px solid #D4A853',
+            boxShadow: '0 2px 12px rgba(212, 168, 83, 0.12)',
+          }}
+        >
+          <p
+            className="text-xl font-medium mb-2"
+            style={{ fontFamily: 'var(--font-display)', color: '#5C4A2F' }}
+          >
+            Enjoy the moment!
+          </p>
+          <p className="text-sm mb-3" style={{ color: '#7A6B52' }}>
+            {blockedMessage}
+          </p>
+          <div className="flex items-center justify-center gap-1.5">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#D4A853" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+              <circle cx="12" cy="13" r="4" />
+            </svg>
+            <span className="text-xs" style={{ color: '#B8963E' }}>
+              Don&apos;t forget to take pictures!
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* Compose Card */}
-      {showCompose && (
+      {showCompose && !feedBlocked && (
         <div
           className="p-4 mb-4"
           style={{
@@ -573,7 +621,20 @@ export default function FeedPage() {
                 </p>
               )}
 
-              {post.photo_url && (
+              {post.video_url && (
+                <div className="rounded-xl overflow-hidden mb-3">
+                  <video
+                    src={post.video_url}
+                    controls
+                    playsInline
+                    preload="metadata"
+                    className="w-full rounded-xl"
+                    style={{ maxHeight: '400px', objectFit: 'contain', background: '#000' }}
+                  />
+                </div>
+              )}
+
+              {post.photo_url && !post.video_url && (
                 <div className="rounded-xl overflow-hidden mb-3">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={post.photo_url} alt="" className="w-full" loading="lazy" />

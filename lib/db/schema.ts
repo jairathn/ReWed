@@ -93,6 +93,7 @@ export interface Guest {
   state: string | null;
   zip: string | null;
   country: string | null;
+  instagram_handle: string | null;
   party_id: string | null;
   party_role: 'primary' | 'partner' | 'child';
   relationship: string | null;
@@ -260,4 +261,51 @@ export interface Subscription {
   package_snapshot: Record<string, unknown>;
   created_at: Date;
   updated_at: Date;
+}
+
+export interface ActivityLog {
+  id: string;
+  wedding_id: string;
+  guest_id: string | null;
+  event_type: string;
+  metadata: Record<string, unknown>;
+  created_at: Date;
+}
+
+export interface SeatingAssignment {
+  id: string;
+  wedding_id: string;
+  guest_id: string;
+  table_name: string;
+  seat_number: number | null;
+  created_at: Date;
+}
+
+export interface IcebreakerResponse {
+  id: string;
+  wedding_id: string;
+  guest_id: string;
+  question_key: string;
+  answer: string;
+  created_at: Date;
+}
+
+export interface MusicRequest {
+  id: string;
+  wedding_id: string;
+  guest_id: string;
+  song_title: string;
+  artist: string | null;
+  created_at: Date;
+}
+
+export interface ContactShare {
+  id: string;
+  wedding_id: string;
+  guest_id: string;
+  instagram_handle: string | null;
+  phone: string | null;
+  email: string | null;
+  share_message: string | null;
+  created_at: Date;
 }

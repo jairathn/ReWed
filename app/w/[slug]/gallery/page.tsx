@@ -9,6 +9,19 @@ import type { MediaItem } from '@/lib/types/api';
 
 type FilterTab = 'all' | 'photo' | 'video' | 'portrait' | 'favorite';
 
+const AI_STYLES: { id: string; name: string; emoji: string }[] = [
+  { id: 'castle-wedding', name: 'Castle Wedding', emoji: '🏰' },
+  { id: 'mughal', name: 'Mughal Royalty', emoji: '👑' },
+  { id: 'bollywood-poster', name: 'Bollywood Poster', emoji: '🎬' },
+  { id: 'watercolor', name: 'Watercolor', emoji: '🎨' },
+  { id: 'renaissance', name: 'Renaissance', emoji: '🖼️' },
+  { id: 'pop-art', name: 'Pop Art', emoji: '🎯' },
+  { id: 'anime', name: 'Anime', emoji: '✨' },
+  { id: 'oil-painting', name: 'Oil Painting', emoji: '🖌️' },
+  { id: 'pixel-art', name: 'Pixel Art', emoji: '👾' },
+  { id: 'stained-glass', name: 'Stained Glass', emoji: '⛪' },
+];
+
 export default function GalleryPage() {
   const { guest, slug, isAuthenticated, isLoading } = useWedding();
   const router = useRouter();
@@ -23,6 +36,12 @@ export default function GalleryPage() {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [activeThumbId, setActiveThumbId] = useState<string | null>(null);
+  const [showAiModal, setShowAiModal] = useState(false);
+  const [aiSourceItem, setAiSourceItem] = useState<MediaItem | null>(null);
+  const [selectedAiStyle, setSelectedAiStyle] = useState<string | null>(null);
+  const [aiGenerating, setAiGenerating] = useState(false);
+  const [aiCustomPrompt, setAiCustomPrompt] = useState('');
+  const [aiMode, setAiMode] = useState<'presets' | 'custom'>('presets');
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -156,6 +175,37 @@ export default function GalleryPage() {
       // Silently fail
     } finally {
       setActionLoading(null);
+    }
+  };
+
+  const handleAiPortrait = async () => {
+    if (!aiSourceItem || (!selectedAiStyle && !aiCustomPrompt.trim())) return;
+    setAiGenerating(true);
+    try {
+      const res = await fetch(`/api/v1/w/${slug}/ai-portrait`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          source_upload_id: aiSourceItem.id,
+          style_id: selectedAiStyle || 'custom',
+          custom_prompt: aiCustomPrompt.trim() || undefined,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setShowAiModal(false);
+        setAiSourceItem(null);
+        setSelectedAiStyle(null);
+        setAiCustomPrompt('');
+        // Show toast-like feedback
+        alert('AI portrait is generating! It will appear in your gallery shortly.');
+      } else {
+        alert(data.error?.message || 'Failed to generate portrait');
+      }
+    } catch {
+      alert('Failed to generate portrait. Please try again.');
+    } finally {
+      setAiGenerating(false);
     }
   };
 
@@ -590,6 +640,24 @@ export default function GalleryPage() {
               </svg>
               <span className="text-white/70 text-[11px]">Delete</span>
             </button>
+
+            {selectedItem.type === 'photo' && (
+              <button
+                onClick={() => {
+                  setAiSourceItem(selectedItem);
+                  setShowAiModal(true);
+                  setSelectedItem(null);
+                }}
+                className="flex flex-col items-center gap-1"
+              >
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
+                  <path d="M12 2L2 7l10 5 10-5-10-5z" />
+                  <path d="M2 17l10 5 10-5" />
+                  <path d="M2 12l10 5 10-5" />
+                </svg>
+                <span className="text-white/70 text-[11px]">AI Edit</span>
+              </button>
+            )}
           </div>
 
           {/* Delete Confirmation */}
@@ -622,6 +690,58 @@ export default function GalleryPage() {
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {showAiModal && aiSourceItem && (
+        <div className="fixed inset-0 flex flex-col" style={{ background: 'rgba(0,0,0,0.92)', zIndex: 65 }}>
+          {/* Header */}
+          <div className="flex items-center justify-between px-4 py-3 flex-shrink-0">
+            <button onClick={() => { setShowAiModal(false); setSelectedAiStyle(null); setAiCustomPrompt(''); }} className="text-white p-2">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+            </button>
+            <span className="text-white text-sm font-medium" style={{ fontFamily: 'var(--font-display)' }}>Edit with AI</span>
+            <div className="w-10" />
+          </div>
+
+          {/* Source image preview */}
+          <div className="px-4 flex justify-center mb-4">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={aiSourceItem.thumbnail_url} alt="" className="w-32 h-32 rounded-xl object-cover" style={{ border: '2px solid rgba(255,255,255,0.2)' }} />
+          </div>
+
+          {/* Mode toggle */}
+          <div className="flex justify-center gap-2 mb-4 px-4">
+            <button onClick={() => setAiMode('presets')} className="px-4 py-1.5 rounded-full text-xs font-medium" style={{ background: aiMode === 'presets' ? 'var(--color-terracotta)' : 'rgba(255,255,255,0.1)', color: 'white' }}>Preset Styles</button>
+            <button onClick={() => setAiMode('custom')} className="px-4 py-1.5 rounded-full text-xs font-medium" style={{ background: aiMode === 'custom' ? 'var(--color-terracotta)' : 'rgba(255,255,255,0.1)', color: 'white' }}>Custom Prompt</button>
+          </div>
+
+          {/* Content */}
+          <div className="flex-1 overflow-y-auto px-4">
+            {aiMode === 'presets' ? (
+              <div className="grid grid-cols-3 gap-3">
+                {AI_STYLES.map((style) => (
+                  <button key={style.id} onClick={() => { setSelectedAiStyle(style.id); setAiCustomPrompt(''); }} className="flex flex-col items-center gap-2 p-3 rounded-2xl transition-all" style={{ background: selectedAiStyle === style.id ? 'rgba(196,112,75,0.4)' : 'rgba(254,252,249,0.06)', border: selectedAiStyle === style.id ? '2px solid var(--color-terracotta)' : '2px solid transparent' }}>
+                    <span className="text-2xl">{style.emoji}</span>
+                    <span className="text-xs font-medium text-center leading-tight" style={{ color: '#FEFCF9' }}>{style.name}</span>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div>
+                <p className="text-white/60 text-sm mb-3">Describe how you want your portrait to look:</p>
+                <textarea value={aiCustomPrompt} onChange={(e) => { setAiCustomPrompt(e.target.value); setSelectedAiStyle(null); }} placeholder="e.g. Transform this into a Renaissance painting with golden light..." className="w-full p-3 rounded-xl text-sm resize-none" style={{ background: 'rgba(255,255,255,0.1)', color: 'white', border: '1px solid rgba(255,255,255,0.2)', minHeight: '100px', fontFamily: 'var(--font-body)' }} maxLength={500} />
+                <p className="text-white/30 text-xs mt-1 text-right">{aiCustomPrompt.length}/500</p>
+              </div>
+            )}
+          </div>
+
+          {/* Generate button */}
+          <div className="px-6 pb-10 pt-4 flex justify-center">
+            <button onClick={handleAiPortrait} disabled={aiGenerating || (!selectedAiStyle && !aiCustomPrompt.trim())} className="w-full max-w-xs py-4 rounded-full text-base font-semibold transition-transform active:scale-95" style={{ background: (selectedAiStyle || aiCustomPrompt.trim()) ? 'var(--color-terracotta-gradient)' : 'rgba(255,255,255,0.1)', color: (selectedAiStyle || aiCustomPrompt.trim()) ? 'white' : 'rgba(255,255,255,0.3)', boxShadow: (selectedAiStyle || aiCustomPrompt.trim()) ? 'var(--shadow-terracotta)' : 'none' }}>
+              {aiGenerating ? 'Generating...' : 'Generate Portrait'}
+            </button>
+          </div>
         </div>
       )}
 
