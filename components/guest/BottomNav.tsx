@@ -6,10 +6,10 @@ import { useWedding } from '@/components/WeddingProvider';
 
 const navItems = [
   {
-    id: 'home',
-    label: 'Home',
-    path: '',
-    paths: ['M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z', 'M9 22V12h6v10'],
+    id: 'travel',
+    label: 'Travel',
+    path: '/travel',
+    paths: ['M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3z', 'M9 3v15', 'M15 6v15'],
   },
   {
     id: 'capture',
@@ -18,11 +18,11 @@ const navItems = [
     paths: ['M14.5 4h-5L7 7H4a2 2 0 00-2 2v9a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2h-3l-2.5-3z', 'M12 13a3 3 0 100-6 3 3 0 000 6z'],
   },
   {
-    id: 'travel',
-    label: 'Travel',
-    path: '/travel',
+    id: 'home',
+    label: 'Home',
+    path: '',
     elevated: true,
-    paths: ['M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3z', 'M9 3v15', 'M15 6v15'],
+    paths: ['M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z', 'M9 22V12h6v10'],
   },
   {
     id: 'gallery',
