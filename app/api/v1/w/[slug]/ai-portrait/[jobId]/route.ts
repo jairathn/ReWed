@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { getPool } from '@/lib/db/client';
 import { validateSession } from '@/lib/session';
-import { getCdnUrl } from '@/lib/storage/r2';
+import { getMediaUrl } from '@/lib/storage/r2';
 import { AppError, handleApiError } from '@/lib/errors';
 
 export async function GET(
@@ -42,7 +42,7 @@ export async function GET(
         job_id: job.id,
         status: job.status,
         style_id: job.style_id,
-        output_url: job.output_key ? getCdnUrl(job.output_key) : null,
+        output_url: job.output_key ? await getMediaUrl(job.output_key) : null,
         error: job.error_message || null,
         created_at: job.created_at,
         completed_at: job.completed_at,

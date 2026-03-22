@@ -5,7 +5,7 @@ import { getPool } from '@/lib/db/client';
 import { slugSchema } from '@/lib/validation';
 import { z } from 'zod';
 import { generateWeddingQrCode, uploadQrCodeToR2 } from '@/lib/qr';
-import { getCdnUrl } from '@/lib/storage/r2';
+import { getMediaUrl } from '@/lib/storage/r2';
 
 function getJwtSecret(): string {
   return process.env.JWT_SECRET || 'dev-jwt-secret-change-in-production-min-32-chars!!';
@@ -56,10 +56,10 @@ export async function GET(request: NextRequest) {
       [coupleId]
     );
 
-    const weddings = result.rows.map((w: Record<string, unknown>) => ({
+    const weddings = await Promise.all(result.rows.map(async (w: Record<string, unknown>) => ({
       ...w,
-      qr_code_url: w.qr_code_key ? getCdnUrl(w.qr_code_key as string) : null,
-    }));
+      qr_code_url: w.qr_code_key ? await getMediaUrl(w.qr_code_key as string) : null,
+    })));
 
     return Response.json({ weddings });
   } catch (error) {
@@ -115,7 +115,7 @@ export async function POST(request: NextRequest) {
       const pngBuffer = await generateWeddingQrCode(parsed.slug);
       const qrKey = await uploadQrCodeToR2(wedding.id, pngBuffer);
       await pool.query('UPDATE weddings SET qr_code_key = $1 WHERE id = $2', [qrKey, wedding.id]);
-      wedding.qr_code_url = getCdnUrl(qrKey);
+      wedding.qr_code_url = await getMediaUrl(qrKey);
     } catch (err) {
       // QR generation is non-blocking — wedding still created if R2 is unavailable
       console.warn('[wedding-create] QR code generation failed:', err);

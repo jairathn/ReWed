@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server';
 import { handleApiError } from '@/lib/errors';
 import { getPool } from '@/lib/db/client';
 import { getCoupleId, verifyWeddingOwnership } from '@/lib/dashboard-auth';
-import { getCdnUrl } from '@/lib/storage/r2';
+import { getMediaUrl } from '@/lib/storage/r2';
 
 /**
  * GET /api/v1/dashboard/weddings/[weddingId]/feed
@@ -50,11 +50,11 @@ export async function GET(
     const hasMore = result.rows.length > limit;
     const rows = result.rows.slice(0, limit);
 
-    const posts = rows.map((row) => ({
+    const posts = await Promise.all(rows.map(async (row) => ({
       id: row.id,
       type: row.type,
       content: row.content,
-      photo_url: row.photo_key ? getCdnUrl(row.photo_key) : null,
+      photo_url: row.photo_key ? await getMediaUrl(row.photo_key) : null,
       like_count: row.like_count,
       comment_count: row.comment_count,
       is_pinned: row.is_pinned,
@@ -66,7 +66,7 @@ export async function GET(
         last_name: row.last_name,
       },
       created_at: row.created_at,
-    }));
+    })));
 
     return Response.json({
       data: {

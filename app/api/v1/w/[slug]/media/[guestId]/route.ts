@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { getPool } from '@/lib/db/client';
 import { validateSession } from '@/lib/session';
-import { getCdnUrl } from '@/lib/storage/r2';
+import { getMediaUrl } from '@/lib/storage/r2';
 import { AppError, handleApiError } from '@/lib/errors';
 
 export async function GET(
@@ -130,17 +130,17 @@ export async function GET(
     const hasMore = allItems.length > limit;
     const items = allItems.slice(0, limit);
 
-    const mediaItems = items.map((row) => ({
+    const mediaItems = await Promise.all(items.map(async (row) => ({
       id: row.id,
       type: row.type as 'photo' | 'video' | 'portrait',
-      url: getCdnUrl(row.storage_key),
-      thumbnail_url: row.thumbnail_key ? getCdnUrl(row.thumbnail_key) : getCdnUrl(row.storage_key),
+      url: await getMediaUrl(row.storage_key),
+      thumbnail_url: await getMediaUrl(row.thumbnail_key || row.storage_key),
       event_name: row.event_name || null,
       filter_applied: row.filter_applied || null,
       duration_ms: row.duration_ms || null,
       favorited: row.favorited === true,
       created_at: row.created_at,
-    }));
+    })));
 
     return Response.json({
       data: {

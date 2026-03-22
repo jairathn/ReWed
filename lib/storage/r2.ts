@@ -27,8 +27,8 @@ function getBucketName(): string {
   return process.env.R2_BUCKET_NAME || 'wedding-media';
 }
 
-function getPublicUrl(): string {
-  return process.env.R2_PUBLIC_URL || 'https://media.yourplatform.com';
+function getPublicUrl(): string | null {
+  return process.env.R2_PUBLIC_URL || null;
 }
 
 function getExtension(contentType: string): string {
@@ -125,6 +125,26 @@ export async function generatePresignedGetUrl(storageKey: string): Promise<strin
   return getSignedUrl(client, command, { expiresIn: PRESIGN_EXPIRY });
 }
 
+export async function uploadObject(storageKey: string, body: Buffer, contentType: string): Promise<void> {
+  const client = getR2Client();
+  await client.send(new PutObjectCommand({
+    Bucket: getBucketName(),
+    Key: storageKey,
+    Body: body,
+    ContentType: contentType,
+  }));
+}
+
+export async function getObject(storageKey: string): Promise<Buffer> {
+  const client = getR2Client();
+  const response = await client.send(new GetObjectCommand({
+    Bucket: getBucketName(),
+    Key: storageKey,
+  }));
+  const bytes = await response.Body!.transformToByteArray();
+  return Buffer.from(bytes);
+}
+
 export async function deleteObject(storageKey: string): Promise<void> {
   const client = getR2Client();
   await client.send(new DeleteObjectCommand({
@@ -133,8 +153,22 @@ export async function deleteObject(storageKey: string): Promise<void> {
   }));
 }
 
-export function getCdnUrl(storageKey: string): string {
-  return `${getPublicUrl()}/${storageKey}`;
+export function getCdnUrl(storageKey: string): string | null {
+  const publicUrl = getPublicUrl();
+  if (!publicUrl) return null;
+  return `${publicUrl}/${storageKey}`;
+}
+
+export async function getMediaUrl(storageKey: string): Promise<string> {
+  const cdnUrl = getCdnUrl(storageKey);
+  if (cdnUrl) return cdnUrl;
+  // Fall back to presigned URL when R2_PUBLIC_URL is not configured
+  const client = getR2Client();
+  const command = new GetObjectCommand({
+    Bucket: getBucketName(),
+    Key: storageKey,
+  });
+  return getSignedUrl(client, command, { expiresIn: PRESIGN_EXPIRY });
 }
 
 export function getThumbnailKey(originalKey: string): string {

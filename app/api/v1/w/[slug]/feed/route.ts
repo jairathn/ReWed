@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { getPool } from '@/lib/db/client';
 import { validateSession } from '@/lib/session';
-import { getCdnUrl } from '@/lib/storage/r2';
+import { getMediaUrl } from '@/lib/storage/r2';
 import { feedPostSchema, sanitizeText } from '@/lib/validation';
 import { AppError, handleApiError } from '@/lib/errors';
 
@@ -80,11 +80,11 @@ export async function GET(
       likedPostIds = new Set(likesResult.rows.map((r) => r.post_id));
     }
 
-    const posts = rows.map((row) => ({
+    const posts = await Promise.all(rows.map(async (row) => ({
       id: row.id,
       type: row.type,
       content: row.content,
-      photo_url: row.photo_key ? getCdnUrl(row.photo_key) : null,
+      photo_url: row.photo_key ? await getMediaUrl(row.photo_key) : null,
       like_count: row.like_count,
       comment_count: row.comment_count,
       is_pinned: row.is_pinned,
@@ -96,7 +96,7 @@ export async function GET(
         display_name: row.display_name,
       },
       created_at: row.created_at,
-    }));
+    })));
 
     return Response.json({
       data: {
@@ -196,7 +196,7 @@ export async function POST(
             id: post.id,
             type: post.type,
             content: post.content,
-            photo_url: post.photo_key ? getCdnUrl(post.photo_key) : null,
+            photo_url: post.photo_key ? await getMediaUrl(post.photo_key) : null,
             like_count: post.like_count,
             comment_count: post.comment_count,
             is_pinned: post.is_pinned,
