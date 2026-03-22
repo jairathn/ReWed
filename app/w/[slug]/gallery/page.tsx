@@ -42,12 +42,29 @@ export default function GalleryPage() {
   const [aiGenerating, setAiGenerating] = useState(false);
   const [aiCustomPrompt, setAiCustomPrompt] = useState('');
   const [aiMode, setAiMode] = useState<'presets' | 'custom'>('presets');
+  const [highlightReels, setHighlightReels] = useState<{
+    keeper?: { url: string; thumbnail_url: string | null; duration_ms: number | null; status: string };
+    reel?: { url: string; thumbnail_url: string | null; duration_ms: number | null; status: string };
+  }>({});
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       router.replace(`/w/${slug}`);
     }
   }, [isLoading, isAuthenticated, router, slug]);
+
+  // Fetch highlight reels
+  useEffect(() => {
+    if (!guest) return;
+    fetch(`/api/v1/w/${slug}/memoir/${guest.id}`)
+      .then((res) => res.ok ? res.json() : null)
+      .then((data) => {
+        if (data?.data?.highlight_reels) {
+          setHighlightReels(data.data.highlight_reels);
+        }
+      })
+      .catch(() => {});
+  }, [guest, slug]);
 
   const fetchMedia = useCallback(
     async (tab: FilterTab, cursor?: string | null) => {
@@ -247,6 +264,123 @@ export default function GalleryPage() {
 
       {/* Gold divider */}
       <div className="gold-divider" style={{ margin: '12px 0 20px' }} />
+
+      {/* ── Highlight Reels Section ── */}
+      {(highlightReels.keeper?.status === 'ready' || highlightReels.reel?.status === 'ready') && (
+        <section className="mb-6">
+          <h2
+            className="text-[11px] font-medium uppercase tracking-widest mb-4"
+            style={{ color: 'var(--text-tertiary)', letterSpacing: '0.12em' }}
+          >
+            Your Highlight Reels
+          </h2>
+          <div className="flex gap-3">
+            {/* Full Edit (Keeper) */}
+            {highlightReels.keeper?.status === 'ready' && (
+              <div className="flex-1">
+                <div
+                  className="relative overflow-hidden cursor-pointer"
+                  style={{
+                    borderRadius: 12,
+                    border: '1px solid var(--border-light)',
+                    boxShadow: 'var(--shadow-soft)',
+                  }}
+                >
+                  <video
+                    src={highlightReels.keeper.url}
+                    controls
+                    poster={highlightReels.keeper.thumbnail_url || undefined}
+                    className="w-full block"
+                    style={{ aspectRatio: '16/9', objectFit: 'cover' }}
+                    playsInline
+                  />
+                </div>
+                <div className="flex items-center justify-between mt-2">
+                  <p className="text-[11px] font-medium" style={{ color: 'var(--text-secondary)' }}>
+                    Full Edit
+                  </p>
+                  <button
+                    onClick={() => {
+                      const a = document.createElement('a');
+                      a.href = highlightReels.keeper!.url;
+                      a.download = 'highlight-full.mp4';
+                      a.target = '_blank';
+                      document.body.appendChild(a);
+                      a.click();
+                      document.body.removeChild(a);
+                    }}
+                    className="text-[10px] font-medium px-2.5 py-1 rounded-full"
+                    style={{
+                      background: 'var(--color-gold-faint)',
+                      color: 'var(--color-gold)',
+                      border: '0.5px solid var(--color-gold-rule)',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    Download
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Social Media Edit (Reel) */}
+            {highlightReels.reel?.status === 'ready' && (
+              <div style={{ width: highlightReels.keeper?.status === 'ready' ? '40%' : '100%', flexShrink: 0 }}>
+                <div
+                  className="relative overflow-hidden"
+                  style={{
+                    borderRadius: 12,
+                    border: '1px solid var(--border-light)',
+                    boxShadow: 'var(--shadow-soft)',
+                  }}
+                >
+                  <video
+                    src={highlightReels.reel.url}
+                    controls
+                    poster={highlightReels.reel.thumbnail_url || undefined}
+                    className="w-full block"
+                    style={{ aspectRatio: '9/16', objectFit: 'cover', maxHeight: highlightReels.keeper?.status === 'ready' ? 160 : 300 }}
+                    playsInline
+                  />
+                </div>
+                <div className="flex items-center justify-between mt-2">
+                  <p className="text-[11px] font-medium" style={{ color: 'var(--text-secondary)' }}>
+                    Social Reel
+                  </p>
+                  <button
+                    onClick={() => {
+                      if (navigator.share) {
+                        navigator.share({
+                          title: 'My Wedding Highlight',
+                          url: highlightReels.reel!.url,
+                        }).catch(() => {});
+                      } else {
+                        const a = document.createElement('a');
+                        a.href = highlightReels.reel!.url;
+                        a.download = 'highlight-reel.mp4';
+                        a.target = '_blank';
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                      }
+                    }}
+                    className="text-[10px] font-medium px-2.5 py-1 rounded-full"
+                    style={{
+                      background: 'var(--color-terracotta-gradient)',
+                      color: '#FFFFFF',
+                      border: 'none',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    Share
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+          <div className="gold-divider" style={{ margin: '16px 0 0' }} />
+        </section>
+      )}
 
       {/* Stats Row — shimmer gold numbers */}
       <div className="flex gap-6 mb-6">

@@ -309,3 +309,26 @@ export interface ContactShare {
   share_message: string | null;
   created_at: Date;
 }
+
+export interface HighlightReel {
+  id: string;
+  wedding_id: string;
+  guest_id: string;
+  type: 'keeper' | 'reel';
+  storage_key: string;
+  thumbnail_key: string | null;
+  duration_ms: number | null;
+  size_bytes: number | null;
+  status: 'pending' | 'processing' | 'ready' | 'failed';
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface MemoirMessage {
+  id: string;
+  wedding_id: string;
+  guest_id: string;
+  message: string;
+  created_at: Date;
+  updated_at: Date;
+}

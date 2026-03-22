@@ -285,6 +285,16 @@ body {
   }
 }
 
+/* ── Memoir card flip ── */
+.memoir-card-flip {
+  transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-style: preserve-3d;
+}
+
+.memoir-card-face {
+  backface-visibility: hidden;
+}
+
 /* ── Safe area for mobile ── */
 .safe-bottom {
   padding-bottom: env(safe-area-inset-bottom, 0px);
