@@ -19,7 +19,7 @@ export default function CapturePage() {
 
   if (isLoading || !config || !guest) {
     return (
-      <div className="pb-24 px-5 pt-8 max-w-lg mx-auto">
+      <div className="pb-24 px-7 pt-8 max-w-lg mx-auto">
         <div className="skeleton h-8 w-48 mb-6" />
         <div className="skeleton h-48 w-full mb-4 rounded-2xl" />
         <div className="skeleton h-48 w-full rounded-2xl" />
@@ -29,58 +29,78 @@ export default function CapturePage() {
   }
 
   return (
-    <div className="pb-24 px-5 pt-8 max-w-lg mx-auto">
+    <div className="pb-24 px-7 pt-8 max-w-lg mx-auto">
       <BackButton href={`/w/${slug}/home`} label="Home" />
+
       <h1
-        className="text-2xl font-medium mb-2"
-        style={{ fontFamily: 'var(--font-display)', color: 'var(--text-primary)' }}
+        className="text-[32px] font-normal mb-1"
+        style={{
+          fontFamily: 'var(--font-display)',
+          color: 'var(--text-primary)',
+          letterSpacing: '-0.01em',
+        }}
       >
-        Capture a Moment
+        Capture
       </h1>
-      <p className="text-sm mb-6" style={{ color: 'var(--text-secondary)' }}>
-        Take a photo or record a video message for {config.display_name}
+      <p
+        className="text-sm mb-1"
+        style={{ color: 'var(--text-secondary)', lineHeight: 1.5 }}
+      >
+        Share a moment from {config.display_name}
       </p>
+
+      {/* Gold divider */}
+      <div
+        style={{
+          height: 1,
+          margin: '16px 0 28px',
+          background: 'linear-gradient(90deg, rgba(198,163,85,0) 0%, rgba(198,163,85,0.3) 20%, rgba(212,183,106,0.6) 50%, rgba(198,163,85,0.3) 80%, rgba(198,163,85,0) 100%)',
+          backgroundSize: '200% 100%',
+          animation: 'shimmer 3s ease-in-out infinite',
+        }}
+      />
 
       <div className="space-y-4">
         {/* Photo Booth Card */}
         <Link
           href={`/w/${slug}/photo`}
-          className="block card p-0 overflow-hidden"
+          className="block overflow-hidden"
           style={{
-            border: '1px solid var(--border-light)',
+            borderRadius: 16,
+            border: '0.5px solid rgba(198,163,85,0.25)',
+            background: 'rgba(198,163,85,0.08)',
+            textDecoration: 'none',
           }}
         >
-          <div
-            className="px-6 py-8 flex items-center gap-5"
-            style={{
-              background: 'linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%)',
-            }}
-          >
+          <div className="px-6 py-7 flex items-center gap-5">
             <div
-              className="w-16 h-16 rounded-2xl flex items-center justify-center flex-shrink-0"
+              className="w-14 h-14 rounded-full flex items-center justify-center flex-shrink-0"
               style={{
-                background: 'rgba(255, 255, 255, 0.1)',
-                border: '1px solid rgba(255, 255, 255, 0.15)',
+                background: 'linear-gradient(145deg, #A8883F, #C6A355, #D4B76A)',
+                boxShadow: '0 4px 16px rgba(198,163,85,0.25)',
               }}
             >
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
-                <circle cx="12" cy="13" r="4" />
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FDFBF7" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" />
+                <circle cx="12" cy="13" r="3" />
               </svg>
             </div>
             <div className="flex-1 min-w-0">
               <h2
-                className="text-lg font-medium text-white mb-1"
-                style={{ fontFamily: 'var(--font-display)' }}
+                className="text-lg font-normal mb-1"
+                style={{
+                  fontFamily: 'var(--font-display)',
+                  color: 'var(--text-primary)',
+                }}
               >
                 Photo Booth
               </h2>
-              <p className="text-sm text-white/60 leading-snug">
+              <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
                 Take photos &amp; AI portraits
               </p>
             </div>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0 opacity-40">
-              <polyline points="9 18 15 12 9 6" />
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#A8883F" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0">
+              <polyline points="9 6 15 12 9 18" />
             </svg>
           </div>
         </Link>
@@ -88,68 +108,67 @@ export default function CapturePage() {
         {/* Video Message Card */}
         <Link
           href={`/w/${slug}/video`}
-          className="block card p-0 overflow-hidden"
+          className="block overflow-hidden"
           style={{
-            border: '1px solid var(--border-light)',
+            borderRadius: 16,
+            border: '0.5px solid rgba(198,163,85,0.25)',
+            background: 'rgba(198,163,85,0.08)',
+            textDecoration: 'none',
           }}
         >
-          <div
-            className="px-6 py-8 flex items-center gap-5"
-            style={{
-              background: 'linear-gradient(135deg, #2d1a1a 0%, #1a1a2d 100%)',
-            }}
-          >
+          <div className="px-6 py-7 flex items-center gap-5">
             <div
-              className="w-16 h-16 rounded-2xl flex items-center justify-center flex-shrink-0"
+              className="w-14 h-14 rounded-full flex items-center justify-center flex-shrink-0"
               style={{
-                background: 'rgba(255, 255, 255, 0.1)',
-                border: '1px solid rgba(255, 255, 255, 0.15)',
+                background: 'linear-gradient(145deg, #A8883F, #C6A355, #D4B76A)',
+                boxShadow: '0 4px 16px rgba(198,163,85,0.25)',
               }}
             >
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FDFBF7" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                 <polygon points="23 7 16 12 23 17 23 7" />
                 <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
               </svg>
             </div>
             <div className="flex-1 min-w-0">
               <h2
-                className="text-lg font-medium text-white mb-1"
-                style={{ fontFamily: 'var(--font-display)' }}
+                className="text-lg font-normal mb-1"
+                style={{
+                  fontFamily: 'var(--font-display)',
+                  color: 'var(--text-primary)',
+                }}
               >
                 Video Message
               </h2>
-              <p className="text-sm text-white/60 leading-snug">
+              <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
                 Record a heartfelt message
               </p>
             </div>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0 opacity-40">
-              <polyline points="9 18 15 12 9 6" />
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#A8883F" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0">
+              <polyline points="9 6 15 12 9 18" />
             </svg>
           </div>
         </Link>
 
-        {/* Gallery Link */}
+        {/* View Gallery Link */}
         <Link
           href={`/w/${slug}/gallery`}
-          className="block card p-4"
-          style={{
-            border: '1px solid var(--border-light)',
-            background: 'var(--bg-muted, #f9f8f6)',
-          }}
+          className="flex items-center gap-3 py-4 px-1"
+          style={{ textDecoration: 'none' }}
         >
-          <div className="flex items-center gap-3">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-              <circle cx="8.5" cy="8.5" r="1.5" />
-              <polyline points="21 15 16 10 5 21" />
-            </svg>
-            <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
-              View Gallery
-            </span>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="ml-auto">
-              <polyline points="9 18 15 12 9 6" />
-            </svg>
-          </div>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C6A355" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+            <circle cx="8.5" cy="8.5" r="1.5" />
+            <polyline points="21 15 16 10 5 21" />
+          </svg>
+          <span
+            className="text-sm font-medium"
+            style={{ color: 'var(--text-primary)' }}
+          >
+            View Gallery
+          </span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#A8883F" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="ml-auto">
+            <polyline points="9 6 15 12 9 18" />
+          </svg>
         </Link>
       </div>
 

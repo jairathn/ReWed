@@ -22,6 +22,7 @@ export default function GalleryPage() {
   const [selectedItem, setSelectedItem] = useState<MediaItem | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [activeThumbId, setActiveThumbId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -294,96 +295,163 @@ export default function GalleryPage() {
       ) : (
         <>
           <div className="grid grid-cols-3 gap-[2px] mt-5">
-            {items.map((item, i) => (
-              <div
-                key={item.id}
-                className="aspect-square relative overflow-hidden cursor-pointer"
-                style={{
-                  background: 'var(--bg-soft-cream)',
-                  borderRadius: i === 0 ? '10px 2px 2px 2px' : i === 2 ? '2px 10px 2px 2px' : 2,
-                  ...(i === 0 ? { gridColumn: 'span 2', gridRow: 'span 2' } : {}),
-                }}
-                onClick={() => { setSelectedItem(item); setShowDeleteConfirm(false); }}
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={item.thumbnail_url}
-                  alt=""
-                  className="w-full h-full object-cover"
-                  loading="lazy"
-                  onError={(e) => {
-                    const img = e.currentTarget;
-                    if (img.src !== item.url) {
-                      img.src = item.url;
+            {items.map((item, i) => {
+              const showActions = activeThumbId === item.id;
+              return (
+                <div
+                  key={item.id}
+                  className="aspect-square relative overflow-hidden cursor-pointer group"
+                  style={{
+                    background: 'var(--bg-soft-cream)',
+                    borderRadius: i === 0 ? '10px 2px 2px 2px' : i === 2 ? '2px 10px 2px 2px' : 2,
+                    ...(i === 0 ? { gridColumn: 'span 2', gridRow: 'span 2' } : {}),
+                  }}
+                  onClick={() => {
+                    // On mobile: first tap shows actions, second tap opens lightbox
+                    if ('ontouchstart' in window) {
+                      if (activeThumbId === item.id) {
+                        setSelectedItem(item);
+                        setShowDeleteConfirm(false);
+                        setActiveThumbId(null);
+                      } else {
+                        setActiveThumbId(item.id);
+                      }
+                    } else {
+                      setSelectedItem(item);
+                      setShowDeleteConfirm(false);
                     }
                   }}
-                />
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={item.thumbnail_url}
+                    alt=""
+                    className="w-full h-full object-cover"
+                    loading="lazy"
+                    onError={(e) => {
+                      const img = e.currentTarget;
+                      if (img.src !== item.url) {
+                        img.src = item.url;
+                      }
+                    }}
+                  />
 
-                {/* Hero image gold corner accent */}
-                {i === 0 && (
-                  <>
-                    <div className="absolute top-0 left-0 w-10" style={{ height: 1, background: 'linear-gradient(90deg, var(--color-gold), transparent)', opacity: 0.4 }} />
-                    <div className="absolute top-0 left-0 h-10" style={{ width: 1, background: 'linear-gradient(180deg, var(--color-gold), transparent)', opacity: 0.4 }} />
-                  </>
-                )}
-
-                {/* Portrait badge */}
-                {item.type === 'portrait' && (
-                  <div className="absolute bottom-3 left-3">
-                    <div
-                      className="text-[8.5px] font-medium uppercase tracking-wider"
-                      style={{
-                        padding: '4px 10px',
-                        background: 'rgba(26, 23, 20, 0.55)',
-                        backdropFilter: 'blur(12px)',
-                        borderRadius: 4,
-                        color: 'rgba(255, 255, 255, 0.85)',
-                        letterSpacing: '0.1em',
+                  {/* Action overlay - shown on hover (desktop) or tap (mobile) */}
+                  <div
+                    className={`absolute inset-0 flex items-end justify-center gap-3 pb-2 transition-opacity duration-200 ${showActions ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
+                    style={{
+                      background: 'linear-gradient(to top, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.15) 50%, transparent 100%)',
+                    }}
+                  >
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleFavorite(item); }}
+                      className="p-1.5 rounded-full"
+                      style={{ background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(8px)' }}
+                      title={item.favorited ? 'Unsave' : 'Save'}
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24"
+                        fill={item.favorited ? '#ef4444' : 'none'}
+                        stroke={item.favorited ? '#ef4444' : 'white'}
+                        strokeWidth="2"
+                      >
+                        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                      </svg>
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleDownload(item); }}
+                      className="p-1.5 rounded-full"
+                      style={{ background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(8px)' }}
+                      title="Download"
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
+                        <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+                        <polyline points="7 10 12 15 17 10" />
+                        <line x1="12" y1="15" x2="12" y2="3" />
+                      </svg>
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedItem(item);
+                        setShowDeleteConfirm(true);
                       }}
+                      className="p-1.5 rounded-full"
+                      style={{ background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(8px)' }}
+                      title="Delete"
                     >
-                      Portrait
-                    </div>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
+                        <polyline points="3 6 5 6 21 6" />
+                        <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
+                      </svg>
+                    </button>
                   </div>
-                )}
 
-                {/* Favorite indicator */}
-                {item.favorited && (
-                  <div className="absolute top-1 left-1 text-red-500 text-sm drop-shadow">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-                    </svg>
-                  </div>
-                )}
+                  {/* Hero image gold corner accent */}
+                  {i === 0 && (
+                    <>
+                      <div className="absolute top-0 left-0 w-10" style={{ height: 1, background: 'linear-gradient(90deg, var(--color-gold), transparent)', opacity: 0.4 }} />
+                      <div className="absolute top-0 left-0 h-10" style={{ width: 1, background: 'linear-gradient(180deg, var(--color-gold), transparent)', opacity: 0.4 }} />
+                    </>
+                  )}
 
-                {/* Video play icon */}
-                {item.type === 'video' && (
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div
-                      className="w-7 h-7 rounded-full flex items-center justify-center"
-                      style={{ border: '1px solid rgba(255, 255, 255, 0.5)' }}
-                    >
+                  {/* Portrait badge */}
+                  {item.type === 'portrait' && (
+                    <div className="absolute bottom-3 left-3 pointer-events-none">
                       <div
+                        className="text-[8.5px] font-medium uppercase tracking-wider"
                         style={{
-                          width: 0, height: 0,
-                          borderTop: '4px solid transparent',
-                          borderBottom: '4px solid transparent',
-                          borderLeft: '7px solid rgba(255, 255, 255, 0.7)',
-                          marginLeft: 2,
+                          padding: '4px 10px',
+                          background: 'rgba(26, 23, 20, 0.55)',
+                          backdropFilter: 'blur(12px)',
+                          borderRadius: 4,
+                          color: 'rgba(255, 255, 255, 0.85)',
+                          letterSpacing: '0.1em',
                         }}
-                      />
+                      >
+                        Portrait
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {/* Video duration badge */}
-                {item.type === 'video' && item.duration_ms && (
-                  <div className="absolute bottom-1 right-1 bg-black/60 text-white text-[10px] px-1.5 py-0.5 rounded">
-                    {Math.floor(item.duration_ms / 60000)}:
-                    {String(Math.floor((item.duration_ms % 60000) / 1000)).padStart(2, '0')}
-                  </div>
-                )}
-              </div>
-            ))}
+                  {/* Favorite indicator */}
+                  {item.favorited && (
+                    <div className="absolute top-1 left-1 text-red-500 text-sm drop-shadow pointer-events-none">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                      </svg>
+                    </div>
+                  )}
+
+                  {/* Video play icon */}
+                  {item.type === 'video' && (
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                      <div
+                        className="w-7 h-7 rounded-full flex items-center justify-center"
+                        style={{ border: '1px solid rgba(255, 255, 255, 0.5)' }}
+                      >
+                        <div
+                          style={{
+                            width: 0, height: 0,
+                            borderTop: '4px solid transparent',
+                            borderBottom: '4px solid transparent',
+                            borderLeft: '7px solid rgba(255, 255, 255, 0.7)',
+                            marginLeft: 2,
+                          }}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Video duration badge */}
+                  {item.type === 'video' && item.duration_ms && (
+                    <div className="absolute bottom-1 right-1 bg-black/60 text-white text-[10px] px-1.5 py-0.5 rounded pointer-events-none">
+                      {Math.floor(item.duration_ms / 60000)}:
+                      {String(Math.floor((item.duration_ms % 60000) / 1000)).padStart(2, '0')}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
 
           {/* Load More */}

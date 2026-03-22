@@ -4,65 +4,38 @@ import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useWedding } from '@/components/WeddingProvider';
 
-const HomeIcon = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-    <polyline points="9 22 9 12 15 12 15 22" />
-  </svg>
-);
-
-const VideoIcon = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <polygon points="23 7 16 12 23 17 23 7" />
-    <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
-  </svg>
-);
-
-const CameraIcon = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
-    <circle cx="12" cy="13" r="4" />
-  </svg>
-);
-
-const CalendarIcon = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-    <line x1="16" y1="2" x2="16" y2="6" />
-    <line x1="8" y1="2" x2="8" y2="6" />
-    <line x1="3" y1="10" x2="21" y2="10" />
-  </svg>
-);
-
-const GalleryIcon = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-    <circle cx="8.5" cy="8.5" r="1.5" />
-    <polyline points="21 15 16 10 5 21" />
-  </svg>
-);
-
-const MapIcon = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6" />
-    <line x1="8" y1="2" x2="8" y2="18" />
-    <line x1="16" y1="6" x2="16" y2="22" />
-  </svg>
-);
-
-const CaptureIcon = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="12" r="10" />
-    <circle cx="12" cy="12" r="3" />
-  </svg>
-);
-
-const tabs = [
-  { id: 'home', label: 'Home', icon: HomeIcon, path: '' },
-  { id: 'capture', label: 'Capture', icon: CaptureIcon, path: '/capture' },
-  { id: 'travel', label: 'Travel', icon: MapIcon, path: '/travel', elevated: true },
-  { id: 'gallery', label: 'Gallery', icon: GalleryIcon, path: '/gallery' },
-  { id: 'schedule', label: 'Events', icon: CalendarIcon, path: '/schedule' },
+const navItems = [
+  {
+    id: 'home',
+    label: 'Home',
+    path: '',
+    paths: ['M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z', 'M9 22V12h6v10'],
+  },
+  {
+    id: 'capture',
+    label: 'Capture',
+    path: '/capture',
+    paths: ['M14.5 4h-5L7 7H4a2 2 0 00-2 2v9a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2h-3l-2.5-3z', 'M12 13a3 3 0 100-6 3 3 0 000 6z'],
+  },
+  {
+    id: 'travel',
+    label: 'Travel',
+    path: '/travel',
+    elevated: true,
+    paths: ['M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3z', 'M9 3v15', 'M15 6v15'],
+  },
+  {
+    id: 'gallery',
+    label: 'Gallery',
+    path: '/gallery',
+    paths: ['M3 3h18a2 2 0 012 2v14a2 2 0 01-2 2H3a2 2 0 01-2-2V5a2 2 0 012-2z', 'M8.5 8.5a1.5 1.5 0 100-3 1.5 1.5 0 000 3z', 'M21 15l-5-5L5 21'],
+  },
+  {
+    id: 'events',
+    label: 'Events',
+    path: '/schedule',
+    paths: ['M3 4h18a2 2 0 012 2v14a2 2 0 01-2 2H3a2 2 0 01-2-2V6a2 2 0 012-2z', 'M16 2v4', 'M8 2v4', 'M3 10h18'],
+  },
 ];
 
 export default function BottomNav() {
@@ -74,67 +47,93 @@ export default function BottomNav() {
     <nav
       className="fixed bottom-0 left-0 right-0 z-50 safe-bottom"
       style={{
-        background: 'rgba(254, 252, 249, 0.88)',
+        height: 84,
+        background: 'rgba(253, 251, 247, 0.95)',
         backdropFilter: 'blur(24px)',
         WebkitBackdropFilter: 'blur(24px)',
-        borderTop: '1px solid var(--border-light)',
       }}
     >
-      <div className="flex items-end justify-around max-w-lg mx-auto px-2 pt-2 pb-2">
-        {tabs.map((tab) => {
-          const href = tab.path ? `${basePath}${tab.path}` : `${basePath}/home`;
+      {/* Shimmer top border */}
+      <div
+        className="absolute top-0 left-0 right-0"
+        style={{
+          height: '0.5px',
+          background: 'linear-gradient(90deg, rgba(198,163,85,0) 0%, rgba(198,163,85,0.3) 20%, rgba(212,183,106,0.6) 50%, rgba(198,163,85,0.3) 80%, rgba(198,163,85,0) 100%)',
+          backgroundSize: '200% 100%',
+          animation: 'shimmer 3s ease-in-out infinite',
+        }}
+      />
+      <div className="flex items-start justify-around max-w-lg mx-auto px-2 pt-2.5">
+        {navItems.map((item) => {
+          const href = item.path ? `${basePath}${item.path}` : `${basePath}/home`;
           const isActive =
-            tab.path === ''
+            item.path === ''
               ? pathname === `${basePath}/home` || pathname === basePath
-              : tab.id === 'capture'
+              : item.id === 'capture'
                 ? pathname.startsWith(`${basePath}/capture`) ||
                   pathname.startsWith(`${basePath}/photo`) ||
                   pathname.startsWith(`${basePath}/video`)
-                : pathname.startsWith(`${basePath}${tab.path}`);
-          const Icon = tab.icon;
+                : pathname.startsWith(`${basePath}${item.path}`);
 
-          if (tab.elevated) {
+          if (item.elevated) {
             return (
               <Link
-                key={tab.id}
+                key={item.id}
                 href={href}
                 className="flex flex-col items-center -mt-5"
-                aria-label={tab.label}
+                aria-label={item.label}
               >
                 <div
-                  className="w-14 h-14 rounded-full flex items-center justify-center mb-1"
+                  className="w-12 h-12 rounded-full flex items-center justify-center mb-1"
                   style={{
-                    background: 'var(--color-terracotta-gradient)',
-                    boxShadow: 'var(--shadow-terracotta)',
-                    color: 'white',
+                    background: 'linear-gradient(145deg, #A8883F, #C6A355, #D4B76A)',
+                    boxShadow: '0 4px 20px rgba(198,163,85,0.25), 0 0 40px rgba(198,163,85,0.08)',
                   }}
                 >
-                  <Icon />
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FDFBF7" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+                    {item.paths.map((d, i) => <path key={i} d={d} />)}
+                  </svg>
                 </div>
                 <span
-                  className="text-xs font-medium"
                   style={{
-                    color: isActive ? 'var(--color-terracotta)' : 'var(--text-tertiary)',
+                    fontSize: 9,
+                    fontWeight: 500,
+                    letterSpacing: '0.06em',
+                    textTransform: 'uppercase',
+                    color: isActive ? '#C6A355' : '#C8BFB3',
+                    fontFamily: 'var(--font-body)',
                   }}
                 >
-                  {tab.label}
+                  {item.label}
                 </span>
               </Link>
             );
           }
 
+          const stroke = isActive ? '#C6A355' : '#C8BFB3';
+
           return (
             <Link
-              key={tab.id}
+              key={item.id}
               href={href}
-              className="flex flex-col items-center py-1 min-w-[56px]"
-              aria-label={tab.label}
-              style={{
-                color: isActive ? 'var(--color-terracotta)' : 'var(--text-tertiary)',
-              }}
+              className="flex flex-col items-center gap-1 py-1 min-w-[56px]"
+              aria-label={item.label}
             >
-              <Icon />
-              <span className="text-xs font-medium mt-1">{tab.label}</span>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={stroke} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+                {item.paths.map((d, i) => <path key={i} d={d} />)}
+              </svg>
+              <span
+                style={{
+                  fontSize: 9,
+                  fontWeight: 500,
+                  letterSpacing: '0.06em',
+                  textTransform: 'uppercase',
+                  color: isActive ? '#C6A355' : '#C8BFB3',
+                  fontFamily: 'var(--font-body)',
+                }}
+              >
+                {item.label}
+              </span>
             </Link>
           );
         })}
