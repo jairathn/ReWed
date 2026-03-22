@@ -34,16 +34,16 @@ export async function GET(
       guest_id: r.guest_id,
       guest_name: r.display_name || `${r.first_name} ${r.last_name}`,
       type: r.type,
-      url: r.status === 'ready' ? await getMediaUrl(r.storage_key) : null,
-      thumbnail_url: r.thumbnail_key ? await getMediaUrl(r.thumbnail_key) : null,
+      url: r.status === 'ready' ? await getMediaUrl(r.storage_key as string) : null,
+      thumbnail_url: r.thumbnail_key ? await getMediaUrl(r.thumbnail_key as string) : null,
       duration_ms: r.duration_ms,
       status: r.status,
       created_at: r.created_at,
     })));
 
-    // Also get list of all guests for the dropdown
+    // Also get list of all guests for the dropdown (include memoir_published status)
     const guestsResult = await pool.query(
-      `SELECT id, first_name, last_name, display_name FROM guests
+      `SELECT id, first_name, last_name, display_name, memoir_published FROM guests
        WHERE wedding_id = $1 ORDER BY last_name, first_name`,
       [weddingId]
     );
@@ -54,6 +54,7 @@ export async function GET(
         guests: guestsResult.rows.map((g: Record<string, unknown>) => ({
           id: g.id,
           name: g.display_name || `${g.first_name} ${g.last_name}`,
+          memoir_published: g.memoir_published,
         })),
       },
     });
@@ -76,7 +77,27 @@ export async function POST(
     await verifyWeddingOwnership(coupleId, weddingId);
 
     const body = await request.json();
-    const { guest_id, type, action, content_type, content_length } = body;
+    const { guest_id, action, content_type, content_length } = body;
+    const type = body.type as string | undefined;
+
+    const pool = getPool();
+
+    // Publish / unpublish a guest's memoir
+    if (action === 'publish' || action === 'unpublish') {
+      if (!guest_id) {
+        return Response.json(
+          { error: { code: 'VALIDATION_ERROR', message: 'guest_id required' } },
+          { status: 400 }
+        );
+      }
+
+      await pool.query(
+        `UPDATE guests SET memoir_published = $1 WHERE id = $2 AND wedding_id = $3`,
+        [action === 'publish', guest_id, weddingId]
+      );
+
+      return Response.json({ data: { success: true, memoir_published: action === 'publish' } });
+    }
 
     if (!guest_id || !type || !['keeper', 'reel'].includes(type)) {
       return Response.json(
@@ -84,8 +105,6 @@ export async function POST(
         { status: 400 }
       );
     }
-
-    const pool = getPool();
 
     if (action === 'presign') {
       // Generate presigned upload URL

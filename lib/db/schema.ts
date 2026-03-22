@@ -97,6 +97,7 @@ export interface Guest {
   party_id: string | null;
   party_role: 'primary' | 'partner' | 'child';
   relationship: string | null;
+  memoir_published: boolean;
   created_at: Date;
 }
 

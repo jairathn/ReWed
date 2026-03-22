@@ -24,13 +24,33 @@ export async function GET(
 
     // Get guest
     const guestResult = await pool.query(
-      `SELECT id, first_name, last_name, display_name FROM guests WHERE id = $1 AND wedding_id = $2`,
+      `SELECT id, first_name, last_name, display_name, memoir_published FROM guests WHERE id = $1 AND wedding_id = $2`,
       [guestId, wedding.id]
     );
     if (guestResult.rows.length === 0) {
       throw new AppError('AUTH_GUEST_NOT_FOUND');
     }
     const guest = guestResult.rows[0];
+
+    // If memoir is not published, return minimal data with published: false
+    if (!guest.memoir_published) {
+      return Response.json({
+        data: {
+          published: false,
+          wedding: {
+            display_name: wedding.display_name,
+            couple_names: config.couple_names || { name1: '', name2: '' },
+            wedding_date: wedding.wedding_date,
+            hashtag: config.hashtag || '',
+          },
+          guest: {
+            id: guest.id,
+            first_name: guest.first_name,
+            display_name: guest.display_name,
+          },
+        },
+      });
+    }
 
     // Run all queries in parallel
     const [
@@ -148,6 +168,7 @@ export async function GET(
 
     return Response.json({
       data: {
+        published: true,
         wedding: {
           display_name: wedding.display_name,
           couple_names: config.couple_names || { name1: '', name2: '' },

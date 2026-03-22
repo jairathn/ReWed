@@ -5,6 +5,7 @@ import { useState, useEffect, useCallback } from 'react';
 interface GuestOption {
   id: string;
   name: string;
+  memoir_published: boolean;
 }
 
 interface ReelItem {
@@ -46,6 +47,7 @@ export default function HighlightsPage({
   const [msgGuest, setMsgGuest] = useState('');
   const [msgText, setMsgText] = useState('');
   const [savingMsg, setSavingMsg] = useState(false);
+  const [publishingGuest, setPublishingGuest] = useState<string | null>(null);
 
   useEffect(() => {
     params.then((p) => setWeddingId(p.weddingId));
@@ -156,6 +158,29 @@ export default function HighlightsPage({
       alert('Failed to save message');
     } finally {
       setSavingMsg(false);
+    }
+  };
+
+  const handleTogglePublish = async (guestId: string, currentlyPublished: boolean) => {
+    if (!weddingId) return;
+    setPublishingGuest(guestId);
+    try {
+      await fetch(`/api/v1/dashboard/weddings/${weddingId}/highlight-reels`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          guest_id: guestId,
+          action: currentlyPublished ? 'unpublish' : 'publish',
+        }),
+      });
+      // Update local state immediately
+      setGuests((prev) =>
+        prev.map((g) => g.id === guestId ? { ...g, memoir_published: !currentlyPublished } : g)
+      );
+    } catch {
+      alert('Failed to update publish status');
+    } finally {
+      setPublishingGuest(null);
     }
   };
 
@@ -364,27 +389,51 @@ export default function HighlightsPage({
       {/* Guests with reels */}
       {Object.entries(reelsByGuest).length > 0 && (
         <div style={{ display: 'grid', gap: 12, marginBottom: 24 }}>
-          {Object.entries(reelsByGuest).map(([guestId, data]) => (
-            <div
-              key={guestId}
-              className="card"
-              style={{ padding: 16, display: 'flex', alignItems: 'center', gap: 16 }}
-            >
-              <div style={{ flex: 1 }}>
-                <p style={{ fontWeight: 500, fontSize: 15, color: 'var(--text-primary)' }}>
-                  {data.name}
-                </p>
-                <div style={{ display: 'flex', gap: 12, marginTop: 6 }}>
-                  <StatusBadge label="Full Edit" status={data.keeper?.status} />
-                  <StatusBadge label="Social Reel" status={data.reel?.status} />
-                  <StatusBadge
-                    label="Message"
-                    status={messages.some((m) => m.guest_id === guestId) ? 'ready' : undefined}
-                  />
+          {Object.entries(reelsByGuest).map(([guestId, data]) => {
+            const guestInfo = guests.find((g) => g.id === guestId);
+            const isPublished = guestInfo?.memoir_published ?? false;
+            const isPublishing = publishingGuest === guestId;
+            return (
+              <div
+                key={guestId}
+                className="card"
+                style={{ padding: 16, display: 'flex', alignItems: 'center', gap: 16 }}
+              >
+                <div style={{ flex: 1 }}>
+                  <p style={{ fontWeight: 500, fontSize: 15, color: 'var(--text-primary)' }}>
+                    {data.name}
+                  </p>
+                  <div style={{ display: 'flex', gap: 12, marginTop: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+                    <StatusBadge label="Full Edit" status={data.keeper?.status} />
+                    <StatusBadge label="Social Reel" status={data.reel?.status} />
+                    <StatusBadge
+                      label="Message"
+                      status={messages.some((m) => m.guest_id === guestId) ? 'ready' : undefined}
+                    />
+                  </div>
                 </div>
+                <button
+                  onClick={() => handleTogglePublish(guestId, isPublished)}
+                  disabled={isPublishing}
+                  style={{
+                    padding: '8px 18px',
+                    borderRadius: 8,
+                    fontSize: 13,
+                    fontWeight: 600,
+                    fontFamily: 'var(--font-body)',
+                    cursor: isPublishing ? 'wait' : 'pointer',
+                    border: isPublished ? '1.5px solid var(--color-terracotta)' : '1.5px solid var(--color-olive)',
+                    background: isPublished ? 'rgba(196, 112, 75, 0.06)' : 'rgba(122, 139, 92, 0.08)',
+                    color: isPublished ? 'var(--color-terracotta)' : 'var(--color-olive)',
+                    opacity: isPublishing ? 0.5 : 1,
+                    flexShrink: 0,
+                  }}
+                >
+                  {isPublishing ? '...' : isPublished ? 'Unpublish' : 'Publish'}
+                </button>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 

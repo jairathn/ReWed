@@ -39,28 +39,29 @@ interface HighlightReel {
 }
 
 interface MemoirData {
+  published: boolean;
   wedding: {
     display_name: string;
     couple_names: { name1: string; name2: string };
     wedding_date: string | null;
     hashtag: string;
-    venue_city: string | null;
-    venue_country: string | null;
+    venue_city?: string | null;
+    venue_country?: string | null;
   };
   guest: {
     id: string;
     first_name: string;
-    last_name: string;
+    last_name?: string;
     display_name: string | null;
   };
-  photos: MemoirPhoto[];
-  videos: MemoirVideo[];
-  portraits: MemoirPortrait[];
-  posts: MemoirPost[];
-  highlight_reels: Record<string, HighlightReel>;
-  memoir_message: string | null;
-  carousel_photos: MemoirPhoto[];
-  stats: {
+  photos?: MemoirPhoto[];
+  videos?: MemoirVideo[];
+  portraits?: MemoirPortrait[];
+  posts?: MemoirPost[];
+  highlight_reels?: Record<string, HighlightReel>;
+  memoir_message?: string | null;
+  carousel_photos?: MemoirPhoto[];
+  stats?: {
     photo_count: number;
     video_count: number;
     portrait_count: number;
@@ -283,14 +284,89 @@ export default function GuestMemoirPage() {
     );
   }
 
+  /* ── Coming Soon (not published yet) ── */
+  if (!data.published) {
+    const comingSoonCouple = coupleLabel(data.wedding.couple_names) || data.wedding.display_name;
+    const comingSoonName = data.guest.display_name || data.guest.first_name;
+    return (
+      <div
+        className="min-h-screen relative overflow-hidden flex items-center justify-center"
+        style={{ background: '#2C2825' }}
+      >
+        {/* Castell bg */}
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage: 'url(/castell-background.jpg)',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            opacity: 0.12,
+            filter: 'blur(2px)',
+          }}
+        />
+        <div className="relative z-10 text-center px-8 py-16 max-w-md">
+          <p
+            className="text-[10px] font-medium uppercase tracking-[0.2em] mb-6"
+            style={{ color: 'rgba(254, 252, 249, 0.4)' }}
+          >
+            A Memoir For
+          </p>
+          <h1
+            className="text-[36px] font-normal leading-tight mb-4"
+            style={{
+              fontFamily: 'var(--font-display)',
+              color: 'rgba(254, 252, 249, 0.9)',
+              letterSpacing: '-0.01em',
+            }}
+          >
+            {comingSoonName}
+          </h1>
+          <div className="gold-divider mx-auto mb-6" style={{ maxWidth: 100 }} />
+          <p
+            className="text-[18px] font-normal mb-2"
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontStyle: 'italic',
+              color: 'var(--color-golden)',
+            }}
+          >
+            Your memories are being crafted
+          </p>
+          <p
+            className="text-[13px] leading-relaxed mb-8"
+            style={{ color: 'rgba(254, 252, 249, 0.45)' }}
+          >
+            {comingSoonCouple} {data.wedding.wedding_date ? `are` : `is`} putting together something special for you.
+            Check back soon.
+          </p>
+          {data.wedding.hashtag && (
+            <p
+              className="text-[13px] font-medium"
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontStyle: 'italic',
+                color: 'rgba(212, 183, 106, 0.6)',
+              }}
+            >
+              #{data.wedding.hashtag}
+            </p>
+          )}
+          <p className="text-[10px] mt-12" style={{ color: 'rgba(254, 252, 249, 0.2)' }}>
+            Made with ReWed
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   const { wedding, guest, highlight_reels, memoir_message, carousel_photos } = data;
   const couple = coupleLabel(wedding.couple_names) || wedding.display_name;
   const guestName = guest.display_name || guest.first_name;
   const keeperReel = highlight_reels?.keeper;
   const socialReel = highlight_reels?.reel;
   const hasHighlightVideo = keeperReel?.status === 'ready';
-  const topPhotos = carousel_photos.slice(0, 12);
-  const bottomPhotos = carousel_photos.slice(12, 24);
+  const topPhotos = (carousel_photos || []).slice(0, 12);
+  const bottomPhotos = (carousel_photos || []).slice(12, 24);
   const venueLocation = [wedding.venue_city, wedding.venue_country].filter(Boolean).join(', ');
 
   return (
