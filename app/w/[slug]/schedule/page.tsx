@@ -322,16 +322,25 @@ export default async function SchedulePage({
                       </p>
                     )}
 
-                    {/* Venue */}
+                    {/* Venue — links to Google Maps */}
                     {event.venue_name && (
-                      <div className="flex items-start gap-1.5 mb-0.5">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--color-terracotta)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="mt-0.5 flex-shrink-0">
+                      <a
+                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.venue_name + (event.venue_address ? ', ' + event.venue_address : ''))}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-start gap-1.5 mb-0.5 group"
+                        style={{ textDecoration: 'none' }}
+                      >
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--color-golden)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="mt-0.5 flex-shrink-0">
                           <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" />
                         </svg>
-                        <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-primary)' }}>
+                        <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-primary)' }} className="group-hover:underline">
                           {event.venue_name}
                         </span>
-                      </div>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--color-golden)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="mt-0.5 flex-shrink-0 opacity-60">
+                          <line x1="7" y1="17" x2="17" y2="7" /><polyline points="7 7 17 7 17 17" />
+                        </svg>
+                      </a>
                     )}
                     {event.logistics && (
                       <p style={{ fontSize: 12, color: 'var(--text-secondary)', marginLeft: 18, marginTop: 2 }}>
@@ -373,7 +382,7 @@ export default async function SchedulePage({
                           {event.dress_code}
                         </p>
 
-                        {/* Venue address as secondary info in attire card */}
+                        {/* Venue address — clickable to Google Maps */}
                         {event.venue_address && (
                           <>
                             <div
@@ -384,9 +393,18 @@ export default async function SchedulePage({
                                 opacity: 0.2,
                               }}
                             />
-                            <p style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-                              {event.venue_address}
-                            </p>
+                            <a
+                              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent((event.venue_name || '') + ', ' + event.venue_address)}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-1.5 hover:underline"
+                              style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.5, textDecoration: 'none' }}
+                            >
+                              <span>{event.venue_address}</span>
+                              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--color-golden)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0 opacity-60">
+                                <line x1="7" y1="17" x2="17" y2="7" /><polyline points="7 7 17 7 17 17" />
+                              </svg>
+                            </a>
                           </>
                         )}
                       </div>

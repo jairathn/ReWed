@@ -74,6 +74,7 @@ export default function GuestHomePage() {
     { label: 'Schedule', sub: `${config.events.length} event${config.events.length !== 1 ? 's' : ''}`, href: `/w/${slug}/schedule` },
     { label: 'Guest List', sub: 'See who\u2019s coming', href: `/w/${slug}/directory` },
     { label: 'Gallery', sub: 'Photos & video', href: `/w/${slug}/gallery` },
+    { label: 'Social Feed', sub: 'Posts & updates', href: `/w/${slug}/feed` },
     { label: 'FAQ', sub: 'Travel & logistics', href: `/w/${slug}/faq` },
   ];
 
