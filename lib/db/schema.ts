@@ -131,6 +131,7 @@ export interface Upload {
   thumbnail_key: string | null;
   transcode_key: string | null;
   status: 'pending' | 'uploading' | 'processing' | 'ready' | 'failed';
+  couple_approved: boolean;
   retry_count: number;
   created_at: Date;
 }

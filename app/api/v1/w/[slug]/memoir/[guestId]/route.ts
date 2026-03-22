@@ -111,12 +111,13 @@ export async function GET(
          WHERE wedding_id = $1 AND guest_id = $2`,
         [wedding.id, guestId]
       ),
-      // Carousel photos from all guests (only if couple has published gallery)
+      // Carousel photos from all guests (only couple-approved, only if gallery published)
       wedding.gallery_published
         ? pool.query(
             `SELECT u.id, u.storage_key, u.thumbnail_key
              FROM uploads u
              WHERE u.wedding_id = $1 AND u.status = 'ready' AND u.type = 'photo'
+               AND u.couple_approved = TRUE
              ORDER BY u.created_at DESC
              LIMIT 24`,
             [wedding.id]
