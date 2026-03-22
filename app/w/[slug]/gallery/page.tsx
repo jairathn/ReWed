@@ -503,11 +503,11 @@ export default function GalleryPage() {
         </>
       )}
 
-      {/* Lightbox Modal */}
+      {/* Lightbox Modal — z-[60] to sit above BottomNav z-50 */}
       {selectedItem && (
         <div
-          className="fixed inset-0 z-50 flex flex-col"
-          style={{ background: 'rgba(0,0,0,0.92)' }}
+          className="fixed inset-0 flex flex-col"
+          style={{ background: 'rgba(0,0,0,0.92)', zIndex: 60 }}
         >
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 flex-shrink-0">
