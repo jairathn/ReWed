@@ -71,11 +71,12 @@ export default function GuestHomePage() {
   }
 
   const links = [
-    { label: 'Schedule', sub: `${config.events.length} event${config.events.length !== 1 ? 's' : ''}`, href: `/w/${slug}/schedule` },
+    { label: 'Schedule', sub: `${config.events.length} event${config.events.length !== 1 ? 's' : ''}`, desc: 'View all events, venues, dress codes, and directions', href: `/w/${slug}/schedule` },
+    { label: 'Gallery', sub: 'Photos & video', desc: 'Take pictures and videos \u2014 we\u2019ll send you an album after!', href: `/w/${slug}/gallery` },
+    { label: 'Social Feed', sub: 'Posts & updates', desc: 'Share a toast to the couple or a favorite memory', href: `/w/${slug}/feed` },
+    { label: 'Travel', sub: 'Plans & meetups', desc: 'Share your travel plans, find friends nearby, or share a ride', href: `/w/${slug}/travel` },
+    { label: 'FAQ', sub: 'Questions?', desc: 'Ask the chatbot anything about the wedding', href: `/w/${slug}/faq` },
     { label: 'Guest List', sub: 'See who\u2019s coming', href: `/w/${slug}/directory` },
-    { label: 'Gallery', sub: 'Photos & video', href: `/w/${slug}/gallery` },
-    { label: 'Social Feed', sub: 'Posts & updates', href: `/w/${slug}/feed` },
-    { label: 'FAQ', sub: 'Travel & logistics', href: `/w/${slug}/faq` },
   ];
 
   return (
@@ -128,7 +129,7 @@ export default function GuestHomePage() {
       {/* Gold divider */}
       <div className="gold-divider mb-2" />
 
-      {/* Quick Links — list style with chevrons */}
+      {/* Quick Links — with welcoming descriptions */}
       <div className="mb-8">
         {links.map((link, i) => (
           <div key={i}>
@@ -137,15 +138,22 @@ export default function GuestHomePage() {
               className="flex items-center justify-between py-4"
               style={{ textDecoration: 'none' }}
             >
-              <div>
-                <p className="text-[15px] font-medium" style={{ color: 'var(--text-primary)', letterSpacing: '0.01em' }}>
-                  {link.label}
-                </p>
-                <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>
-                  {link.sub}
-                </p>
+              <div className="flex-1 min-w-0 pr-3">
+                <div className="flex items-baseline gap-2">
+                  <p className="text-[15px] font-medium" style={{ color: 'var(--text-primary)', letterSpacing: '0.01em' }}>
+                    {link.label}
+                  </p>
+                  <p className="text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
+                    {link.sub}
+                  </p>
+                </div>
+                {link.desc && (
+                  <p className="text-[12px] mt-1" style={{ color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+                    {link.desc}
+                  </p>
+                )}
               </div>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-gold-dark)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-gold-dark)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0">
                 <polyline points="9 6 15 12 9 18" />
               </svg>
             </Link>
