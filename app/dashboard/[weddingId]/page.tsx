@@ -296,7 +296,7 @@ export default function WeddingOverviewPage({
       </div>
 
       {/* Wedding Location */}
-      <div className="card" style={{ padding: 24, background: 'var(--bg-pure-white)', marginBottom: 24 }}>
+      <div className="card" style={{ padding: 24, background: 'var(--bg-pure-white)', marginBottom: 24, overflow: 'visible' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, marginBottom: 16 }}>
           <div>
             <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 500, color: 'var(--text-primary)', margin: '0 0 4px' }}>

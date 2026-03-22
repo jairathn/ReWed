@@ -288,7 +288,7 @@ export default async function SchedulePage({
                       {event.name}
                     </p>
 
-                    {/* Subtitle / description snippet */}
+                    {/* Description with preserved line formatting */}
                     {event.description && (
                       <p
                         style={{
@@ -297,9 +297,11 @@ export default async function SchedulePage({
                           fontStyle: 'italic',
                           color: 'var(--text-secondary)',
                           marginTop: 3,
+                          whiteSpace: 'pre-line',
+                          lineHeight: 1.6,
                         }}
                       >
-                        {event.description.length > 80 ? event.description.slice(0, 80) + '...' : event.description}
+                        {event.description}
                       </p>
                     )}
 

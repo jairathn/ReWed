@@ -375,7 +375,7 @@ export default function FeedPage() {
               fontFamily: 'var(--font-body)',
               minHeight: '80px',
             }}
-            maxLength={500}
+            maxLength={1000}
           />
 
           {/* Media preview */}
