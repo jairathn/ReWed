@@ -306,7 +306,7 @@ export default function GuestMemoirPage() {
         <div
           className="absolute inset-0"
           style={{
-            backgroundImage: 'url(/castell.jpg)',
+            backgroundImage: 'url(/castell-background.jpg)',
             backgroundSize: 'cover',
             backgroundPosition: 'center',
             opacity: 0.15,
