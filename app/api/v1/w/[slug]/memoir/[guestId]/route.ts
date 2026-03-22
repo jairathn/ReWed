@@ -13,7 +13,7 @@ export async function GET(
 
     // Get wedding
     const weddingResult = await pool.query(
-      `SELECT id, display_name, config, wedding_date, status FROM weddings WHERE slug = $1`,
+      `SELECT id, display_name, config, wedding_date, status, gallery_published FROM weddings WHERE slug = $1`,
       [slug]
     );
     if (weddingResult.rows.length === 0) {
@@ -111,15 +111,17 @@ export async function GET(
          WHERE wedding_id = $1 AND guest_id = $2`,
         [wedding.id, guestId]
       ),
-      // Carousel photos from all guests (couple-approved shared gallery)
-      pool.query(
-        `SELECT u.id, u.storage_key, u.thumbnail_key
-         FROM uploads u
-         WHERE u.wedding_id = $1 AND u.status = 'ready' AND u.type = 'photo'
-         ORDER BY u.created_at DESC
-         LIMIT 24`,
-        [wedding.id]
-      ),
+      // Carousel photos from all guests (only if couple has published gallery)
+      wedding.gallery_published
+        ? pool.query(
+            `SELECT u.id, u.storage_key, u.thumbnail_key
+             FROM uploads u
+             WHERE u.wedding_id = $1 AND u.status = 'ready' AND u.type = 'photo'
+             ORDER BY u.created_at DESC
+             LIMIT 24`,
+            [wedding.id]
+          )
+        : Promise.resolve({ rows: [] }),
     ]);
 
     const photos = await Promise.all(photosResult.rows.map(async (r) => ({

@@ -48,6 +48,8 @@ export default function HighlightsPage({
   const [msgText, setMsgText] = useState('');
   const [savingMsg, setSavingMsg] = useState(false);
   const [publishingGuest, setPublishingGuest] = useState<string | null>(null);
+  const [galleryPublished, setGalleryPublished] = useState(false);
+  const [togglingGallery, setTogglingGallery] = useState(false);
 
   useEffect(() => {
     params.then((p) => setWeddingId(p.weddingId));
@@ -66,6 +68,7 @@ export default function HighlightsPage({
       if (reelsData.data) {
         setReels(reelsData.data.reels);
         setGuests(reelsData.data.guests);
+        setGalleryPublished(reelsData.data.gallery_published ?? false);
       }
       if (msgsData.data) {
         setMessages(msgsData.data.messages);
@@ -184,6 +187,25 @@ export default function HighlightsPage({
     }
   };
 
+  const handleToggleGallery = async () => {
+    if (!weddingId) return;
+    setTogglingGallery(true);
+    try {
+      await fetch(`/api/v1/dashboard/weddings/${weddingId}/highlight-reels`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: galleryPublished ? 'gallery_unpublish' : 'gallery_publish',
+        }),
+      });
+      setGalleryPublished(!galleryPublished);
+    } catch {
+      alert('Failed to update gallery status');
+    } finally {
+      setTogglingGallery(false);
+    }
+  };
+
   // Group reels by guest
   const reelsByGuest: Record<string, { name: string; keeper?: ReelItem; reel?: ReelItem }> = {};
   for (const r of reels) {
@@ -223,6 +245,51 @@ export default function HighlightsPage({
       <p style={{ color: 'var(--text-secondary)', fontSize: 14, marginBottom: 32 }}>
         Upload personalized highlight reels and write thank-you messages for each guest&apos;s memoir page.
       </p>
+
+      {/* ── Gallery Approval Gate ── */}
+      <div
+        className="card"
+        style={{
+          padding: 20,
+          marginBottom: 24,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 16,
+          border: galleryPublished ? '1.5px solid var(--color-olive)' : '1.5px solid var(--border-medium)',
+        }}
+      >
+        <div>
+          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 16, marginBottom: 4, color: 'var(--text-primary)' }}>
+            Shared Gallery
+          </h2>
+          <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: 0 }}>
+            {galleryPublished
+              ? 'Gallery photos are visible on memoir pages. Guest photos appear in the background carousels.'
+              : 'Approve the shared gallery to show guest photos in memoir page carousels. Memoirs won\u2019t show carousel photos until this is enabled.'}
+          </p>
+        </div>
+        <button
+          onClick={handleToggleGallery}
+          disabled={togglingGallery}
+          style={{
+            padding: '10px 24px',
+            borderRadius: 8,
+            fontSize: 14,
+            fontWeight: 600,
+            fontFamily: 'var(--font-body)',
+            cursor: togglingGallery ? 'wait' : 'pointer',
+            border: 'none',
+            background: galleryPublished ? 'var(--color-olive)' : 'var(--color-terracotta-gradient)',
+            color: '#FFFFFF',
+            opacity: togglingGallery ? 0.5 : 1,
+            flexShrink: 0,
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {togglingGallery ? '...' : galleryPublished ? 'Approved' : 'Approve Gallery'}
+        </button>
+      </div>
 
       {/* ── Upload Section ── */}
       <div

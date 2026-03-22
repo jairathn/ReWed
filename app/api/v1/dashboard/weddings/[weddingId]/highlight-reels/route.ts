@@ -41,12 +41,18 @@ export async function GET(
       created_at: r.created_at,
     })));
 
-    // Also get list of all guests for the dropdown (include memoir_published status)
-    const guestsResult = await pool.query(
-      `SELECT id, first_name, last_name, display_name, memoir_published FROM guests
-       WHERE wedding_id = $1 ORDER BY last_name, first_name`,
-      [weddingId]
-    );
+    // Also get list of all guests and wedding gallery_published status
+    const [guestsResult, weddingResult] = await Promise.all([
+      pool.query(
+        `SELECT id, first_name, last_name, display_name, memoir_published FROM guests
+         WHERE wedding_id = $1 ORDER BY last_name, first_name`,
+        [weddingId]
+      ),
+      pool.query(
+        `SELECT gallery_published FROM weddings WHERE id = $1`,
+        [weddingId]
+      ),
+    ]);
 
     return Response.json({
       data: {
@@ -56,6 +62,7 @@ export async function GET(
           name: g.display_name || `${g.first_name} ${g.last_name}`,
           memoir_published: g.memoir_published,
         })),
+        gallery_published: weddingResult.rows[0]?.gallery_published ?? false,
       },
     });
   } catch (error) {
@@ -81,6 +88,15 @@ export async function POST(
     const type = body.type as string | undefined;
 
     const pool = getPool();
+
+    // Publish / unpublish the shared gallery for memoir carousels
+    if (action === 'gallery_publish' || action === 'gallery_unpublish') {
+      await pool.query(
+        `UPDATE weddings SET gallery_published = $1 WHERE id = $2`,
+        [action === 'gallery_publish', weddingId]
+      );
+      return Response.json({ data: { success: true, gallery_published: action === 'gallery_publish' } });
+    }
 
     // Publish / unpublish a guest's memoir
     if (action === 'publish' || action === 'unpublish') {
@@ -115,6 +131,16 @@ export async function POST(
         );
       }
 
+      // Look up guest name for the folder path
+      const guestLookup = await pool.query(
+        `SELECT first_name, last_name, display_name FROM guests WHERE id = $1 AND wedding_id = $2`,
+        [guest_id, weddingId]
+      );
+      const guestRow = guestLookup.rows[0];
+      const guestFolderName = guestRow
+        ? (guestRow.display_name || `${guestRow.first_name} ${guestRow.last_name}`)
+        : 'unknown';
+
       // Upsert the highlight reel record
       const upsertResult = await pool.query(
         `INSERT INTO highlight_reels (wedding_id, guest_id, type, storage_key, status)
@@ -131,8 +157,8 @@ export async function POST(
         uploadId: reelId,
         contentType: content_type,
         contentLength: content_length,
-        guestName: 'highlights',
-        eventName: type,
+        guestName: guestFolderName,
+        eventName: `highlights-${type}`,
       });
 
       // Update storage key

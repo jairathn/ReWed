@@ -24,6 +24,7 @@ export interface Wedding {
   package_config: PackageConfigData;
   storage_used_bytes: number;
   ai_portraits_used: number;
+  gallery_published: boolean;
   created_at: Date;
   updated_at: Date;
 }
