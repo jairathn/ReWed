@@ -186,7 +186,7 @@ export default function TravelListView({
                 <div
                   key={`${overlap.city}|${overlap.country}`}
                   className="card p-4"
-                  style={{ borderLeft: '3px solid #3b82f6' }}
+                  style={{ borderLeft: '3px solid #C6A355' }}
                 >
                   <p
                     className="text-sm font-medium mb-1"
@@ -208,7 +208,7 @@ export default function TravelListView({
                         <div
                           className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium flex-shrink-0"
                           style={{
-                            background: 'var(--color-terracotta)',
+                            background: 'linear-gradient(145deg, #A8883F, #C6A355)',
                             color: 'white',
                           }}
                         >
@@ -285,14 +285,14 @@ export default function TravelListView({
                 <div
                   key={gi}
                   className="card p-4"
-                  style={{ borderLeft: '3px solid #d97706' }}
+                  style={{ borderLeft: '3px solid #D4B76A' }}
                 >
                   <div className="flex items-center gap-2 mb-1">
                     <span
                       className="text-xs px-2 py-0.5 rounded-full font-medium"
                       style={{
-                        background: group.type === 'arrival' ? '#3b82f620' : '#10b98120',
-                        color: group.type === 'arrival' ? '#3b82f6' : '#10b981',
+                        background: group.type === 'arrival' ? 'rgba(198,163,85,0.12)' : 'rgba(16,185,129,0.12)',
+                        color: group.type === 'arrival' ? '#A8883F' : '#10b981',
                       }}
                     >
                       {group.type === 'arrival' ? 'Arriving' : 'Departing'}
@@ -314,7 +314,7 @@ export default function TravelListView({
                         <div
                           className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium flex-shrink-0"
                           style={{
-                            background: '#d97706',
+                            background: 'linear-gradient(145deg, #A8883F, #D4B76A)',
                             color: 'white',
                           }}
                         >
@@ -334,7 +334,7 @@ export default function TravelListView({
                             {match.origin_city && ` \u00b7 from ${match.origin_city}`}
                           </p>
                           {match.share_contact && (
-                            <p className="text-xs mt-1 font-medium" style={{ color: '#d97706' }}>
+                            <p className="text-xs mt-1 font-medium" style={{ color: '#C6A355' }}>
                               {match.share_contact}
                             </p>
                           )}
@@ -353,15 +353,19 @@ export default function TravelListView({
       {hasPlan === false && (
         <div
           className="card p-5 text-center"
-          style={{ borderLeft: '3px solid var(--color-terracotta)' }}
+          style={{ borderLeft: '3px solid #C6A355' }}
         >
           <p className="text-sm mb-3" style={{ color: 'var(--text-secondary)' }}>
             Share your travel plans to see who&rsquo;ll be nearby!
           </p>
           <button
             onClick={onAddPlan}
-            className="px-5 py-2.5 rounded-full text-sm font-medium text-white"
-            style={{ background: 'var(--color-terracotta-gradient)' }}
+            className="px-5 py-2.5 rounded-full text-sm font-medium"
+            style={{
+              background: 'linear-gradient(135deg, #A8883F, #C6A355, #D4B76A)',
+              color: '#FDFBF7',
+              boxShadow: '0 4px 16px rgba(198,163,85,0.25)',
+            }}
           >
             Add My Travel Plans
           </button>
@@ -370,12 +374,35 @@ export default function TravelListView({
 
       {/* Where Everyone Is Traveling */}
       <section>
-        <h2
-          className="text-base font-medium mb-3"
-          style={{ fontFamily: 'var(--font-display)', color: 'var(--text-primary)' }}
-        >
-          Where Everyone Is Traveling
-        </h2>
+        <div className="flex items-center gap-2 mb-4">
+          <div
+            style={{
+              width: 20,
+              height: 1,
+              background: 'linear-gradient(90deg, transparent, rgba(198,163,85,0.5))',
+            }}
+          />
+          <h2
+            style={{
+              fontSize: 10,
+              fontWeight: 500,
+              letterSpacing: '0.14em',
+              textTransform: 'uppercase',
+              color: '#C6A355',
+              fontFamily: 'var(--font-body)',
+              margin: 0,
+            }}
+          >
+            Where Everyone Is Traveling
+          </h2>
+          <div
+            style={{
+              flex: 1,
+              height: 1,
+              background: 'linear-gradient(90deg, rgba(198,163,85,0.5), transparent)',
+            }}
+          />
+        </div>
 
         {stops.length > 0 && (
           <input
@@ -422,7 +449,7 @@ export default function TravelListView({
                   <div>
                     <p
                       className="text-sm font-medium"
-                      style={{ color: 'var(--text-primary)' }}
+                      style={{ fontFamily: 'var(--font-display)', color: 'var(--text-primary)' }}
                     >
                       {stop.city}, {stop.country}
                     </p>
@@ -473,14 +500,14 @@ export default function TravelListView({
                           className="flex items-center gap-1.5 px-2 py-1 rounded-full text-xs text-left"
                           style={{
                             background: isExpanded
-                              ? 'var(--color-terracotta)'
+                              ? 'linear-gradient(145deg, #A8883F, #C6A355)'
                               : 'var(--bg-muted, #f9f8f6)',
                           }}
                         >
                           <div
                             className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-medium flex-shrink-0"
                             style={{
-                              background: isExpanded ? 'rgba(255,255,255,0.3)' : 'var(--color-terracotta)',
+                              background: isExpanded ? 'rgba(255,255,255,0.3)' : 'linear-gradient(145deg, #A8883F, #C6A355)',
                               color: 'white',
                             }}
                           >
@@ -514,7 +541,7 @@ export default function TravelListView({
                                   className="w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0"
                                   style={{
                                     background: s.city === stop.city
-                                      ? 'var(--color-terracotta)'
+                                      ? '#C6A355'
                                       : 'var(--text-tertiary)',
                                   }}
                                 />
