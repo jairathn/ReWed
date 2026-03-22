@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 
@@ -31,24 +31,37 @@ interface MemoirPost {
   created_at: string;
 }
 
+interface HighlightReel {
+  url: string;
+  thumbnail_url: string | null;
+  duration_ms: number | null;
+  status: string;
+}
+
 interface MemoirData {
+  published: boolean;
   wedding: {
     display_name: string;
     couple_names: { name1: string; name2: string };
     wedding_date: string | null;
     hashtag: string;
+    venue_city?: string | null;
+    venue_country?: string | null;
   };
   guest: {
     id: string;
     first_name: string;
-    last_name: string;
+    last_name?: string;
     display_name: string | null;
   };
-  photos: MemoirPhoto[];
-  videos: MemoirVideo[];
-  portraits: MemoirPortrait[];
-  posts: MemoirPost[];
-  stats: {
+  photos?: MemoirPhoto[];
+  videos?: MemoirVideo[];
+  portraits?: MemoirPortrait[];
+  posts?: MemoirPost[];
+  highlight_reels?: Record<string, HighlightReel>;
+  memoir_message?: string | null;
+  carousel_photos?: MemoirPhoto[];
+  stats?: {
     photo_count: number;
     video_count: number;
     portrait_count: number;
@@ -66,19 +79,89 @@ function formatWeddingDate(dateStr: string | null): string {
   }
 }
 
+function formatDateRange(dateStr: string | null): string {
+  if (!dateStr) return '';
+  try {
+    const d = new Date(dateStr + 'T12:00:00');
+    const month = d.toLocaleDateString('en-US', { month: 'long' });
+    const day = d.getDate();
+    const year = d.getFullYear();
+    // Show a range like "September 9 – 11, 2026"
+    return `${month} ${day} – ${day + 2}, ${year}`;
+  } catch {
+    return dateStr;
+  }
+}
+
 function coupleLabel(names: { name1: string; name2: string }): string {
   if (names.name1 && names.name2) return `${names.name1} & ${names.name2}`;
   return names.name1 || names.name2 || '';
 }
 
-function formatDuration(ms: number | null): string {
-  if (!ms) return '0:00';
-  const mins = Math.floor(ms / 60000);
-  const secs = String(Math.floor((ms % 60000) / 1000)).padStart(2, '0');
-  return `${mins}:${secs}`;
+/* ── Photo Carousel Strip ── */
+function PhotoCarousel({ photos, reverse }: { photos: MemoirPhoto[]; reverse?: boolean }) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const animRef = useRef<number>(0);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el || photos.length === 0) return;
+
+    let pos = reverse ? el.scrollWidth / 2 : 0;
+    const speed = 0.3; // px per frame
+
+    const tick = () => {
+      if (reverse) {
+        pos -= speed;
+        if (pos <= 0) pos = el.scrollWidth / 2;
+      } else {
+        pos += speed;
+        if (pos >= el.scrollWidth / 2) pos = 0;
+      }
+      el.scrollLeft = pos;
+      animRef.current = requestAnimationFrame(tick);
+    };
+
+    animRef.current = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(animRef.current);
+  }, [photos, reverse]);
+
+  if (photos.length === 0) return null;
+
+  // Duplicate photos for infinite scroll effect
+  const doubled = [...photos, ...photos];
+
+  return (
+    <div
+      ref={scrollRef}
+      className="flex gap-2 overflow-hidden"
+      style={{ pointerEvents: 'none' }}
+    >
+      {doubled.map((photo, i) => (
+        <div
+          key={`${photo.id}-${i}`}
+          className="flex-shrink-0 overflow-hidden"
+          style={{
+            width: 140,
+            height: 100,
+            borderRadius: 8,
+            opacity: 0.6,
+          }}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={photo.thumbnail_url}
+            alt=""
+            className="w-full h-full object-cover"
+            loading="lazy"
+          />
+        </div>
+      ))}
+    </div>
+  );
 }
 
-/* ── Component ── */
+/* ── Main Component ── */
 export default function GuestMemoirPage() {
   const params = useParams<{ slug: string; guestId: string }>();
   const slug = params.slug;
@@ -88,8 +171,9 @@ export default function GuestMemoirPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
-  const [lightboxType, setLightboxType] = useState<'photo' | 'video'>('photo');
+  const [isFlipped, setIsFlipped] = useState(false);
+  const [audioMuted, setAudioMuted] = useState(true);
+  const audioRef = useRef<HTMLAudioElement>(null);
 
   const fetchMemoir = useCallback(async () => {
     try {
@@ -108,9 +192,21 @@ export default function GuestMemoirPage() {
     fetchMemoir();
   }, [fetchMemoir]);
 
+  const toggleAudio = () => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (audioMuted) {
+      audio.play().catch(() => {});
+      audio.muted = false;
+      setAudioMuted(false);
+    } else {
+      audio.muted = true;
+      setAudioMuted(true);
+    }
+  };
+
   /* ── Share helpers ── */
   const pageUrl = typeof window !== 'undefined' ? window.location.href : '';
-
   const shareMessage = data
     ? `Check out my memories from ${coupleLabel(data.wedding.couple_names) || data.wedding.display_name}'s wedding! ${pageUrl}`
     : '';
@@ -121,7 +217,6 @@ export default function GuestMemoirPage() {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      // Fallback
       const ta = document.createElement('textarea');
       ta.value = pageUrl;
       ta.style.position = 'fixed';
@@ -133,14 +228,6 @@ export default function GuestMemoirPage() {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }
-  };
-
-  const handleWhatsApp = () => {
-    window.open(`https://wa.me/?text=${encodeURIComponent(shareMessage)}`, '_blank');
-  };
-
-  const handleInstagram = () => {
-    window.open('https://www.instagram.com/', '_blank');
   };
 
   const handleNativeShare = async () => {
@@ -160,25 +247,11 @@ export default function GuestMemoirPage() {
   /* ── Loading state ── */
   if (loading) {
     return (
-      <div
-        className="min-h-screen px-6 pt-12 pb-16"
-        style={{ background: 'var(--bg-warm-gradient)' }}
-      >
-        <div className="max-w-lg mx-auto">
-          <div className="skeleton h-10 w-64 mx-auto mb-3" />
-          <div className="skeleton h-5 w-48 mx-auto mb-2" />
-          <div className="skeleton h-4 w-32 mx-auto mb-8" />
-          <div className="flex justify-center gap-6 mb-10">
-            <div className="skeleton h-14 w-16" />
-            <div className="skeleton h-14 w-16" />
-            <div className="skeleton h-14 w-16" />
-          </div>
-          <div className="gold-divider mb-10" />
-          <div className="grid grid-cols-2 gap-3">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="skeleton aspect-[3/4]" style={{ borderRadius: 12 }} />
-            ))}
-          </div>
+      <div className="min-h-screen" style={{ background: '#2C2825' }}>
+        <div className="flex flex-col items-center justify-center min-h-screen">
+          <div className="skeleton h-10 w-64 mb-3" style={{ opacity: 0.3 }} />
+          <div className="skeleton h-5 w-48 mb-8" style={{ opacity: 0.2 }} />
+          <div className="skeleton h-64 w-80 rounded-2xl" style={{ opacity: 0.15 }} />
         </div>
       </div>
     );
@@ -211,565 +284,486 @@ export default function GuestMemoirPage() {
     );
   }
 
-  const { wedding, guest, photos, videos, portraits, posts, stats } = data;
+  /* ── Coming Soon (not published yet) ── */
+  if (!data.published) {
+    const comingSoonCouple = coupleLabel(data.wedding.couple_names) || data.wedding.display_name;
+    const comingSoonName = data.guest.display_name || data.guest.first_name;
+    return (
+      <div
+        className="min-h-screen relative overflow-hidden flex items-center justify-center"
+        style={{ background: '#2C2825' }}
+      >
+        {/* Castell bg */}
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage: 'url(/castell-background.jpg)',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            opacity: 0.12,
+            filter: 'blur(2px)',
+          }}
+        />
+        <div className="relative z-10 text-center px-8 py-16 max-w-md">
+          <p
+            className="text-[10px] font-medium uppercase tracking-[0.2em] mb-6"
+            style={{ color: 'rgba(254, 252, 249, 0.4)' }}
+          >
+            A Memoir For
+          </p>
+          <h1
+            className="text-[36px] font-normal leading-tight mb-4"
+            style={{
+              fontFamily: 'var(--font-display)',
+              color: 'rgba(254, 252, 249, 0.9)',
+              letterSpacing: '-0.01em',
+            }}
+          >
+            {comingSoonName}
+          </h1>
+          <div className="gold-divider mx-auto mb-6" style={{ maxWidth: 100 }} />
+          <p
+            className="text-[18px] font-normal mb-2"
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontStyle: 'italic',
+              color: 'var(--color-golden)',
+            }}
+          >
+            Your memories are being crafted
+          </p>
+          <p
+            className="text-[13px] leading-relaxed mb-8"
+            style={{ color: 'rgba(254, 252, 249, 0.45)' }}
+          >
+            {comingSoonCouple} {data.wedding.wedding_date ? `are` : `is`} putting together something special for you.
+            Check back soon.
+          </p>
+          {data.wedding.hashtag && (
+            <p
+              className="text-[13px] font-medium"
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontStyle: 'italic',
+                color: 'rgba(212, 183, 106, 0.6)',
+              }}
+            >
+              #{data.wedding.hashtag}
+            </p>
+          )}
+          <p className="text-[10px] mt-12" style={{ color: 'rgba(254, 252, 249, 0.2)' }}>
+            Made with ReWed
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  const { wedding, guest, highlight_reels, memoir_message, carousel_photos } = data;
   const couple = coupleLabel(wedding.couple_names) || wedding.display_name;
   const guestName = guest.display_name || guest.first_name;
-  const hasPhotos = photos.length > 0;
-  const hasVideos = videos.length > 0;
-  const hasPortraits = portraits.length > 0;
-  const hasPosts = posts.length > 0;
-  const hasContent = hasPhotos || hasVideos || hasPortraits || hasPosts;
+  const keeperReel = highlight_reels?.keeper;
+  const socialReel = highlight_reels?.reel;
+  const hasHighlightVideo = keeperReel?.status === 'ready';
+  const topPhotos = (carousel_photos || []).slice(0, 12);
+  const bottomPhotos = (carousel_photos || []).slice(12, 24);
+  const venueLocation = [wedding.venue_city, wedding.venue_country].filter(Boolean).join(', ');
 
   return (
     <>
-      <div
-        className="min-h-screen px-6 pt-12 pb-16"
-        style={{ background: 'var(--bg-warm-gradient)' }}
-      >
-        <div className="max-w-lg mx-auto">
+      {/* Background audio */}
+      <audio ref={audioRef} src="/audio/background-music.mp3" loop muted preload="none" />
 
-          {/* ── Header ── */}
-          <header className="text-center mb-8">
-            <h1
-              className="text-[34px] font-normal leading-tight mb-2"
-              style={{
-                fontFamily: 'var(--font-display)',
-                color: 'var(--text-primary)',
-                letterSpacing: '-0.01em',
-              }}
+      <div
+        className="min-h-screen relative overflow-hidden"
+        style={{ background: '#2C2825' }}
+      >
+        {/* ── Castell Background ── */}
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage: 'url(/castell-background.jpg)',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            opacity: 0.15,
+            filter: 'blur(2px)',
+          }}
+        />
+
+        {/* ── Content ── */}
+        <div className="relative z-10 flex flex-col min-h-screen">
+
+          {/* ── Top Photo Carousel ── */}
+          <div className="pt-4 pb-2 overflow-hidden">
+            <PhotoCarousel photos={topPhotos} />
+          </div>
+
+          {/* ── Center Card ── */}
+          <div className="flex-1 flex items-center justify-center px-4 py-6">
+            <div
+              className="relative w-full max-w-md"
+              style={{ perspective: '1200px' }}
             >
-              {guestName}&apos;s Memories
-            </h1>
-            <p
-              className="text-[15px] mb-1"
-              style={{ color: 'var(--text-secondary)' }}
-            >
-              {couple}
-              {wedding.wedding_date && (
-                <span style={{ color: 'var(--text-tertiary)' }}>
-                  {' '}&middot; {formatWeddingDate(wedding.wedding_date)}
-                </span>
-              )}
-            </p>
-            {wedding.hashtag && (
-              <p
-                className="text-[13px] font-medium mt-2"
+              <div
                 style={{
-                  fontFamily: 'var(--font-display)',
-                  fontStyle: 'italic',
-                  color: 'var(--color-gold)',
+                  transformStyle: 'preserve-3d',
+                  transition: 'transform 0.8s cubic-bezier(0.4, 0, 0.2, 1)',
+                  transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0)',
                 }}
               >
-                #{wedding.hashtag}
-              </p>
-            )}
-          </header>
+                {/* ── Front of Card ── */}
+                <div
+                  className="relative px-8 pt-10 pb-8 text-center"
+                  style={{
+                    background: 'rgba(254, 252, 249, 0.95)',
+                    borderRadius: 20,
+                    boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
+                    backfaceVisibility: 'hidden',
+                  }}
+                >
+                  {/* Decorative top accent */}
+                  <p
+                    className="text-[10px] font-medium uppercase tracking-[0.2em] mb-4"
+                    style={{ color: 'var(--text-tertiary)' }}
+                  >
+                    A Memoir For
+                  </p>
 
-          {/* ── Stats ── */}
-          {hasContent && (
-            <div className="flex justify-center gap-8 mb-8">
-              {stats.photo_count > 0 && (
-                <div className="text-center">
-                  <span
-                    className="shimmer-text"
+                  {/* Guest Name in elegant script */}
+                  <h1
+                    className="text-[38px] font-normal leading-tight mb-1"
                     style={{
                       fontFamily: 'var(--font-display)',
-                      fontSize: 28,
-                      fontWeight: 400,
-                      display: 'inline-block',
+                      color: 'var(--text-primary)',
+                      letterSpacing: '-0.01em',
                     }}
                   >
-                    {stats.photo_count}
-                  </span>
-                  <p className="text-[11px] mt-0.5" style={{ color: 'var(--text-secondary)' }}>
-                    Photos
+                    {guestName}
+                  </h1>
+
+                  <p
+                    className="text-[12px] uppercase tracking-[0.15em] mb-6"
+                    style={{ color: 'var(--text-tertiary)' }}
+                  >
+                    from the wedding of
                   </p>
-                </div>
-              )}
-              {stats.video_count > 0 && (
-                <div className="text-center">
-                  <span
-                    className="shimmer-text"
+
+                  {/* Couple Names */}
+                  <h2
+                    className="text-[26px] font-normal mb-6"
                     style={{
                       fontFamily: 'var(--font-display)',
-                      fontSize: 28,
-                      fontWeight: 400,
-                      display: 'inline-block',
+                      fontStyle: 'italic',
+                      color: 'var(--color-terracotta)',
                     }}
                   >
-                    {stats.video_count}
-                  </span>
-                  <p className="text-[11px] mt-0.5" style={{ color: 'var(--text-secondary)' }}>
-                    Videos
-                  </p>
-                </div>
-              )}
-              {stats.portrait_count > 0 && (
-                <div className="text-center">
-                  <span
-                    className="shimmer-text"
-                    style={{
-                      fontFamily: 'var(--font-display)',
-                      fontSize: 28,
-                      fontWeight: 400,
-                      display: 'inline-block',
-                    }}
-                  >
-                    {stats.portrait_count}
-                  </span>
-                  <p className="text-[11px] mt-0.5" style={{ color: 'var(--text-secondary)' }}>
-                    Portraits
-                  </p>
-                </div>
-              )}
-            </div>
-          )}
+                    {couple}
+                  </h2>
 
-          <div className="gold-divider mb-10" />
+                  {/* Gold divider */}
+                  <div className="gold-divider mx-auto mb-6" style={{ maxWidth: 120 }} />
 
-          {/* ── Photo Gallery (masonry 2-col) ── */}
-          {hasPhotos && (
-            <section className="mb-12">
-              <h2
-                className="text-[11px] font-medium uppercase tracking-widest mb-5 text-center"
-                style={{ color: 'var(--text-tertiary)', letterSpacing: '0.12em' }}
-              >
-                Photos
-              </h2>
-              <div style={{ columns: 2, columnGap: 10 }}>
-                {photos.map((photo, i) => (
-                  <div
-                    key={photo.id}
-                    className="mb-2.5 overflow-hidden cursor-pointer"
-                    style={{
-                      breakInside: 'avoid',
-                      borderRadius: 12,
-                      border: '1px solid var(--border-light)',
-                    }}
-                    onClick={() => {
-                      setLightboxUrl(photo.url);
-                      setLightboxType('photo');
-                    }}
-                  >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={photo.thumbnail_url}
-                      alt=""
-                      className="w-full block"
-                      loading={i < 4 ? 'eager' : 'lazy'}
+                  {/* Highlight Video */}
+                  {hasHighlightVideo && (
+                    <div
+                      className="mb-6 overflow-hidden mx-auto"
                       style={{
-                        aspectRatio: i % 3 === 0 ? '3/4' : '1/1',
-                        objectFit: 'cover',
+                        borderRadius: 12,
+                        border: '1px solid var(--border-light)',
+                        boxShadow: 'var(--shadow-soft)',
+                        maxWidth: 320,
                       }}
-                      onError={(e) => {
-                        const img = e.currentTarget;
-                        if (img.src !== photo.url) img.src = photo.url;
-                      }}
-                    />
-                  </div>
-                ))}
-              </div>
-            </section>
-          )}
-
-          {/* ── Videos ── */}
-          {hasVideos && (
-            <section className="mb-12">
-              <h2
-                className="text-[11px] font-medium uppercase tracking-widest mb-5 text-center"
-                style={{ color: 'var(--text-tertiary)', letterSpacing: '0.12em' }}
-              >
-                Videos
-              </h2>
-              <div className="flex flex-col gap-4">
-                {videos.map((video) => (
-                  <div
-                    key={video.id}
-                    className="relative overflow-hidden cursor-pointer"
-                    style={{
-                      borderRadius: 12,
-                      border: '1px solid var(--border-light)',
-                    }}
-                    onClick={() => {
-                      setLightboxUrl(video.url);
-                      setLightboxType('video');
-                    }}
-                  >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={video.thumbnail_url}
-                      alt=""
-                      className="w-full block"
-                      loading="lazy"
-                      style={{ aspectRatio: '16/9', objectFit: 'cover' }}
-                      onError={(e) => {
-                        const img = e.currentTarget;
-                        if (img.src !== video.url) img.src = video.url;
-                      }}
-                    />
-                    {/* Play button overlay */}
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div
-                        className="w-14 h-14 rounded-full flex items-center justify-center"
-                        style={{
-                          background: 'rgba(0, 0, 0, 0.45)',
-                          backdropFilter: 'blur(8px)',
-                          border: '1.5px solid rgba(255, 255, 255, 0.3)',
-                        }}
-                      >
-                        <div
-                          style={{
-                            width: 0,
-                            height: 0,
-                            borderTop: '8px solid transparent',
-                            borderBottom: '8px solid transparent',
-                            borderLeft: '14px solid rgba(255, 255, 255, 0.9)',
-                            marginLeft: 3,
-                          }}
-                        />
-                      </div>
-                    </div>
-                    {/* Duration badge */}
-                    {video.duration_ms && (
-                      <div
-                        className="absolute bottom-2 right-2 text-[11px] font-medium px-2 py-0.5 rounded"
-                        style={{
-                          background: 'rgba(0, 0, 0, 0.6)',
-                          color: 'rgba(255, 255, 255, 0.9)',
-                        }}
-                      >
-                        {formatDuration(video.duration_ms)}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </section>
-          )}
-
-          {/* ── AI Portraits ── */}
-          {hasPortraits && (
-            <section className="mb-12">
-              <h2
-                className="text-[11px] font-medium uppercase tracking-widest mb-5 text-center"
-                style={{ color: 'var(--text-tertiary)', letterSpacing: '0.12em' }}
-              >
-                AI Portraits
-              </h2>
-              <div
-                className="flex gap-3 overflow-x-auto pb-2 -mx-6 px-6"
-                style={{ scrollSnapType: 'x mandatory', WebkitOverflowScrolling: 'touch' }}
-              >
-                {portraits.map((portrait) => (
-                  <div
-                    key={portrait.id}
-                    className="flex-shrink-0 overflow-hidden cursor-pointer"
-                    style={{
-                      width: portraits.length === 1 ? '100%' : '70%',
-                      maxWidth: 280,
-                      borderRadius: 14,
-                      border: '1px solid var(--border-light)',
-                      scrollSnapAlign: 'center',
-                      boxShadow: 'var(--shadow-soft)',
-                    }}
-                    onClick={() => {
-                      setLightboxUrl(portrait.url);
-                      setLightboxType('photo');
-                    }}
-                  >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={portrait.url}
-                      alt=""
-                      className="w-full block"
-                      loading="lazy"
-                      style={{ aspectRatio: '3/4', objectFit: 'cover' }}
-                    />
-                  </div>
-                ))}
-              </div>
-            </section>
-          )}
-
-          {/* ── Written Memories / Toasts ── */}
-          {hasPosts && (
-            <section className="mb-12">
-              <h2
-                className="text-[11px] font-medium uppercase tracking-widest mb-5 text-center"
-                style={{ color: 'var(--text-tertiary)', letterSpacing: '0.12em' }}
-              >
-                Words & Toasts
-              </h2>
-              <div className="flex flex-col gap-5">
-                {posts.map((post) => (
-                  <div
-                    key={post.id}
-                    className="text-center px-4 py-6"
-                    style={{
-                      background: 'var(--bg-pure-white)',
-                      borderRadius: 16,
-                      border: '1px solid var(--border-light)',
-                      boxShadow: 'var(--shadow-soft)',
-                    }}
-                  >
-                    {/* Decorative open-quote */}
-                    <span
-                      className="block text-3xl leading-none mb-2"
-                      style={{ color: 'var(--color-gold-rule)', fontFamily: 'Georgia, serif' }}
                     >
-                      &ldquo;
-                    </span>
+                      <video
+                        src={keeperReel.url}
+                        controls
+                        poster={keeperReel.thumbnail_url || undefined}
+                        className="w-full block"
+                        style={{ aspectRatio: '16/9', objectFit: 'cover' }}
+                        playsInline
+                      />
+                    </div>
+                  )}
+
+                  {/* Placeholder when no video yet */}
+                  {!hasHighlightVideo && (
+                    <div
+                      className="mb-6 mx-auto flex items-center justify-center"
+                      style={{
+                        borderRadius: 12,
+                        border: '1px dashed var(--border-medium)',
+                        background: 'var(--bg-soft-cream)',
+                        maxWidth: 320,
+                        aspectRatio: '16/9',
+                      }}
+                    >
+                      <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+                        Your highlight reel is being crafted
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Date & Location */}
+                  <p
+                    className="text-[18px] mb-1"
+                    style={{
+                      fontFamily: 'var(--font-display)',
+                      fontStyle: 'italic',
+                      color: 'var(--text-primary)',
+                    }}
+                  >
+                    {formatDateRange(wedding.wedding_date) || formatWeddingDate(wedding.wedding_date)}
+                  </p>
+                  {venueLocation && (
+                    <p className="text-[13px] mb-4" style={{ color: 'var(--text-secondary)' }}>
+                      {venueLocation}
+                    </p>
+                  )}
+
+                  {/* Hashtag */}
+                  {wedding.hashtag && (
                     <p
-                      className="text-[15px] leading-relaxed"
+                      className="text-[14px] font-medium mb-6"
                       style={{
                         fontFamily: 'var(--font-display)',
                         fontStyle: 'italic',
-                        color: 'var(--text-primary)',
+                        color: 'var(--color-golden)',
                       }}
                     >
-                      {post.content}
+                      #{wedding.hashtag}
                     </p>
-                    <span
-                      className="block text-3xl leading-none mt-2"
-                      style={{ color: 'var(--color-gold-rule)', fontFamily: 'Georgia, serif' }}
+                  )}
+
+                  {/* View Your Gallery Button */}
+                  <Link
+                    href={`/w/${slug}/gallery`}
+                    className="inline-block w-full py-3.5 rounded-full text-sm font-semibold transition-transform active:scale-[0.97]"
+                    style={{
+                      background: 'var(--color-terracotta-gradient)',
+                      color: '#FFFFFF',
+                      boxShadow: 'var(--shadow-terracotta)',
+                      maxWidth: 280,
+                      textAlign: 'center',
+                      textDecoration: 'none',
+                    }}
+                  >
+                    View Your Gallery
+                  </Link>
+
+                  {/* Share row */}
+                  <div className="flex items-center justify-center gap-3 mt-5">
+                    <button
+                      onClick={handleCopyLink}
+                      className="flex items-center gap-1.5 px-4 py-2 rounded-full text-[11px] font-medium transition-all"
+                      style={{
+                        background: 'var(--color-gold-faint)',
+                        color: 'var(--color-gold)',
+                        border: '0.5px solid var(--color-gold-rule)',
+                        cursor: 'pointer',
+                      }}
                     >
-                      &rdquo;
-                    </span>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+                        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+                      </svg>
+                      {copied ? 'Copied!' : 'Copy Link'}
+                    </button>
+                    {typeof navigator !== 'undefined' && typeof navigator.share === 'function' && (
+                      <button
+                        onClick={handleNativeShare}
+                        className="flex items-center gap-1.5 px-4 py-2 rounded-full text-[11px] font-medium transition-all"
+                        style={{
+                          background: 'var(--color-terracotta-gradient)',
+                          color: '#FFFFFF',
+                          border: 'none',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <circle cx="18" cy="5" r="3" />
+                          <circle cx="6" cy="12" r="3" />
+                          <circle cx="18" cy="19" r="3" />
+                          <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+                          <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+                        </svg>
+                        Share
+                      </button>
+                    )}
                   </div>
-                ))}
-              </div>
-            </section>
-          )}
+                </div>
 
-          {/* ── No Content State ── */}
-          {!hasContent && (
-            <div className="text-center py-16">
-              <p className="text-5xl mb-4">&#128247;</p>
-              <p
-                className="text-lg font-normal mb-2"
-                style={{
-                  fontFamily: 'var(--font-display)',
-                  fontStyle: 'italic',
-                  color: 'var(--text-secondary)',
-                }}
-              >
-                No memories captured yet
-              </p>
-              <p className="text-sm" style={{ color: 'var(--text-tertiary)' }}>
-                Photos, videos, and portraits will appear here.
-              </p>
-            </div>
-          )}
-
-          <div className="gold-divider mb-10" />
-
-          {/* ── Share Section (the viral hook) ── */}
-          <section className="mb-12 text-center">
-            <h3
-              className="text-[20px] font-normal mb-6"
-              style={{
-                fontFamily: 'var(--font-display)',
-                color: 'var(--text-primary)',
-              }}
-            >
-              Share Your Memories
-            </h3>
-            <div className="flex flex-col gap-3 max-w-xs mx-auto">
-              {/* Copy Link */}
-              <button
-                onClick={handleCopyLink}
-                className="w-full flex items-center justify-center gap-2.5 py-3.5 rounded-full text-sm font-medium transition-all"
-                style={{
-                  background: 'var(--bg-pure-white)',
-                  color: 'var(--text-primary)',
-                  border: '1px solid var(--border-medium)',
-                  boxShadow: 'var(--shadow-soft)',
-                  cursor: 'pointer',
-                }}
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
-                  <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
-                </svg>
-                {copied ? 'Link Copied!' : 'Copy Link'}
-              </button>
-
-              {/* WhatsApp */}
-              <button
-                onClick={handleWhatsApp}
-                className="w-full flex items-center justify-center gap-2.5 py-3.5 rounded-full text-sm font-medium transition-all"
-                style={{
-                  background: '#25D366',
-                  color: '#FFFFFF',
-                  border: 'none',
-                  cursor: 'pointer',
-                }}
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
-                </svg>
-                Share via WhatsApp
-              </button>
-
-              {/* Instagram */}
-              <button
-                onClick={handleInstagram}
-                className="w-full flex items-center justify-center gap-2.5 py-3.5 rounded-full text-sm font-medium transition-all"
-                style={{
-                  background: 'linear-gradient(135deg, #833AB4 0%, #E1306C 50%, #F77737 100%)',
-                  color: '#FFFFFF',
-                  border: 'none',
-                  cursor: 'pointer',
-                }}
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
-                  <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
-                  <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
-                </svg>
-                Share to Instagram
-              </button>
-
-              {/* Native Share (if available) */}
-              {typeof navigator !== 'undefined' && typeof navigator.share === 'function' && (
-                <button
-                  onClick={handleNativeShare}
-                  className="w-full flex items-center justify-center gap-2.5 py-3.5 rounded-full text-sm font-medium transition-all"
+                {/* ── Back of Card (Flip side — Personal Message) ── */}
+                <div
+                  className="absolute inset-0 px-8 py-10 flex flex-col items-center justify-center text-center"
                   style={{
-                    background: 'var(--color-terracotta-gradient)',
-                    color: '#FFFFFF',
-                    border: 'none',
-                    boxShadow: 'var(--shadow-terracotta)',
-                    cursor: 'pointer',
+                    background: 'rgba(254, 252, 249, 0.95)',
+                    borderRadius: 20,
+                    boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
+                    backfaceVisibility: 'hidden',
+                    transform: 'rotateY(180deg)',
                   }}
                 >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="18" cy="5" r="3" />
-                    <circle cx="6" cy="12" r="3" />
-                    <circle cx="18" cy="19" r="3" />
-                    <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
-                    <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
-                  </svg>
-                  Share
-                </button>
-              )}
+                  {/* Decorative open-quote */}
+                  <span
+                    className="block text-5xl leading-none mb-4"
+                    style={{ color: 'var(--color-gold-rule)', fontFamily: 'Georgia, serif' }}
+                  >
+                    &ldquo;
+                  </span>
+
+                  <p
+                    className="text-[16px] leading-relaxed mb-4 max-w-sm"
+                    style={{
+                      fontFamily: 'var(--font-display)',
+                      fontStyle: 'italic',
+                      color: 'var(--text-primary)',
+                    }}
+                  >
+                    {memoir_message || `Thank you for being part of our special day, ${guestName}. Your presence made everything more beautiful.`}
+                  </p>
+
+                  <span
+                    className="block text-5xl leading-none mb-6"
+                    style={{ color: 'var(--color-gold-rule)', fontFamily: 'Georgia, serif' }}
+                  >
+                    &rdquo;
+                  </span>
+
+                  <div className="gold-divider mx-auto mb-4" style={{ maxWidth: 80 }} />
+
+                  <p
+                    className="text-[14px]"
+                    style={{
+                      fontFamily: 'var(--font-display)',
+                      fontStyle: 'italic',
+                      color: 'var(--color-terracotta)',
+                    }}
+                  >
+                    With love, {couple}
+                  </p>
+                </div>
+              </div>
+
+              {/* ── Flip Tab ── */}
+              <button
+                onClick={() => setIsFlipped(!isFlipped)}
+                className="absolute -right-1 top-1/2 -translate-y-1/2 flex flex-col items-center justify-center gap-1 py-6 px-2"
+                style={{
+                  background: 'var(--color-terracotta-gradient)',
+                  borderRadius: '0 10px 10px 0',
+                  color: '#FFFFFF',
+                  cursor: 'pointer',
+                  border: 'none',
+                  writingMode: 'vertical-rl',
+                  textOrientation: 'mixed',
+                  fontSize: 10,
+                  fontWeight: 600,
+                  letterSpacing: '0.1em',
+                  textTransform: 'uppercase',
+                  boxShadow: '4px 0 12px rgba(0, 0, 0, 0.2)',
+                  zIndex: 5,
+                }}
+              >
+                {isFlipped ? (
+                  <>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ transform: 'rotate(90deg)' }}>
+                      <polyline points="15 18 9 12 15 6" />
+                    </svg>
+                    Flip Back
+                  </>
+                ) : (
+                  <>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style={{ transform: 'rotate(90deg)' }}>
+                      <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                    </svg>
+                    For You
+                  </>
+                )}
+              </button>
             </div>
-          </section>
+          </div>
 
-          <div className="gold-divider mb-10" />
+          {/* ── Bottom Photo Carousel ── */}
+          <div className="pb-4 pt-2 overflow-hidden">
+            <PhotoCarousel photos={bottomPhotos} reverse />
+          </div>
 
-          {/* ── Viral CTA ── */}
-          <section className="mb-10">
+          {/* ── Audio Toggle ── */}
+          <button
+            onClick={toggleAudio}
+            className="fixed bottom-6 left-6 w-10 h-10 rounded-full flex items-center justify-center"
+            style={{
+              background: 'rgba(0, 0, 0, 0.5)',
+              backdropFilter: 'blur(12px)',
+              border: '1px solid rgba(255, 255, 255, 0.15)',
+              cursor: 'pointer',
+              zIndex: 20,
+              color: '#FFFFFF',
+            }}
+          >
+            {audioMuted ? (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                <line x1="23" y1="9" x2="17" y2="15" />
+                <line x1="17" y1="9" x2="23" y2="15" />
+              </svg>
+            ) : (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+                <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+              </svg>
+            )}
+          </button>
+
+          {/* ── Viral CTA at bottom ── */}
+          <div className="px-6 pb-8 text-center">
             <div
-              className="relative overflow-hidden p-7 text-center"
+              className="relative overflow-hidden p-6 mx-auto max-w-md"
               style={{
-                borderRadius: 20,
-                background: 'var(--bg-pure-white)',
-                border: '1px solid var(--color-gold-rule)',
-                boxShadow: '0 0 30px rgba(198, 163, 85, 0.06), var(--shadow-soft)',
+                borderRadius: 16,
+                background: 'rgba(254, 252, 249, 0.08)',
+                border: '1px solid rgba(198, 163, 85, 0.2)',
+                backdropFilter: 'blur(12px)',
               }}
             >
-              {/* Decorative gold corner accents */}
-              <div
-                className="absolute top-0 left-0 w-16"
-                style={{ height: 1, background: 'linear-gradient(90deg, var(--color-gold), transparent)', opacity: 0.4 }}
-              />
-              <div
-                className="absolute top-0 left-0 h-16"
-                style={{ width: 1, background: 'linear-gradient(180deg, var(--color-gold), transparent)', opacity: 0.4 }}
-              />
-              <div
-                className="absolute bottom-0 right-0 w-16"
-                style={{ height: 1, background: 'linear-gradient(270deg, var(--color-gold), transparent)', opacity: 0.4 }}
-              />
-              <div
-                className="absolute bottom-0 right-0 h-16"
-                style={{ width: 1, background: 'linear-gradient(0deg, var(--color-gold), transparent)', opacity: 0.4 }}
-              />
-
               <p
-                className="text-[22px] font-normal mb-3"
+                className="text-[16px] font-normal mb-2"
                 style={{
                   fontFamily: 'var(--font-display)',
-                  color: 'var(--text-primary)',
-                  lineHeight: 1.3,
+                  color: 'rgba(254, 252, 249, 0.9)',
                 }}
               >
                 Want this for your wedding?
               </p>
               <p
-                className="text-[13px] leading-relaxed mb-6 max-w-[260px] mx-auto"
-                style={{ color: 'var(--text-secondary)' }}
+                className="text-[12px] mb-4"
+                style={{ color: 'rgba(254, 252, 249, 0.5)' }}
               >
-                Every guest gets their own memory page, AI portraits, and more.
+                Every guest gets their own memoir, highlight reel, and more.
               </p>
               <Link
                 href="/"
                 className="inline-block text-xs font-medium uppercase tracking-wide"
                 style={{
-                  padding: '12px 32px',
+                  padding: '10px 28px',
                   background: 'transparent',
-                  border: '1px solid var(--color-gold-rule)',
-                  color: 'var(--color-gold)',
+                  border: '1px solid rgba(198, 163, 85, 0.4)',
+                  color: 'var(--color-golden)',
                   borderRadius: 50,
                   letterSpacing: '0.06em',
-                  transition: 'all 0.2s ease',
+                  textDecoration: 'none',
                 }}
               >
                 Learn More
               </Link>
             </div>
-          </section>
-
-          {/* ── Footer ── */}
-          <footer className="text-center pb-4">
-            <p className="text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
+            <p className="text-[10px] mt-4" style={{ color: 'rgba(254, 252, 249, 0.25)' }}>
               Made with ReWed
             </p>
-          </footer>
+          </div>
         </div>
       </div>
-
-      {/* ── Lightbox Modal ── */}
-      {lightboxUrl && (
-        <div
-          className="fixed inset-0 flex items-center justify-center"
-          style={{ background: 'rgba(0, 0, 0, 0.92)', zIndex: 60 }}
-          onClick={() => setLightboxUrl(null)}
-        >
-          {/* Close button */}
-          <button
-            className="absolute top-4 right-4 text-white p-2"
-            onClick={() => setLightboxUrl(null)}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', zIndex: 61 }}
-          >
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <line x1="18" y1="6" x2="6" y2="18" />
-              <line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
-          </button>
-
-          {lightboxType === 'video' ? (
-            <video
-              src={lightboxUrl}
-              controls
-              autoPlay
-              className="max-w-full max-h-full rounded-lg"
-              style={{ objectFit: 'contain' }}
-              onClick={(e) => e.stopPropagation()}
-            />
-          ) : (
-            /* eslint-disable-next-line @next/next/no-img-element */
-            <img
-              src={lightboxUrl}
-              alt=""
-              className="max-w-full max-h-full rounded-lg"
-              style={{ objectFit: 'contain', maxHeight: '90vh' }}
-              onClick={(e) => e.stopPropagation()}
-            />
-          )}
-        </div>
-      )}
     </>
   );
 }

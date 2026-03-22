@@ -164,7 +164,7 @@ export default function KeepInTouchPage() {
     );
   }
 
-  const weddingName = config?.couple_names || config?.wedding_name || 'the wedding';
+  const weddingName = config?.display_name || 'the wedding';
   const showForm = !myShare || editing;
 
   return (

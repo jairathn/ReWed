@@ -90,7 +90,7 @@ export async function POST(
     const body = await request.json();
     const parsed = contactShareSchema.safeParse(body);
     if (!parsed.success) {
-      throw new AppError('VALIDATION_ERROR', parsed.error.issues[0]?.message || parsed.error.errors[0]?.message);
+      throw new AppError('VALIDATION_ERROR', parsed.error.issues[0]?.message || 'Invalid input');
     }
 
     await pool.query(

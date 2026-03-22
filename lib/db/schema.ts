@@ -24,6 +24,7 @@ export interface Wedding {
   package_config: PackageConfigData;
   storage_used_bytes: number;
   ai_portraits_used: number;
+  gallery_published: boolean;
   created_at: Date;
   updated_at: Date;
 }
@@ -97,6 +98,7 @@ export interface Guest {
   party_id: string | null;
   party_role: 'primary' | 'partner' | 'child';
   relationship: string | null;
+  memoir_published: boolean;
   created_at: Date;
 }
 
@@ -129,6 +131,7 @@ export interface Upload {
   thumbnail_key: string | null;
   transcode_key: string | null;
   status: 'pending' | 'uploading' | 'processing' | 'ready' | 'failed';
+  couple_approved: boolean;
   retry_count: number;
   created_at: Date;
 }
@@ -308,4 +311,27 @@ export interface ContactShare {
   email: string | null;
   share_message: string | null;
   created_at: Date;
+}
+
+export interface HighlightReel {
+  id: string;
+  wedding_id: string;
+  guest_id: string;
+  type: 'keeper' | 'reel';
+  storage_key: string;
+  thumbnail_key: string | null;
+  duration_ms: number | null;
+  size_bytes: number | null;
+  status: 'pending' | 'processing' | 'ready' | 'failed';
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface MemoirMessage {
+  id: string;
+  wedding_id: string;
+  guest_id: string;
+  message: string;
+  created_at: Date;
+  updated_at: Date;
 }
