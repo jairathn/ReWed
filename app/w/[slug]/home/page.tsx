@@ -7,10 +7,19 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import TravelListView from '@/components/travel/TravelListView';
 
+interface Reminder {
+  type: string;
+  title: string;
+  body: string;
+  event_name?: string;
+  when: string;
+}
+
 export default function GuestHomePage() {
   const { config, guest, slug, isAuthenticated, isLoading, configError, retryConfig, logout } = useWedding();
   const router = useRouter();
   const [hasPlan, setHasPlan] = useState<boolean | null>(null);
+  const [reminders, setReminders] = useState<Reminder[]>([]);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -25,6 +34,17 @@ export default function GuestHomePage() {
       .then((res) => res.json())
       .then((data) => setHasPlan(!!data.data?.plan))
       .catch(() => setHasPlan(false));
+  }, [slug, isAuthenticated]);
+
+  // Fetch reminders
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    fetch(`/api/v1/w/${slug}/reminders`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.data?.reminders) setReminders(data.data.reminders);
+      })
+      .catch(() => {});
   }, [slug, isAuthenticated]);
 
   // Calculate days until wedding
@@ -72,11 +92,16 @@ export default function GuestHomePage() {
 
   const links = [
     { label: 'Schedule', sub: `${config.events.length} event${config.events.length !== 1 ? 's' : ''}`, desc: 'View all events, venues, dress codes, and directions', href: `/w/${slug}/schedule` },
-    { label: 'Gallery', sub: 'Photos & video', desc: 'Take pictures and videos \u2014 we\u2019ll send you an album after!', href: `/w/${slug}/gallery` },
-    { label: 'Social Feed', sub: 'Posts & updates', desc: 'Share a toast to the couple or a favorite memory', href: `/w/${slug}/feed` },
+    { label: 'Gallery', sub: 'Photos & video', desc: 'Take pictures and videos \u2014 edit with AI in the gallery!', href: `/w/${slug}/gallery` },
+    { label: 'Social Feed', sub: 'Posts & updates', desc: 'Share photos, videos, and moments with everyone', href: `/w/${slug}/feed` },
+    { label: 'My Table', sub: 'Seating chart', desc: 'See who\u2019s at your table and get to know them', href: `/w/${slug}/seating` },
+    { label: 'Song Requests', sub: 'DJ requests', desc: 'What song gets you on the dance floor?', href: `/w/${slug}/music` },
     { label: 'Travel', sub: 'Plans & meetups', desc: 'Share your travel plans, find friends nearby, or share a ride', href: `/w/${slug}/travel` },
+    { label: 'Everyone\u2019s Photos', sub: 'Shared gallery', desc: 'Browse all photos and videos from every guest', href: `/w/${slug}/shared-gallery` },
     { label: 'FAQ', sub: 'Questions?', desc: 'Ask the chatbot anything about the wedding', href: `/w/${slug}/faq` },
     { label: 'Guest List', sub: 'See who\u2019s coming', href: `/w/${slug}/directory` },
+    { label: 'Keep in Touch', sub: 'Stay connected', desc: 'Share your contact info with guests you met', href: `/w/${slug}/keep-in-touch` },
+    { label: 'My Memories', sub: 'Your personal page', desc: 'View and share your curated memories from the wedding', href: `/w/${slug}/memories/${guest.id}` },
   ];
 
   return (
@@ -128,6 +153,33 @@ export default function GuestHomePage() {
 
       {/* Gold divider */}
       <div className="gold-divider mb-2" />
+
+      {/* Reminders */}
+      {reminders.length > 0 && (
+        <div className="mb-6 space-y-3">
+          {reminders.map((r, i) => (
+            <div
+              key={i}
+              className="p-4 rounded-2xl"
+              style={{
+                background: r.type === 'today' ? 'var(--color-gold-faint)' : 'var(--bg-pure-white)',
+                border: r.type === 'today' ? '1px solid var(--color-gold-rule)' : '1px solid var(--border-light)',
+                boxShadow: 'var(--shadow-soft)',
+              }}
+            >
+              <p
+                className="text-sm font-medium mb-1"
+                style={{ color: r.type === 'today' ? 'var(--color-gold-dark)' : 'var(--text-primary)' }}
+              >
+                {r.title}
+              </p>
+              <p className="text-xs" style={{ color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                {r.body}
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Quick Links — with welcoming descriptions */}
       <div className="mb-8">

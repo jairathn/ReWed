@@ -342,6 +342,25 @@ export default async function SchedulePage({
                         </svg>
                       </a>
                     )}
+                    {/* Uber link */}
+                    {event.venue_address && (
+                      <a
+                        href={`https://m.uber.com/ul/?action=setPickup&dropoff[formatted_address]=${encodeURIComponent(event.venue_name + ', ' + event.venue_address)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1.5 mt-2 ml-[18px] group"
+                        style={{ textDecoration: 'none' }}
+                      >
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0">
+                          <circle cx="12" cy="12" r="10" />
+                          <path d="M8 12h4v5" />
+                          <path d="M12 7v5" />
+                        </svg>
+                        <span className="text-xs group-hover:underline" style={{ color: 'var(--text-tertiary)' }}>
+                          Get a ride
+                        </span>
+                      </a>
+                    )}
                     {event.logistics && (
                       <p style={{ fontSize: 12, color: 'var(--text-secondary)', marginLeft: 18, marginTop: 2 }}>
                         {event.logistics}

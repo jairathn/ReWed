@@ -37,8 +37,51 @@ export async function GET(
       throw new AppError('AUTH_NOT_REGISTERED');
     }
 
-    // Parse pagination
+    // Check if feed is blocked during events
     const url = new URL(request.url);
+    const checkBlocked = url.searchParams.get('check_blocked');
+
+    // Get wedding timezone
+    const tzResult = await pool.query(
+      `SELECT timezone FROM weddings WHERE id = $1`,
+      [session.weddingId]
+    );
+    const tz = tzResult.rows[0]?.timezone || 'America/New_York';
+
+    // Check if current time falls within any event
+    const nowResult = await pool.query(
+      `SELECT EXISTS (
+        SELECT 1 FROM events
+        WHERE wedding_id = $1
+          AND date IS NOT NULL
+          AND start_time IS NOT NULL
+          AND end_time IS NOT NULL
+          AND (NOW() AT TIME ZONE $2) >= (date + start_time)
+          AND (NOW() AT TIME ZONE $2) <= (COALESCE(end_date, date) + end_time)
+      ) as is_during_event`,
+      [session.weddingId, tz]
+    );
+
+    const isDuringEvent = nowResult.rows[0]?.is_during_event === true;
+
+    // Get current/next event name for the blocked message
+    let currentEventName = '';
+    if (isDuringEvent) {
+      const eventResult = await pool.query(
+        `SELECT name FROM events
+         WHERE wedding_id = $1
+           AND date IS NOT NULL
+           AND start_time IS NOT NULL
+           AND end_time IS NOT NULL
+           AND (NOW() AT TIME ZONE $2) >= (date + start_time)
+           AND (NOW() AT TIME ZONE $2) <= (COALESCE(end_date, date) + end_time)
+         LIMIT 1`,
+        [session.weddingId, tz]
+      );
+      currentEventName = eventResult.rows[0]?.name || 'the event';
+    }
+
+    // Parse pagination
     const cursor = url.searchParams.get('cursor');
     const limit = Math.min(parseInt(url.searchParams.get('limit') || '20', 10), 100);
 
@@ -55,8 +98,8 @@ export async function GET(
     queryParams.push(limit + 1);
 
     const result = await pool.query(
-      `SELECT p.id, p.type, p.content, p.photo_key, p.like_count, p.comment_count,
-              p.is_pinned, p.created_at,
+      `SELECT p.id, p.type, p.content, p.photo_key, p.video_key, p.media_type,
+              p.like_count, p.comment_count, p.is_pinned, p.created_at,
               g.id as guest_id, g.first_name, g.last_name, g.display_name
        FROM feed_posts p
        JOIN guests g ON p.guest_id = g.id
@@ -85,6 +128,8 @@ export async function GET(
       type: row.type,
       content: row.content,
       photo_url: row.photo_key ? await getMediaUrl(row.photo_key) : null,
+      video_url: row.video_key ? await getMediaUrl(row.video_key) : null,
+      media_type: row.media_type || null,
       like_count: row.like_count,
       comment_count: row.comment_count,
       is_pinned: row.is_pinned,
@@ -104,6 +149,10 @@ export async function GET(
         next_cursor: hasMore && rows.length > 0 ? rows[rows.length - 1].created_at : null,
         has_more: hasMore,
       },
+      is_blocked: isDuringEvent,
+      blocked_message: isDuringEvent
+        ? `Put your phone down and enjoy ${currentEventName}! The feed will be back after the event.`
+        : null,
     });
   } catch (error) {
     return handleApiError(error);
@@ -147,6 +196,28 @@ export async function POST(
       throw new AppError('BILLING_FEATURE_LOCKED');
     }
 
+    // Block posting during events
+    const tzResult2 = await pool.query(`SELECT timezone FROM weddings WHERE id = $1`, [session.weddingId]);
+    const tz2 = tzResult2.rows[0]?.timezone || 'America/New_York';
+
+    const blockResult = await pool.query(
+      `SELECT EXISTS (
+        SELECT 1 FROM events
+        WHERE wedding_id = $1
+          AND date IS NOT NULL AND start_time IS NOT NULL AND end_time IS NOT NULL
+          AND (NOW() AT TIME ZONE $2) >= (date + start_time)
+          AND (NOW() AT TIME ZONE $2) <= (COALESCE(end_date, date) + end_time)
+      ) as blocked`,
+      [session.weddingId, tz2]
+    );
+
+    if (blockResult.rows[0]?.blocked === true) {
+      return Response.json(
+        { error: { code: 'FEED_BLOCKED', message: "Put your phone down and enjoy the moment! The feed will be back after the event." } },
+        { status: 403 }
+      );
+    }
+
     // Validate body
     const body = await request.json();
     const parsed = feedPostSchema.safeParse(body);
@@ -159,25 +230,34 @@ export async function POST(
     // Sanitize content
     const sanitizedContent = content ? sanitizeText(content) : null;
 
-    // If photo post, get the storage key from the upload
+    // If photo/video post, get the storage key from the upload
     let photoKey: string | null = null;
+    let videoKey: string | null = null;
+    let mediaType: 'photo' | 'video' | null = null;
     if (photo_upload_id) {
       const uploadResult = await pool.query(
-        `SELECT storage_key FROM uploads
+        `SELECT storage_key, type FROM uploads
          WHERE id = $1 AND wedding_id = $2 AND guest_id = $3 AND status = 'ready'`,
         [photo_upload_id, session.weddingId, session.guestId]
       );
       if (uploadResult.rows.length === 0) {
         throw new AppError('VALIDATION_ERROR', 'Photo not found');
       }
-      photoKey = uploadResult.rows[0].storage_key;
+      const uploadType = uploadResult.rows[0].type;
+      if (uploadType === 'video') {
+        videoKey = uploadResult.rows[0].storage_key;
+        mediaType = 'video';
+      } else {
+        photoKey = uploadResult.rows[0].storage_key;
+        mediaType = 'photo';
+      }
     }
 
     const result = await pool.query(
-      `INSERT INTO feed_posts (wedding_id, guest_id, type, content, photo_key)
-       VALUES ($1, $2, $3, $4, $5)
-       RETURNING id, type, content, photo_key, like_count, comment_count, is_pinned, created_at`,
-      [session.weddingId, session.guestId, type, sanitizedContent, photoKey]
+      `INSERT INTO feed_posts (wedding_id, guest_id, type, content, photo_key, video_key, media_type)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
+       RETURNING id, type, content, photo_key, video_key, media_type, like_count, comment_count, is_pinned, created_at`,
+      [session.weddingId, session.guestId, type, sanitizedContent, photoKey, videoKey, mediaType]
     );
 
     const post = result.rows[0];
@@ -197,6 +277,8 @@ export async function POST(
             type: post.type,
             content: post.content,
             photo_url: post.photo_key ? await getMediaUrl(post.photo_key) : null,
+            video_url: post.video_key ? await getMediaUrl(post.video_key) : null,
+            media_type: post.media_type || null,
             like_count: post.like_count,
             comment_count: post.comment_count,
             is_pinned: post.is_pinned,

@@ -4,21 +4,7 @@ import { useWedding } from '@/components/WeddingProvider';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, useCallback } from 'react';
 
-type Mode = 'photo' | 'ai-portrait';
-type Phase = 'viewfinder' | 'review' | 'style-picker' | 'uploading' | 'success';
-
-const AI_STYLES: { id: string; name: string; emoji: string }[] = [
-  { id: 'castle-wedding', name: 'Castle Wedding', emoji: '🏰' },
-  { id: 'mughal', name: 'Mughal Royalty', emoji: '👑' },
-  { id: 'bollywood-poster', name: 'Bollywood Poster', emoji: '🎬' },
-  { id: 'watercolor', name: 'Watercolor', emoji: '🎨' },
-  { id: 'renaissance', name: 'Renaissance', emoji: '🖼️' },
-  { id: 'pop-art', name: 'Pop Art', emoji: '🎯' },
-  { id: 'anime', name: 'Anime', emoji: '✨' },
-  { id: 'oil-painting', name: 'Oil Painting', emoji: '🖌️' },
-  { id: 'pixel-art', name: 'Pixel Art', emoji: '👾' },
-  { id: 'stained-glass', name: 'Stained Glass', emoji: '⛪' },
-];
+type Phase = 'viewfinder' | 'review' | 'uploading' | 'success';
 
 export default function PhotoBoothPage() {
   const { config, guest, slug, isAuthenticated, isLoading } = useWedding();
@@ -28,7 +14,6 @@ export default function PhotoBoothPage() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
-  const [mode, setMode] = useState<Mode>('photo');
   const [phase, setPhase] = useState<Phase>('viewfinder');
   const [facingMode, setFacingMode] = useState<'environment' | 'user'>('environment');
   const [capturedBlob, setCapturedBlob] = useState<Blob | null>(null);
@@ -36,7 +21,6 @@ export default function PhotoBoothPage() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [permissionDenied, setPermissionDenied] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
-  const [selectedStyle, setSelectedStyle] = useState<string | null>(null);
   const [flashOn, setFlashOn] = useState(false);
   const [flashSupported, setFlashSupported] = useState(false);
   const [screenFlashing, setScreenFlashing] = useState(false);
@@ -149,12 +133,7 @@ export default function PhotoBoothPage() {
           }
 
           setScreenFlashing(false);
-
-          if (mode === 'ai-portrait') {
-            setPhase('style-picker');
-          } else {
-            setPhase('review');
-          }
+          setPhase('review');
         },
         'image/jpeg',
         0.92
@@ -175,12 +154,11 @@ export default function PhotoBoothPage() {
     }
     setCapturedBlob(null);
     setCapturedUrl('');
-    setSelectedStyle(null);
     setUploadProgress(0);
     setPhase('viewfinder');
   };
 
-  const uploadPhoto = async (styleId?: string) => {
+  const uploadPhoto = async () => {
     if (!capturedBlob || !guest) return;
 
     setPhase('uploading');
@@ -254,25 +232,8 @@ export default function PhotoBoothPage() {
 
       setUploadProgress(100);
 
-      if (styleId) {
-        const completeData = await completeRes.json();
-        const sourceUploadId = completeData.data?.upload?.id || upload_id;
-
-        const portraitRes = await fetch(`/api/v1/w/${slug}/ai-portrait`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            source_upload_id: sourceUploadId,
-            style_id: styleId,
-          }),
-        });
-        if (!portraitRes.ok) {
-          console.warn('AI portrait generation request failed:', await portraitRes.text());
-        }
-      }
-
       setPhase('success');
-      setToastMessage(styleId ? 'Photo saved! AI portrait is generating...' : 'Photo saved to gallery!');
+      setToastMessage('Photo saved to gallery!');
 
       setTimeout(() => { retake(); }, 1500);
     } catch (err) {
@@ -425,51 +386,6 @@ export default function PhotoBoothPage() {
           {/* Bottom controls */}
           <div className="absolute bottom-0 left-0 right-0 z-20">
             <div className="flex flex-col items-center gap-5 pb-10 pt-6">
-              {/* Mode Toggle — warm editorial pill */}
-              <div
-                className="inline-flex rounded-full"
-                style={{
-                  background: 'rgba(20, 14, 8, 0.65)',
-                  border: '0.5px solid rgba(200, 174, 140, 0.35)',
-                  backdropFilter: 'blur(8px)',
-                  WebkitBackdropFilter: 'blur(8px)',
-                  padding: '3px',
-                }}
-              >
-                <button
-                  onClick={() => setMode('photo')}
-                  className="rounded-full text-xs transition-all"
-                  style={{
-                    padding: '6px 18px',
-                    letterSpacing: '0.4px',
-                    background: mode === 'photo'
-                      ? 'rgba(200, 174, 140, 0.25)'
-                      : 'transparent',
-                    color: mode === 'photo' ? '#e8d5b8' : 'rgba(255,255,255,0.45)',
-                    border: mode === 'photo' ? '0.5px solid rgba(200, 174, 140, 0.5)' : '0.5px solid transparent',
-                    fontFamily: 'var(--font-body)',
-                  }}
-                >
-                  Photo
-                </button>
-                <button
-                  onClick={() => setMode('ai-portrait')}
-                  className="rounded-full text-xs transition-all"
-                  style={{
-                    padding: '6px 18px',
-                    letterSpacing: '0.4px',
-                    background: mode === 'ai-portrait'
-                      ? 'rgba(200, 174, 140, 0.25)'
-                      : 'transparent',
-                    color: mode === 'ai-portrait' ? '#e8d5b8' : 'rgba(255,255,255,0.45)',
-                    border: mode === 'ai-portrait' ? '0.5px solid rgba(200, 174, 140, 0.5)' : '0.5px solid transparent',
-                    fontFamily: 'var(--font-body)',
-                  }}
-                >
-                  AI Portrait
-                </button>
-              </div>
-
               {/* Shutter button — white with gold ring and shadow */}
               <div className="flex items-center justify-center relative" style={{ width: '100%' }}>
                 {/* Gallery shortcut (left) */}
@@ -580,7 +496,7 @@ export default function PhotoBoothPage() {
                 Retake
               </button>
               <button
-                onClick={() => uploadPhoto()}
+                onClick={uploadPhoto}
                 className="flex-1 max-w-[160px] py-4 rounded-full text-base font-semibold transition-transform active:scale-95"
                 style={{
                   background: 'var(--color-terracotta-gradient)',
@@ -590,102 +506,6 @@ export default function PhotoBoothPage() {
                 }}
               >
                 Save
-              </button>
-            </div>
-          </div>
-        </>
-      )}
-
-      {/* ========== STYLE PICKER PHASE (AI Portrait) ========== */}
-      {phase === 'style-picker' && capturedUrl && (
-        <>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={capturedUrl}
-            alt="Captured photo"
-            className="absolute inset-0 w-full h-full"
-            style={{ objectFit: 'cover', filter: 'brightness(0.5)' }}
-          />
-
-          {/* Style picker overlay */}
-          <div className="absolute inset-0 flex flex-col justify-end z-20">
-            <div
-              className="px-4 pt-6 pb-4"
-              style={{
-                background: 'rgba(44, 40, 37, 0.5)',
-                backdropFilter: 'blur(24px)',
-                WebkitBackdropFilter: 'blur(24px)',
-              }}
-            >
-              <h3
-                className="text-lg font-medium mb-4 text-center"
-                style={{ fontFamily: 'var(--font-display)', color: '#FEFCF9' }}
-              >
-                Choose a Portrait Style
-              </h3>
-
-              <div className="grid grid-cols-3 gap-3 max-h-[280px] overflow-y-auto">
-                {(config.enabled_ai_styles.length > 0
-                  ? AI_STYLES.filter((s) => config.enabled_ai_styles.includes(s.id))
-                  : AI_STYLES
-                ).map((style) => (
-                  <button
-                    key={style.id}
-                    onClick={() => setSelectedStyle(style.id)}
-                    className="flex flex-col items-center gap-2 p-3 rounded-2xl transition-all"
-                    style={{
-                      background:
-                        selectedStyle === style.id
-                          ? 'rgba(196, 112, 75, 0.4)'
-                          : 'rgba(254, 252, 249, 0.06)',
-                      border:
-                        selectedStyle === style.id
-                          ? '2px solid var(--color-terracotta)'
-                          : '2px solid transparent',
-                    }}
-                  >
-                    <span className="text-2xl">{style.emoji}</span>
-                    <span className="text-xs font-medium text-center leading-tight" style={{ color: '#FEFCF9' }}>
-                      {style.name}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Style picker actions */}
-            <div
-              className="px-6 pb-10 pt-4 flex gap-4 justify-center"
-              style={{
-                background: 'rgba(44, 40, 37, 0.55)',
-                backdropFilter: 'blur(24px)',
-                WebkitBackdropFilter: 'blur(24px)',
-              }}
-            >
-              <button
-                onClick={retake}
-                className="flex-1 max-w-[160px] py-4 rounded-full text-base font-semibold transition-transform active:scale-95"
-                style={{
-                  background: 'rgba(254, 252, 249, 0.12)',
-                  color: '#FEFCF9',
-                  border: '1.5px solid rgba(254, 252, 249, 0.25)',
-                }}
-              >
-                Retake
-              </button>
-              <button
-                onClick={() => selectedStyle && uploadPhoto(selectedStyle)}
-                disabled={!selectedStyle}
-                className="flex-1 max-w-[160px] py-4 rounded-full text-base font-semibold transition-transform active:scale-95"
-                style={{
-                  background: selectedStyle
-                    ? 'var(--color-terracotta-gradient)'
-                    : 'rgba(255, 255, 255, 0.1)',
-                  color: selectedStyle ? 'white' : 'rgba(255, 255, 255, 0.3)',
-                  boxShadow: selectedStyle ? 'var(--shadow-terracotta)' : 'none',
-                }}
-              >
-                Generate
               </button>
             </div>
           </div>
