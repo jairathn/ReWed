@@ -257,8 +257,8 @@ export default function GuestHomePage() {
             </div>
           </Link>
 
-          {/* Gallery Card */}
-          <Link
+          {/* Gallery Card — preview mode only */}
+          {unlocked && <Link
             href={`/w/${slug}/gallery`}
             className="lg:col-span-2 group p-7 rounded-xl flex flex-col justify-between transition-all duration-300 hover:shadow-md"
             style={{
@@ -304,7 +304,7 @@ export default function GuestHomePage() {
                 <span className="text-[10px] font-bold" style={{ color: 'var(--bg-warm-white)' }}>+</span>
               </div>
             </div>
-          </Link>
+          </Link>}
 
           {/* Social Feed */}
           <Link
@@ -358,8 +358,8 @@ export default function GuestHomePage() {
             </div>
           </Link>
 
-          {/* My Table */}
-          <Link
+          {/* My Table — preview mode only */}
+          {unlocked && <Link
             href={`/w/${slug}/seating`}
             className="lg:col-span-3 group p-7 rounded-xl flex flex-col justify-between transition-all hover:shadow-md"
             style={{
@@ -402,10 +402,10 @@ export default function GuestHomePage() {
                 Guests
               </div>
             </div>
-          </Link>
+          </Link>}
 
-          {/* Song Requests */}
-          <Link
+          {/* Song Requests — preview mode only */}
+          {unlocked && <Link
             href={`/w/${slug}/music`}
             className="lg:col-span-2 group p-7 rounded-xl flex flex-col justify-center items-center text-center space-y-3 transition-colors hover:shadow-md"
             style={{
@@ -441,7 +441,7 @@ export default function GuestHomePage() {
             >
               Search for a track...
             </div>
-          </Link>
+          </Link>}
 
           {/* Travel — Wide Card */}
           <Link

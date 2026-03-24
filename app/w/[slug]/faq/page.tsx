@@ -79,9 +79,35 @@ export default function FaqPage() {
 
   if (isLoading || !guest) {
     return (
-      <div className="pb-24 px-5 pt-8 max-w-lg mx-auto">
-        <div className="skeleton h-8 w-40 mb-6" />
-        <div className="skeleton h-20 w-full mb-3 rounded-xl" />
+      <div className="min-h-screen flex flex-col" style={{ background: 'var(--bg-warm-white)' }}>
+        <header
+          className="fixed top-0 w-full z-50 flex justify-between items-center px-6 py-4"
+          style={{
+            background: 'rgba(250, 249, 245, 0.90)',
+            backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+          }}
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8" />
+          </div>
+          <h1
+            className="text-2xl tracking-wide"
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontStyle: 'italic',
+              color: 'var(--color-gold-dark)',
+            }}
+          >
+            ReWed
+          </h1>
+          <div className="w-8" />
+        </header>
+        <main className="pt-24 pb-32 px-6 max-w-2xl mx-auto flex-1 flex flex-col">
+          <div className="skeleton h-8 w-40 mb-6" />
+          <div className="skeleton h-20 w-full mb-3 rounded-xl" />
+        </main>
         <BottomNav />
       </div>
     );
@@ -92,22 +118,61 @@ export default function FaqPage() {
     : config?.display_name || 'the couple';
 
   return (
-    <div className="pb-24 pt-8 max-w-lg mx-auto flex flex-col" style={{ minHeight: 'calc(100vh - 80px)' }}>
-      <div className="px-5">
-        <BackButton href={`/w/${slug}/home`} label="Home" />
+    <div className="min-h-screen flex flex-col" style={{ background: 'var(--bg-warm-white)' }}>
+      <header
+        className="fixed top-0 w-full z-50 flex justify-between items-center px-6 py-4"
+        style={{
+          background: 'rgba(250, 249, 245, 0.90)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+        }}
+      >
+        <div className="flex items-center gap-3">
+          <BackButton href={`/w/${slug}/home`} label="" />
+        </div>
         <h1
-          className="text-2xl font-medium mb-2"
-          style={{ fontFamily: 'var(--font-display)', color: 'var(--text-primary)' }}
+          className="text-2xl tracking-wide"
+          style={{
+            fontFamily: 'var(--font-display)',
+            fontStyle: 'italic',
+            color: 'var(--color-gold-dark)',
+          }}
         >
-          Questions?
+          ReWed
         </h1>
-        <p className="text-sm mb-4" style={{ color: 'var(--text-secondary)' }}>
-          Ask anything about {coupleName}&apos;s wedding and get an instant answer.
-        </p>
-      </div>
+        <div className="w-8" />
+      </header>
 
-      {/* Chat Messages */}
-      <div className="flex-1 overflow-y-auto px-5 space-y-3">
+      <main className="pt-24 pb-32 px-6 max-w-2xl mx-auto flex-1 flex flex-col">
+        <section className="mb-6 text-center">
+          <h2
+            className="text-5xl mb-3 tracking-tight"
+            style={{
+              fontFamily: 'var(--font-display)',
+              color: 'var(--text-primary)',
+            }}
+          >
+            Questions?
+          </h2>
+          <div className="flex items-center justify-center gap-3">
+            <span className="h-px w-8" style={{ background: 'var(--border-light)' }} />
+            <p
+              className="text-lg"
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontStyle: 'italic',
+                color: 'var(--color-terracotta)',
+              }}
+            >
+              Ask anything about the wedding
+            </p>
+            <span className="h-px w-8" style={{ background: 'var(--border-light)' }} />
+          </div>
+        </section>
+
+        {/* Chat Messages */}
+        <div className="flex-1 overflow-y-auto space-y-3">
         {messages.length === 0 && (
           <div className="text-center py-8">
             <p className="text-4xl mb-3">&#128173;</p>
@@ -159,53 +224,54 @@ export default function FaqPage() {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input Bar */}
-      <div className="px-5 pt-3 pb-2">
-        <form onSubmit={handleSubmit} className="flex gap-2">
-          <input
-            type="text"
-            value={inputText}
-            onChange={(e) => setInputText(e.target.value)}
-            placeholder="Ask a question..."
-            className="flex-1 rounded-full px-4 py-3 text-sm"
-            style={{ background: 'var(--bg-pure-white)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }}
-            disabled={sending}
-          />
-          <button
-            type="submit"
-            disabled={!inputText.trim() || sending}
-            className="w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0"
-            style={{
-              background: inputText.trim() ? 'var(--color-terracotta-gradient)' : 'var(--border-light)',
-              color: inputText.trim() ? 'white' : 'var(--text-tertiary)',
-              border: 'none',
-            }}
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <line x1="22" y1="2" x2="11" y2="13" />
-              <polygon points="22 2 15 22 11 13 2 9 22 2" />
-            </svg>
-          </button>
-        </form>
+        {/* Input Bar */}
+        <div className="pt-3 pb-2">
+          <form onSubmit={handleSubmit} className="flex gap-2">
+            <input
+              type="text"
+              value={inputText}
+              onChange={(e) => setInputText(e.target.value)}
+              placeholder="Ask a question..."
+              className="flex-1 rounded-full px-4 py-3 text-sm"
+              style={{ background: 'var(--bg-pure-white)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }}
+              disabled={sending}
+            />
+            <button
+              type="submit"
+              disabled={!inputText.trim() || sending}
+              className="w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0"
+              style={{
+                background: inputText.trim() ? 'var(--color-terracotta-gradient)' : 'var(--border-light)',
+                color: inputText.trim() ? 'white' : 'var(--text-tertiary)',
+                border: 'none',
+              }}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <line x1="22" y1="2" x2="11" y2="13" />
+                <polygon points="22 2 15 22 11 13 2 9 22 2" />
+              </svg>
+            </button>
+          </form>
 
-        {messages.length > 0 && messages.length < 6 && (
-          <div className="flex gap-2 mt-2 overflow-x-auto pb-1">
-            {QUICK_QUESTIONS.filter((q) => !messages.some((m) => m.role === 'user' && m.content === q))
-              .slice(0, 3)
-              .map((q) => (
-                <button
-                  key={q}
-                  onClick={() => askQuestion(q)}
-                  className="px-3 py-1.5 rounded-full text-xs whitespace-nowrap flex-shrink-0"
-                  style={{ background: 'rgba(196, 112, 75, 0.08)', color: 'var(--color-terracotta)' }}
-                  disabled={sending}
-                >
-                  {q}
-                </button>
-              ))}
-          </div>
-        )}
-      </div>
+          {messages.length > 0 && messages.length < 6 && (
+            <div className="flex gap-2 mt-2 overflow-x-auto pb-1">
+              {QUICK_QUESTIONS.filter((q) => !messages.some((m) => m.role === 'user' && m.content === q))
+                .slice(0, 3)
+                .map((q) => (
+                  <button
+                    key={q}
+                    onClick={() => askQuestion(q)}
+                    className="px-3 py-1.5 rounded-full text-xs whitespace-nowrap flex-shrink-0"
+                    style={{ background: 'rgba(196, 112, 75, 0.08)', color: 'var(--color-terracotta)' }}
+                    disabled={sending}
+                  >
+                    {q}
+                  </button>
+                ))}
+            </div>
+          )}
+        </div>
+      </main>
 
       <BottomNav />
     </div>

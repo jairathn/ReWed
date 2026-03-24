@@ -100,46 +100,106 @@ export default function MusicPage() {
 
   if (isLoading || !isAuthenticated) {
     return (
-      <div className="pb-24 px-5 pt-8 max-w-lg mx-auto">
-        <div className="skeleton h-8 w-48 mb-2" />
-        <div className="skeleton h-4 w-20 mb-6" style={{ borderRadius: '2px' }} />
-        <div
-          className="skeleton mb-4"
-          style={{ height: '180px', borderRadius: '16px' }}
-        />
-        <div
-          className="skeleton mb-3"
-          style={{ height: '72px', borderRadius: '16px' }}
-        />
-        <div
-          className="skeleton mb-3"
-          style={{ height: '72px', borderRadius: '16px' }}
-        />
+      <div className="min-h-screen flex flex-col" style={{ background: 'var(--bg-warm-white)' }}>
+        <header
+          className="fixed top-0 w-full z-50 flex justify-between items-center px-6 py-4"
+          style={{
+            background: 'rgba(250, 249, 245, 0.90)',
+            backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+          }}
+        >
+          <div className="flex items-center gap-3">
+            <BackButton href={`/w/${slug}/home`} label="" />
+          </div>
+          <h1
+            className="text-2xl tracking-wide"
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontStyle: 'italic',
+              color: 'var(--color-gold-dark)',
+            }}
+          >
+            ReWed
+          </h1>
+          <div className="w-8" />
+        </header>
+        <main className="pt-24 pb-32 px-6 max-w-2xl mx-auto flex-1">
+          <div className="skeleton h-8 w-48 mb-2" />
+          <div className="skeleton h-4 w-20 mb-6" style={{ borderRadius: '2px' }} />
+          <div
+            className="skeleton mb-4"
+            style={{ height: '180px', borderRadius: '16px' }}
+          />
+          <div
+            className="skeleton mb-3"
+            style={{ height: '72px', borderRadius: '16px' }}
+          />
+          <div
+            className="skeleton mb-3"
+            style={{ height: '72px', borderRadius: '16px' }}
+          />
+        </main>
         <BottomNav />
       </div>
     );
   }
 
   return (
-    <div className="pb-24 pt-8 max-w-lg mx-auto px-5">
-      <BackButton href={`/w/${slug}/home`} label="Home" />
+    <div className="min-h-screen flex flex-col" style={{ background: 'var(--bg-warm-white)' }}>
+      <header
+        className="fixed top-0 w-full z-50 flex justify-between items-center px-6 py-4"
+        style={{
+          background: 'rgba(250, 249, 245, 0.90)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+        }}
+      >
+        <div className="flex items-center gap-3">
+          <BackButton href={`/w/${slug}/home`} label="" />
+        </div>
+        <h1
+          className="text-2xl tracking-wide"
+          style={{
+            fontFamily: 'var(--font-display)',
+            fontStyle: 'italic',
+            color: 'var(--color-gold-dark)',
+          }}
+        >
+          ReWed
+        </h1>
+        <div className="w-8" />
+      </header>
+      <main className="pt-24 pb-32 px-6 max-w-2xl mx-auto flex-1">
 
       {/* Header */}
-      <h1
-        className="text-2xl font-medium mb-2"
-        style={{ fontFamily: 'var(--font-display)', color: 'var(--text-primary)' }}
-      >
-        Song Requests
-      </h1>
-      <div
-        style={{
-          width: '40px',
-          height: '3px',
-          background: 'var(--color-gold)',
-          borderRadius: '2px',
-          marginBottom: '24px',
-        }}
-      />
+      <section className="mb-8 text-center">
+        <h2
+          className="text-5xl mb-3 tracking-tight"
+          style={{
+            fontFamily: 'var(--font-display)',
+            color: 'var(--text-primary)',
+          }}
+        >
+          Song Requests
+        </h2>
+        <div className="flex items-center justify-center gap-3">
+          <span className="h-px w-8" style={{ background: 'var(--border-light)' }} />
+          <p
+            className="text-lg"
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontStyle: 'italic',
+              color: 'var(--color-terracotta)',
+            }}
+          >
+            What gets you on the dance floor?
+          </p>
+          <span className="h-px w-8" style={{ background: 'var(--border-light)' }} />
+        </div>
+      </section>
 
       {/* Compose Card */}
       <form onSubmit={handleSubmit}>
@@ -337,6 +397,7 @@ export default function MusicPage() {
         </div>
       )}
 
+      </main>
       <BottomNav />
     </div>
   );

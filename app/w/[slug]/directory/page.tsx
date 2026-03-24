@@ -76,109 +76,147 @@ export default async function DirectoryPage({
   const letters = Object.keys(grouped).sort();
 
   return (
-    <div className="pb-24 px-5 pt-8 max-w-lg mx-auto relative">
-      <BackButton href={`/w/${slug}/home`} label="Home" />
-      <h1
-        className="text-2xl font-medium mb-4"
+    <div className="min-h-screen flex flex-col" style={{ background: 'var(--bg-warm-white)' }}>
+      <header
+        className="fixed top-0 w-full z-50 flex justify-between items-center px-6 py-4"
         style={{
-          fontFamily: 'var(--font-display)',
-          color: 'var(--text-primary)',
+          background: 'rgba(250, 249, 245, 0.90)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
         }}
       >
-        Guest Directory
-      </h1>
+        <div className="flex items-center gap-3">
+          <BackButton href={`/w/${slug}/home`} label="" />
+        </div>
+        <h1
+          className="text-2xl tracking-wide"
+          style={{
+            fontFamily: 'var(--font-display)',
+            fontStyle: 'italic',
+            color: 'var(--color-gold-dark)',
+          }}
+        >
+          ReWed
+        </h1>
+        <div className="w-8" />
+      </header>
 
-      <p className="text-sm mb-6" style={{ color: 'var(--text-secondary)' }}>
-        {guests.length} guests
-      </p>
-
-      {/* Guest List */}
-      <div className="space-y-4">
-        {letters.map((letter) => (
-          <div key={letter}>
-            {/* Letter header */}
-            <div
-              id={letter}
-              className="sticky top-0 z-10 py-1 px-1 text-sm font-semibold"
+      <main className="pt-24 pb-32 px-6 max-w-2xl mx-auto flex-1 relative">
+        <section className="mb-8 text-center">
+          <h2
+            className="text-5xl mb-3 tracking-tight"
+            style={{
+              fontFamily: 'var(--font-display)',
+              color: 'var(--text-primary)',
+            }}
+          >
+            Guest Directory
+          </h2>
+          <div className="flex items-center justify-center gap-3">
+            <span className="h-px w-8" style={{ background: 'var(--border-light)' }} />
+            <p
+              className="text-lg"
               style={{
+                fontFamily: 'var(--font-display)',
+                fontStyle: 'italic',
                 color: 'var(--color-terracotta)',
-                background: 'var(--bg-warm-white)',
               }}
             >
-              {letter}
-            </div>
-
-            <div className="space-y-1">
-              {grouped[letter].map((guest) => {
-                const color = getAvatarColor(
-                  `${guest.first_name}${guest.last_name}`
-                );
-                return (
-                  <div
-                    key={guest.id}
-                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl"
-                    style={{ background: 'var(--bg-pure-white)' }}
-                  >
-                    <div
-                      className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold flex-shrink-0"
-                      style={{
-                        background: color.bg,
-                        color: color.text,
-                      }}
-                    >
-                      {guest.first_name[0]}
-                      {guest.last_name[0]}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p
-                        className="text-sm font-medium truncate"
-                        style={{ color: 'var(--text-primary)' }}
-                      >
-                        {guest.first_name} {guest.last_name}
-                      </p>
-                      {guest.group_label && (
-                        <p
-                          className="text-xs truncate"
-                          style={{ color: 'var(--text-tertiary)' }}
-                        >
-                          {guest.group_label}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+              {guests.length} guests
+            </p>
+            <span className="h-px w-8" style={{ background: 'var(--border-light)' }} />
           </div>
-        ))}
-      </div>
+        </section>
 
-      {guests.length === 0 && (
-        <div className="text-center py-12">
-          <p className="text-4xl mb-4">&#128101;</p>
-          <p style={{ color: 'var(--text-secondary)' }}>
-            The guest list is being finalized!
-          </p>
-        </div>
-      )}
-
-      {/* Alphabet sidebar */}
-      {letters.length > 5 && (
-        <div
-          className="fixed right-1 top-1/2 -translate-y-1/2 flex flex-col items-center gap-0.5 z-20"
-        >
+        {/* Guest List */}
+        <div className="space-y-4">
           {letters.map((letter) => (
-            <a
-              key={letter}
-              href={`#${letter}`}
-              className="text-[10px] font-semibold w-4 h-4 flex items-center justify-center"
-              style={{ color: 'var(--color-terracotta)' }}
-            >
-              {letter}
-            </a>
+            <div key={letter}>
+              {/* Letter header */}
+              <div
+                id={letter}
+                className="sticky top-0 z-10 py-1 px-1 text-sm font-semibold"
+                style={{
+                  color: 'var(--color-terracotta)',
+                  background: 'var(--bg-warm-white)',
+                }}
+              >
+                {letter}
+              </div>
+
+              <div className="space-y-1">
+                {grouped[letter].map((guest) => {
+                  const color = getAvatarColor(
+                    `${guest.first_name}${guest.last_name}`
+                  );
+                  return (
+                    <div
+                      key={guest.id}
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-xl"
+                      style={{ background: 'var(--bg-pure-white)' }}
+                    >
+                      <div
+                        className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold flex-shrink-0"
+                        style={{
+                          background: color.bg,
+                          color: color.text,
+                        }}
+                      >
+                        {guest.first_name[0]}
+                        {guest.last_name[0]}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p
+                          className="text-sm font-medium truncate"
+                          style={{ color: 'var(--text-primary)' }}
+                        >
+                          {guest.first_name} {guest.last_name}
+                        </p>
+                        {guest.group_label && (
+                          <p
+                            className="text-xs truncate"
+                            style={{ color: 'var(--text-tertiary)' }}
+                          >
+                            {guest.group_label}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           ))}
         </div>
-      )}
+
+        {guests.length === 0 && (
+          <div className="text-center py-12">
+            <p className="text-4xl mb-4">&#128101;</p>
+            <p style={{ color: 'var(--text-secondary)' }}>
+              The guest list is being finalized!
+            </p>
+          </div>
+        )}
+
+        {/* Alphabet sidebar */}
+        {letters.length > 5 && (
+          <div
+            className="fixed right-1 top-1/2 -translate-y-1/2 flex flex-col items-center gap-0.5 z-20"
+          >
+            {letters.map((letter) => (
+              <a
+                key={letter}
+                href={`#${letter}`}
+                className="text-[10px] font-semibold w-4 h-4 flex items-center justify-center"
+                style={{ color: 'var(--color-terracotta)' }}
+              >
+                {letter}
+              </a>
+            ))}
+          </div>
+        )}
+      </main>
 
       <BottomNav />
     </div>

@@ -143,22 +143,49 @@ export default function KeepInTouchPage() {
 
   if (isLoading || loadingContacts) {
     return (
-      <div className="pb-24 px-5 pt-8 max-w-lg mx-auto">
-        <div className="skeleton h-5 w-20 mb-4" style={{ borderRadius: '8px' }} />
-        <div className="skeleton h-8 w-56 mb-2" style={{ borderRadius: '8px' }} />
-        <div className="skeleton h-5 w-full mb-6" style={{ borderRadius: '8px' }} />
-        <div
-          className="skeleton mb-6"
-          style={{ height: '220px', width: '100%', borderRadius: '16px' }}
-        />
-        <div className="skeleton h-6 w-48 mb-4" style={{ borderRadius: '8px' }} />
-        {[1, 2, 3].map((i) => (
+      <div className="min-h-screen flex flex-col" style={{ background: 'var(--bg-warm-white)' }}>
+        <header
+          className="fixed top-0 w-full z-50 flex justify-between items-center px-6 py-4"
+          style={{
+            background: 'rgba(250, 249, 245, 0.90)',
+            backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+          }}
+        >
+          <div className="flex items-center gap-3">
+            <BackButton href={`/w/${slug}/home`} label="" />
+          </div>
+          <h1
+            className="text-2xl tracking-wide"
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontStyle: 'italic',
+              color: 'var(--color-gold-dark)',
+            }}
+          >
+            ReWed
+          </h1>
+          <div className="w-8" />
+        </header>
+        <main className="pt-24 pb-32 px-6 max-w-2xl mx-auto flex-1">
+          <section className="mb-8 text-center">
+            <div className="skeleton h-12 w-56 mx-auto mb-3" style={{ borderRadius: '8px' }} />
+            <div className="skeleton h-5 w-40 mx-auto" style={{ borderRadius: '8px' }} />
+          </section>
           <div
-            key={i}
-            className="skeleton mb-3"
-            style={{ height: '100px', width: '100%', borderRadius: '16px' }}
+            className="skeleton mb-6"
+            style={{ height: '220px', width: '100%', borderRadius: '16px' }}
           />
-        ))}
+          <div className="skeleton h-6 w-48 mb-4" style={{ borderRadius: '8px' }} />
+          {[1, 2, 3].map((i) => (
+            <div
+              key={i}
+              className="skeleton mb-3"
+              style={{ height: '100px', width: '100%', borderRadius: '16px' }}
+            />
+          ))}
+        </main>
         <BottomNav />
       </div>
     );
@@ -168,32 +195,59 @@ export default function KeepInTouchPage() {
   const showForm = !myShare || editing;
 
   return (
-    <div className="pb-24 px-5 pt-8 max-w-lg mx-auto">
-      <BackButton href={`/w/${slug}/home`} label="Home" />
-
-      {/* Header */}
-      <h1
-        className="text-2xl font-medium mb-1"
+    <div className="min-h-screen flex flex-col" style={{ background: 'var(--bg-warm-white)' }}>
+      <header
+        className="fixed top-0 w-full z-50 flex justify-between items-center px-6 py-4"
         style={{
-          fontFamily: 'var(--font-display)',
-          color: 'var(--text-primary)',
+          background: 'rgba(250, 249, 245, 0.90)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
         }}
       >
-        Keep in Touch
-      </h1>
-      <p className="text-sm mb-4" style={{ color: 'var(--text-secondary)' }}>
-        Stay connected with the wonderful people you met at {weddingName}
-      </p>
+        <div className="flex items-center gap-3">
+          <BackButton href={`/w/${slug}/home`} label="" />
+        </div>
+        <h1
+          className="text-2xl tracking-wide"
+          style={{
+            fontFamily: 'var(--font-display)',
+            fontStyle: 'italic',
+            color: 'var(--color-gold-dark)',
+          }}
+        >
+          ReWed
+        </h1>
+        <div className="w-8" />
+      </header>
+      <main className="pt-24 pb-32 px-6 max-w-2xl mx-auto flex-1">
 
-      {/* Gold divider */}
-      <div
-        style={{
-          height: '2px',
-          background: 'linear-gradient(90deg, var(--color-gold), transparent)',
-          marginBottom: '24px',
-          borderRadius: '1px',
-        }}
-      />
+      {/* Header */}
+      <section className="mb-8 text-center">
+        <h2
+          className="text-5xl mb-3 tracking-tight"
+          style={{
+            fontFamily: 'var(--font-display)',
+            color: 'var(--text-primary)',
+          }}
+        >
+          Keep in Touch
+        </h2>
+        <div className="flex items-center justify-center gap-3">
+          <span className="h-px w-8" style={{ background: 'var(--border-light)' }} />
+          <p
+            className="text-lg"
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontStyle: 'italic',
+              color: 'var(--color-terracotta)',
+            }}
+          >
+            Stay connected
+          </p>
+          <span className="h-px w-8" style={{ background: 'var(--border-light)' }} />
+        </div>
+      </section>
 
       {fetchError && (
         <div
@@ -631,6 +685,7 @@ export default function KeepInTouchPage() {
         </div>
       )}
 
+      </main>
       <BottomNav />
     </div>
   );

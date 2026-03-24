@@ -292,10 +292,36 @@ export default function FeedPage() {
 
   if (isLoading || !guest) {
     return (
-      <div className="pb-24 px-5 pt-8 max-w-lg mx-auto">
-        <div className="skeleton h-8 w-32 mb-6" />
-        <div className="skeleton h-24 w-full mb-3 rounded-xl" />
-        <div className="skeleton h-24 w-full mb-3 rounded-xl" />
+      <div className="min-h-screen flex flex-col" style={{ background: 'var(--bg-warm-white)' }}>
+        <header
+          className="fixed top-0 w-full z-50 flex justify-between items-center px-6 py-4"
+          style={{
+            background: 'rgba(250, 249, 245, 0.90)',
+            backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+          }}
+        >
+          <div className="flex items-center gap-3">
+            <BackButton href={`/w/${slug}/home`} label="" />
+          </div>
+          <h1
+            className="text-2xl tracking-wide"
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontStyle: 'italic',
+              color: 'var(--color-gold-dark)',
+            }}
+          >
+            ReWed
+          </h1>
+          <div className="w-8" />
+        </header>
+        <main className="pt-24 pb-32 px-6 max-w-2xl mx-auto flex-1">
+          <div className="skeleton h-8 w-32 mb-6" />
+          <div className="skeleton h-24 w-full mb-3 rounded-xl" />
+          <div className="skeleton h-24 w-full mb-3 rounded-xl" />
+        </main>
         <BottomNav />
       </div>
     );
@@ -324,19 +350,63 @@ export default function FeedPage() {
   };
 
   return (
-    <div className="pb-24 px-5 pt-8 max-w-lg mx-auto">
-      <BackButton href={`/w/${slug}/home`} label="Home" />
-      <div className="flex items-center justify-between mb-6">
+    <div className="min-h-screen flex flex-col" style={{ background: 'var(--bg-warm-white)' }}>
+      <header
+        className="fixed top-0 w-full z-50 flex justify-between items-center px-6 py-4"
+        style={{
+          background: 'rgba(250, 249, 245, 0.90)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+        }}
+      >
+        <div className="flex items-center gap-3">
+          <BackButton href={`/w/${slug}/home`} label="" />
+        </div>
         <h1
-          className="text-2xl font-medium"
-          style={{ fontFamily: 'var(--font-display)', color: 'var(--text-primary)' }}
+          className="text-2xl tracking-wide"
+          style={{
+            fontFamily: 'var(--font-display)',
+            fontStyle: 'italic',
+            color: 'var(--color-gold-dark)',
+          }}
+        >
+          ReWed
+        </h1>
+        <div className="w-8" />
+      </header>
+      <main className="pt-24 pb-32 px-6 max-w-2xl mx-auto flex-1">
+      <section className="mb-6 text-center">
+        <h2
+          className="text-5xl mb-3 tracking-tight"
+          style={{
+            fontFamily: 'var(--font-display)',
+            color: 'var(--text-primary)',
+          }}
         >
           Feed
-        </h1>
-        {!feedBlocked && (
+        </h2>
+        <div className="flex items-center justify-center gap-3">
+          <span className="h-px w-8" style={{ background: 'var(--border-light)' }} />
+          <p
+            className="text-lg"
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontStyle: 'italic',
+              color: 'var(--color-terracotta)',
+            }}
+          >
+            Share a moment
+          </p>
+          <span className="h-px w-8" style={{ background: 'var(--border-light)' }} />
+        </div>
+      </section>
+
+      {!feedBlocked && (
+        <div className="flex justify-center mb-6">
           <button
             onClick={() => setShowCompose(true)}
-            className="px-4 py-2 text-sm rounded-full font-semibold"
+            className="px-6 py-2.5 text-sm rounded-full font-semibold"
             style={{
               background: 'var(--color-terracotta-gradient)',
               color: 'white',
@@ -345,8 +415,8 @@ export default function FeedPage() {
           >
             + Post
           </button>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Event Blocked Card */}
       {feedBlocked && (
@@ -734,6 +804,7 @@ export default function FeedPage() {
         </div>
       )}
 
+      </main>
       <BottomNav />
     </div>
   );
