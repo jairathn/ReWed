@@ -2,43 +2,63 @@
 
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { useState } from 'react';
 import { useWedding } from '@/components/WeddingProvider';
-import { usePreviewMode } from '@/lib/hooks/usePreviewMode';
 
-const COMING_SOON_IDS = new Set(['capture', 'gallery']);
+type NavItem = {
+  id: string;
+  label: string;
+  path: string;
+  /** SVG paths for the outlined (inactive) state */
+  paths: string[];
+  /** Optional: different SVG paths for the filled (active) state */
+  filledPaths?: string[];
+  /** Some filled icons need fill instead of stroke */
+  fillWhenActive?: boolean;
+};
 
-const navItems = [
+const navItems: NavItem[] = [
   {
-    id: 'travel',
-    label: 'Travel',
-    path: '/travel',
-    paths: ['M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3z', 'M9 3v15', 'M15 6v15'],
+    id: 'home',
+    label: 'Home',
+    path: '/home',
+    paths: ['M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z', 'M9 22V12h6v10'],
+    filledPaths: ['M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z'],
+    fillWhenActive: true,
+  },
+  {
+    id: 'schedule',
+    label: 'Schedule',
+    path: '/schedule',
+    paths: ['M3 4h18a2 2 0 012 2v14a2 2 0 01-2 2H3a2 2 0 01-2-2V6a2 2 0 012-2z', 'M16 2v4', 'M8 2v4', 'M3 10h18'],
   },
   {
     id: 'capture',
     label: 'Capture',
     path: '/capture',
     paths: ['M14.5 4h-5L7 7H4a2 2 0 00-2 2v9a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2h-3l-2.5-3z', 'M12 13a3 3 0 100-6 3 3 0 000 6z'],
+    filledPaths: ['M14.5 4h-5L7 7H4a2 2 0 00-2 2v9a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2h-3l-2.5-3z'],
+    fillWhenActive: true,
   },
   {
-    id: 'home',
-    label: 'Home',
-    path: '',
-    elevated: true,
-    paths: ['M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z', 'M9 22V12h6v10'],
+    id: 'social',
+    label: 'Social',
+    path: '/feed',
+    paths: [
+      'M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2',
+      'M9 11a4 4 0 100-8 4 4 0 000 8z',
+      'M23 21v-2a4 4 0 00-3-3.87',
+      'M16 3.13a4 4 0 010 7.75',
+    ],
   },
   {
-    id: 'gallery',
-    label: 'Gallery',
-    path: '/gallery',
-    paths: ['M3 3h18a2 2 0 012 2v14a2 2 0 01-2 2H3a2 2 0 01-2-2V5a2 2 0 012-2z', 'M8.5 8.5a1.5 1.5 0 100-3 1.5 1.5 0 000 3z', 'M21 15l-5-5L5 21'],
-  },
-  {
-    id: 'events',
-    label: 'Events',
-    path: '/schedule',
-    paths: ['M3 4h18a2 2 0 012 2v14a2 2 0 01-2 2H3a2 2 0 01-2-2V6a2 2 0 012-2z', 'M16 2v4', 'M8 2v4', 'M3 10h18'],
+    id: 'more',
+    label: 'More',
+    path: '/_more',
+    paths: [
+      'M12 13a1 1 0 100-2 1 1 0 000 2z',
+      'M19 13a1 1 0 100-2 1 1 0 000 2z',
+      'M5 13a1 1 0 100-2 1 1 0 000 2z',
+    ],
   },
 ];
 
@@ -46,129 +66,79 @@ export default function BottomNav() {
   const pathname = usePathname();
   const { slug } = useWedding();
   const basePath = `/w/${slug}`;
-  const { unlocked } = usePreviewMode();
-  const [toast, setToast] = useState(false);
-
-  const handleComingSoon = () => {
-    setToast(true);
-    setTimeout(() => setToast(false), 2500);
-  };
 
   return (
     <nav
       className="fixed bottom-0 left-0 right-0 z-50 safe-bottom"
       style={{
-        height: 84,
-        background: 'rgba(253, 251, 247, 0.95)',
-        backdropFilter: 'blur(24px)',
-        WebkitBackdropFilter: 'blur(24px)',
+        background: 'rgba(250, 249, 245, 0.80)',
+        backdropFilter: 'blur(40px)',
+        WebkitBackdropFilter: 'blur(40px)',
+        borderTop: '1px solid rgba(208, 197, 175, 0.15)',
+        boxShadow: '0 -4px 20px rgba(27, 28, 26, 0.06)',
+        borderRadius: '12px 12px 0 0',
       }}
     >
-      {/* Shimmer top border */}
-      <div
-        className="absolute top-0 left-0 right-0"
-        style={{
-          height: '0.5px',
-          background: 'linear-gradient(90deg, rgba(198,163,85,0) 0%, rgba(198,163,85,0.3) 20%, rgba(212,183,106,0.6) 50%, rgba(198,163,85,0.3) 80%, rgba(198,163,85,0) 100%)',
-          backgroundSize: '200% 100%',
-          animation: 'shimmer 3s ease-in-out infinite',
-        }}
-      />
-      <div className="flex items-start justify-around max-w-lg mx-auto px-2 pt-2.5">
+      <div className="flex items-center justify-around max-w-lg mx-auto px-4 pt-2 pb-2">
         {navItems.map((item) => {
-          const href = item.path ? `${basePath}${item.path}` : `${basePath}/home`;
+          // Skip "more" for now — it's a placeholder
+          const href = item.id === 'more' ? `${basePath}/home` : `${basePath}${item.path}`;
+
           const isActive =
-            item.path === ''
+            item.id === 'home'
               ? pathname === `${basePath}/home` || pathname === basePath
               : item.id === 'capture'
                 ? pathname.startsWith(`${basePath}/capture`) ||
                   pathname.startsWith(`${basePath}/photo`) ||
-                  pathname.startsWith(`${basePath}/video`)
-                : pathname.startsWith(`${basePath}${item.path}`);
-          const isComingSoon = !unlocked && COMING_SOON_IDS.has(item.id);
+                  pathname.startsWith(`${basePath}/video`) ||
+                  pathname.startsWith(`${basePath}/gallery`)
+                : item.id === 'social'
+                  ? pathname.startsWith(`${basePath}/feed`) ||
+                    pathname.startsWith(`${basePath}/shared-gallery`)
+                  : pathname.startsWith(`${basePath}${item.path}`);
 
-          if (item.elevated) {
-            return (
-              <Link
-                key={item.id}
-                href={href}
-                className="flex flex-col items-center -mt-5"
-                aria-label={item.label}
-              >
-                <div
-                  className="w-12 h-12 rounded-full flex items-center justify-center mb-1"
-                  style={{
-                    background: 'linear-gradient(145deg, #A8883F, #C6A355, #D4B76A)',
-                    boxShadow: '0 4px 20px rgba(198,163,85,0.25), 0 0 40px rgba(198,163,85,0.08)',
-                  }}
-                >
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FDFBF7" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
-                    {item.paths.map((d, i) => <path key={i} d={d} />)}
-                  </svg>
-                </div>
-                <span
-                  style={{
-                    fontSize: 9,
-                    fontWeight: 500,
-                    letterSpacing: '0.06em',
-                    textTransform: 'uppercase',
-                    color: isActive ? '#C6A355' : '#C8BFB3',
-                    fontFamily: 'var(--font-body)',
-                  }}
-                >
-                  {item.label}
-                </span>
-              </Link>
-            );
-          }
+          const activeColor = '#735C00';
+          const inactiveColor = '#A8A29E';
+          const color = isActive ? activeColor : inactiveColor;
 
-          const stroke = isComingSoon ? '#D8D0C4' : isActive ? '#C6A355' : '#C8BFB3';
-
-          if (isComingSoon) {
-            return (
-              <button
-                key={item.id}
-                onClick={handleComingSoon}
-                className="flex flex-col items-center gap-1 py-1 min-w-[56px]"
-                aria-label={item.label}
-                style={{ background: 'none', border: 'none', cursor: 'pointer' }}
-              >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={stroke} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
-                  {item.paths.map((d, i) => <path key={i} d={d} />)}
-                </svg>
-                <span
-                  style={{
-                    fontSize: 9,
-                    fontWeight: 500,
-                    letterSpacing: '0.06em',
-                    textTransform: 'uppercase',
-                    color: '#D8D0C4',
-                    fontFamily: 'var(--font-body)',
-                  }}
-                >
-                  {item.label}
-                </span>
-              </button>
-            );
-          }
+          const svgPaths = isActive && item.filledPaths ? item.filledPaths : item.paths;
+          const shouldFill = isActive && item.fillWhenActive;
 
           return (
             <Link
               key={item.id}
               href={href}
-              className="flex flex-col items-center gap-1 py-1 min-w-[56px]"
+              className="flex flex-col items-center justify-center py-2"
+              style={{
+                textDecoration: 'none',
+                transform: isActive ? 'scale(1.1)' : 'scale(1)',
+                transition: 'transform 0.15s ease',
+                minWidth: 48,
+              }}
               aria-label={item.label}
             >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={stroke} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
-                {item.paths.map((d, i) => <path key={i} d={d} />)}
+              <svg
+                width="22"
+                height="22"
+                viewBox="0 0 24 24"
+                fill={shouldFill ? color : 'none'}
+                stroke={color}
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="mb-1"
+              >
+                {svgPaths.map((d, i) => (
+                  <path key={i} d={d} />
+                ))}
               </svg>
               <span
                 style={{
-                  fontSize: 9,
-                  fontWeight: 500,
-                  letterSpacing: '0.06em',
-                  textTransform: 'uppercase',
-                  color: isActive ? '#C6A355' : '#C8BFB3',
+                  fontSize: 10,
+                  fontWeight: 600,
+                  letterSpacing: '0.12em',
+                  textTransform: 'uppercase' as const,
+                  color,
                   fontFamily: 'var(--font-body)',
                 }}
               >
@@ -178,32 +148,6 @@ export default function BottomNav() {
           );
         })}
       </div>
-
-      {/* Coming soon toast */}
-      {toast && (
-        <div
-          style={{
-            position: 'fixed',
-            bottom: 100,
-            left: '50%',
-            transform: 'translateX(-50%)',
-            background: 'rgba(45, 40, 35, 0.92)',
-            backdropFilter: 'blur(12px)',
-            color: 'var(--bg-warm-white)',
-            padding: '10px 20px',
-            borderRadius: 24,
-            fontSize: 13,
-            fontFamily: 'var(--font-display)',
-            fontStyle: 'italic',
-            whiteSpace: 'nowrap',
-            zIndex: 60,
-            boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
-            animation: 'fadeIn 0.2s ease',
-          }}
-        >
-          Coming soon &mdash; closer to the wedding!
-        </div>
-      )}
     </nav>
   );
 }

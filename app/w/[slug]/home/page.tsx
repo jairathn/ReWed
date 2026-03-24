@@ -5,23 +5,11 @@ import BottomNav from '@/components/guest/BottomNav';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useMemo } from 'react';
-import TravelListView from '@/components/travel/TravelListView';
 import { usePreviewMode } from '@/lib/hooks/usePreviewMode';
-
-interface Reminder {
-  type: string;
-  title: string;
-  body: string;
-  event_name?: string;
-  when: string;
-}
 
 export default function GuestHomePage() {
   const { config, guest, slug, isAuthenticated, isLoading, configError, retryConfig, logout } = useWedding();
   const router = useRouter();
-  const [hasPlan, setHasPlan] = useState<boolean | null>(null);
-  const [reminders, setReminders] = useState<Reminder[]>([]);
-  const [comingSoonOpen, setComingSoonOpen] = useState(false);
   const { unlocked, tryUnlock } = usePreviewMode();
   const [showPasswordPrompt, setShowPasswordPrompt] = useState(false);
   const [passwordInput, setPasswordInput] = useState('');
@@ -33,35 +21,18 @@ export default function GuestHomePage() {
     }
   }, [isLoading, isAuthenticated, router, slug]);
 
-  // Check travel plan
-  useEffect(() => {
-    if (!isAuthenticated) return;
-    fetch(`/api/v1/w/${slug}/travel/my-plan`)
-      .then((res) => res.json())
-      .then((data) => setHasPlan(!!data.data?.plan))
-      .catch(() => setHasPlan(false));
-  }, [slug, isAuthenticated]);
-
-  // Fetch reminders
-  useEffect(() => {
-    if (!isAuthenticated) return;
-    fetch(`/api/v1/w/${slug}/reminders`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.data?.reminders) setReminders(data.data.reminders);
-      })
-      .catch(() => {});
-  }, [slug, isAuthenticated]);
-
-  // Calculate days until wedding
-  const daysToGo = useMemo(() => {
+  // Calculate countdown
+  const countdown = useMemo(() => {
     if (!config?.wedding_date) return null;
     const tz = config.timezone || 'America/New_York';
     const nowInTz = new Date(new Date().toLocaleString('en-US', { timeZone: tz }));
-    const todayStr = `${nowInTz.getFullYear()}-${String(nowInTz.getMonth() + 1).padStart(2, '0')}-${String(nowInTz.getDate()).padStart(2, '0')}`;
-    const todayMs = new Date(todayStr).getTime();
-    const weddingMs = new Date(config.wedding_date + 'T12:00:00').getTime();
-    return Math.max(0, Math.ceil((weddingMs - todayMs) / (1000 * 60 * 60 * 24)));
+    const weddingDate = new Date(config.wedding_date + 'T12:00:00');
+    const diff = weddingDate.getTime() - nowInTz.getTime();
+    if (diff <= 0) return { days: 0, hours: 0, mins: 0 };
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    return { days, hours, mins };
   }, [config]);
 
   if (configError && !isLoading) {
@@ -86,285 +57,468 @@ export default function GuestHomePage() {
 
   if (isLoading || !config || !guest) {
     return (
-      <div className="pb-24 px-5 pt-8">
-        <div className="skeleton h-8 w-48 mb-2" />
-        <div className="skeleton h-5 w-32 mb-6" />
-        <div className="skeleton h-40 w-full mb-4 rounded-2xl" />
-        <div className="skeleton h-32 w-full rounded-2xl" />
+      <div className="pb-24 px-6 pt-24 max-w-4xl mx-auto">
+        <div className="skeleton h-6 w-36 mb-2" />
+        <div className="skeleton h-10 w-64 mb-8" />
+        <div className="skeleton h-28 w-full mb-8 rounded-xl" />
+        <div className="grid grid-cols-2 gap-4">
+          <div className="skeleton h-48 rounded-xl" />
+          <div className="skeleton h-48 rounded-xl" />
+          <div className="skeleton h-40 rounded-xl" />
+          <div className="skeleton h-40 rounded-xl" />
+        </div>
         <BottomNav />
       </div>
     );
   }
 
-  const allLinks = [
-    { label: 'Schedule', sub: `${config.events.length} event${config.events.length !== 1 ? 's' : ''}`, desc: 'View all events, venues, dress codes, and directions', href: `/w/${slug}/schedule`, live: true },
-    { label: 'Travel', sub: 'Plans & meetups', desc: 'Share your travel plans, find friends nearby, or share a ride', href: `/w/${slug}/travel`, live: true },
-    { label: 'FAQ', sub: 'Questions?', desc: 'Ask the chatbot anything about the wedding', href: `/w/${slug}/faq`, live: true },
-    { label: 'Social Feed', sub: 'Posts & updates', desc: 'Share photos, videos, and moments with everyone', href: `/w/${slug}/feed`, live: true },
-    { label: 'Gallery', sub: 'Photos & video', desc: 'Take pictures and videos \u2014 edit with AI in the gallery!', href: `/w/${slug}/gallery`, live: false },
-    { label: 'My Table', sub: 'Seating chart', desc: 'See who\u2019s at your table and get to know them', href: `/w/${slug}/seating`, live: false },
-    { label: 'Song Requests', sub: 'DJ requests', desc: 'What song gets you on the dance floor?', href: `/w/${slug}/music`, live: false },
-    { label: 'Everyone\u2019s Photos', sub: 'Shared gallery', desc: 'Browse all photos and videos from every guest', href: `/w/${slug}/shared-gallery`, live: false },
-    { label: 'Guest List', sub: 'See who\u2019s coming', desc: undefined, href: `/w/${slug}/directory`, live: false },
-    { label: 'Keep in Touch', sub: 'Stay connected', desc: 'Share your contact info with guests you met', href: `/w/${slug}/keep-in-touch`, live: false },
-    { label: 'My Memories', sub: 'Your personal page', desc: 'View and share your curated memories from the wedding', href: `/w/${slug}/memories/${guest.id}`, live: false },
-  ];
-
-  const activeLinks = unlocked ? allLinks : allLinks.filter((l) => l.live);
-  const comingSoonLinks = unlocked ? [] : allLinks.filter((l) => !l.live);
-
   return (
-    <div className="pb-24 px-7 pt-8 max-w-lg mx-auto">
-      {/* Greeting */}
-      <div className="flex items-baseline justify-between mb-1">
-        <p className="text-[13px]" style={{ color: 'var(--text-secondary)', letterSpacing: '0.02em' }}>
-          Welcome back
-        </p>
-        <button
-          onClick={logout}
-          className="text-xs underline"
-          style={{ color: 'var(--text-tertiary)' }}
-        >
-          Not you?
-        </button>
-      </div>
-
-      {/* Name in shimmer gold */}
-      <h1
-        className="shimmer-text mb-3"
+    <div className="pb-32 pt-6 max-w-4xl mx-auto">
+      {/* Top App Bar */}
+      <header
+        className="fixed top-0 w-full z-50 flex justify-between items-center px-6 py-4"
         style={{
-          fontFamily: 'var(--font-display)',
-          fontSize: 38,
-          fontWeight: 400,
-          lineHeight: 1.05,
-          letterSpacing: '-0.01em',
-          display: 'inline-block',
+          background: 'rgba(250, 249, 245, 0.90)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
         }}
       >
-        {guest.first_name}
-      </h1>
-
-      {/* Countdown + wedding name — diamond is the secret preview mode trigger */}
-      <div className="flex items-center gap-2 mb-8">
-        <button
-          onClick={() => { if (!unlocked) setShowPasswordPrompt(true); }}
-          style={{ background: 'none', border: 'none', padding: 4, margin: -4, cursor: 'default', lineHeight: 0 }}
-          aria-label="decorative"
-        >
-          <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-            <path d="M5 0L9.33 4.5L5 10L0.67 4.5L5 0Z" fill="var(--color-gold)" opacity="0.5" />
-          </svg>
-        </button>
-        <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-          {daysToGo !== null && (
-            <>
-              <span style={{ color: 'var(--color-gold)', fontWeight: 500 }}>{daysToGo} days</span>
-              <span style={{ margin: '0 8px', color: 'var(--text-tertiary)' }}>&middot;</span>
-            </>
-          )}
-          {config.display_name}
-        </span>
-      </div>
-
-      {/* Gold divider */}
-      <div className="gold-divider mb-2" />
-
-      {/* Reminders */}
-      {reminders.length > 0 && (
-        <div className="mb-6 space-y-3">
-          {reminders.map((r, i) => (
-            <div
-              key={i}
-              className="p-4 rounded-2xl"
-              style={{
-                background: r.type === 'today' ? 'var(--color-gold-faint)' : 'var(--bg-pure-white)',
-                border: r.type === 'today' ? '1px solid var(--color-gold-rule)' : '1px solid var(--border-light)',
-                boxShadow: 'var(--shadow-soft)',
-              }}
-            >
-              <p
-                className="text-sm font-medium mb-1"
-                style={{ color: r.type === 'today' ? 'var(--color-gold-dark)' : 'var(--text-primary)' }}
-              >
-                {r.title}
-              </p>
-              <p className="text-xs" style={{ color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-                {r.body}
-              </p>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Active Quick Links */}
-      <div className="mb-2">
-        {activeLinks.map((link, i) => (
-          <div key={i}>
-            <Link
-              href={link.href}
-              className="flex items-center justify-between py-4"
-              style={{ textDecoration: 'none' }}
-            >
-              <div className="flex-1 min-w-0 pr-3">
-                <div className="flex items-baseline gap-2">
-                  <p className="text-[15px] font-medium" style={{ color: 'var(--text-primary)', letterSpacing: '0.01em' }}>
-                    {link.label}
-                  </p>
-                  <p className="text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
-                    {link.sub}
-                  </p>
-                </div>
-                {link.desc && (
-                  <p className="text-[12px] mt-1" style={{ color: 'var(--text-secondary)', lineHeight: 1.4 }}>
-                    {link.desc}
-                  </p>
-                )}
-              </div>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-gold-dark)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0">
-                <polyline points="9 6 15 12 9 18" />
-              </svg>
-            </Link>
-            {i < activeLinks.length - 1 && (
-              <div style={{ height: 0.5, background: 'var(--border-light)' }} />
-            )}
-          </div>
-        ))}
-      </div>
-
-      {/* Coming Soon — collapsible (hidden when preview mode is unlocked) */}
-      {comingSoonLinks.length > 0 && <div className="mb-8">
-        <button
-          onClick={() => setComingSoonOpen((prev) => !prev)}
-          className="flex items-center justify-between w-full py-3"
-          style={{ background: 'none', border: 'none', cursor: 'pointer' }}
-        >
-          <div className="flex items-center gap-2">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-gold)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="10" />
-              <polyline points="12 6 12 12 16 14" />
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => { if (!unlocked) setShowPasswordPrompt(true); }}
+            style={{ background: 'none', border: 'none', padding: 0, cursor: 'default', lineHeight: 0 }}
+            aria-label="menu"
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--color-gold-dark)" strokeWidth="1.5" strokeLinecap="round">
+              <line x1="3" y1="6" x2="21" y2="6" />
+              <line x1="3" y1="12" x2="21" y2="12" />
+              <line x1="3" y1="18" x2="21" y2="18" />
             </svg>
-            <span
-              className="text-[13px]"
-              style={{
-                fontFamily: 'var(--font-display)',
-                fontStyle: 'italic',
-                color: 'var(--text-secondary)',
-              }}
-            >
-              More features
-            </span>
-          </div>
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="var(--text-tertiary)"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            style={{
-              transform: comingSoonOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-              transition: 'transform 0.2s ease',
-            }}
-          >
-            <polyline points="6 9 12 15 18 9" />
-          </svg>
-        </button>
-
-        {comingSoonOpen && (
-          <div
-            className="rounded-2xl p-5 mt-1"
-            style={{
-              background: 'var(--color-gold-faint)',
-              border: '0.5px solid var(--color-gold-rule)',
-            }}
-          >
-            <p
-              className="text-center mb-4"
-              style={{
-                fontFamily: 'var(--font-display)',
-                fontStyle: 'italic',
-                fontSize: 15,
-                color: 'var(--text-primary)',
-                lineHeight: 1.4,
-              }}
-            >
-              Coming soon &mdash; more features will be revealed closer to the wedding!
-            </p>
-            <div style={{ opacity: 0.5 }}>
-              {comingSoonLinks.map((link, i) => (
-                <div key={i}>
-                  <div className="flex items-baseline gap-2 py-3">
-                    <p className="text-[14px] font-medium" style={{ color: 'var(--text-secondary)' }}>
-                      {link.label}
-                    </p>
-                    <p className="text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
-                      {link.sub}
-                    </p>
-                  </div>
-                  {i < comingSoonLinks.length - 1 && (
-                    <div style={{ height: 0.5, background: 'var(--color-gold-rule)' }} />
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>}
-
-      {/* Travel CTA */}
-      {hasPlan === false && (
-        <div
-          className="gold-glow text-center mb-10"
-          style={{
-            borderRadius: 16,
-            padding: '32px 24px',
-            background: 'var(--color-gold-faint)',
-            border: '0.5px solid var(--color-gold-rule)',
-          }}
-        >
-          <p
+          </button>
+          <h1
+            className="text-2xl tracking-wide"
             style={{
               fontFamily: 'var(--font-display)',
-              fontSize: 18,
               fontStyle: 'italic',
-              color: 'var(--text-primary)',
-              marginBottom: 6,
-              lineHeight: 1.4,
-              fontWeight: 400,
+              color: 'var(--color-gold-dark)',
             }}
           >
-            Where is everyone traveling?
-          </p>
-          <p className="text-xs mb-5" style={{ color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-            Share your plans to find friends nearby
-          </p>
-          <button
-            onClick={() => router.push(`/w/${slug}/travel`)}
-            className="text-xs font-medium uppercase tracking-wide"
-            style={{
-              padding: '12px 36px',
-              background: 'linear-gradient(135deg, var(--color-gold-dark), var(--color-gold), var(--color-gold-light))',
-              color: 'var(--bg-warm-white)',
-              border: 'none',
-              borderRadius: 50,
-              cursor: 'pointer',
-              letterSpacing: '0.06em',
-              boxShadow: '0 4px 16px rgba(198, 163, 85, 0.25)',
-            }}
-          >
-            Add My Travel Plans
-          </button>
+            ReWed
+          </h1>
         </div>
-      )}
+        <button
+          onClick={logout}
+          className="w-10 h-10 rounded-full overflow-hidden flex items-center justify-center"
+          style={{
+            background: 'var(--color-gold-faint)',
+            border: '1px solid var(--color-gold-rule)',
+          }}
+          title="Not you? Tap to switch"
+        >
+          <span
+            className="text-sm font-semibold"
+            style={{ color: 'var(--color-gold-dark)', fontFamily: 'var(--font-display)' }}
+          >
+            {guest.first_name?.[0] || '?'}
+          </span>
+        </button>
+      </header>
 
-      {/* Travel list */}
-      <TravelListView
-        slug={slug}
-        hasPlan={hasPlan}
-        onAddPlan={() => router.push(`/w/${slug}/travel`)}
-      />
+      <main className="px-6 pt-20 space-y-10">
+        {/* Welcome Greeting & Countdown */}
+        <section className="space-y-5">
+          <div className="space-y-1">
+            <p
+              className="text-lg"
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontStyle: 'italic',
+                color: 'var(--color-terracotta)',
+              }}
+            >
+              Welcome back, {guest.first_name}
+            </p>
+            <h2
+              className="text-4xl lg:text-5xl leading-tight"
+              style={{
+                fontFamily: 'var(--font-display)',
+                color: 'var(--text-primary)',
+                letterSpacing: '-0.01em',
+              }}
+            >
+              {config.display_name}
+            </h2>
+          </div>
+
+          {/* Countdown Card */}
+          {countdown && (
+            <div
+              className="p-6 rounded-xl flex flex-wrap gap-6 items-center"
+              style={{
+                background: 'var(--bg-pure-white)',
+                boxShadow: '0 32px 64px -12px rgba(27, 28, 26, 0.06)',
+                border: '1px solid var(--border-light)',
+              }}
+            >
+              <div className="flex flex-wrap gap-6">
+                {[
+                  { value: countdown.days, label: 'Days' },
+                  { value: countdown.hours, label: 'Hours' },
+                  { value: countdown.mins, label: 'Mins' },
+                ].map((item, i) => (
+                  <div key={i} className="flex flex-col items-center">
+                    <span
+                      className="text-3xl"
+                      style={{ fontFamily: 'var(--font-display)', color: 'var(--color-gold-dark)' }}
+                    >
+                      {item.value}
+                    </span>
+                    <span
+                      className="text-[10px] font-semibold uppercase tracking-widest"
+                      style={{ color: 'var(--color-olive)', fontFamily: 'var(--font-body)' }}
+                    >
+                      {item.label}
+                    </span>
+                  </div>
+                ))}
+              </div>
+              <div className="ml-auto">
+                <Link
+                  href={`/w/${slug}/schedule`}
+                  className="inline-block px-5 py-2 rounded text-sm font-semibold tracking-wide"
+                  style={{
+                    background: 'linear-gradient(135deg, var(--color-gold-dark), var(--color-gold))',
+                    color: 'var(--bg-warm-white)',
+                    textDecoration: 'none',
+                    boxShadow: '0 2px 8px rgba(198, 163, 85, 0.2)',
+                  }}
+                >
+                  RSVP Details
+                </Link>
+              </div>
+            </div>
+          )}
+        </section>
+
+        {/* Bento Grid */}
+        <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-5">
+          {/* Schedule — Wide Card */}
+          <Link
+            href={`/w/${slug}/schedule`}
+            className="lg:col-span-4 group overflow-hidden rounded-xl flex flex-col sm:flex-row relative transition-all duration-500 hover:shadow-lg"
+            style={{
+              background: 'var(--bg-soft-cream)',
+              textDecoration: 'none',
+            }}
+          >
+            <div className="p-7 flex-1 flex flex-col justify-between z-10">
+              <div className="space-y-3">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--color-gold-dark)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="4" width="18" height="18" rx="2" />
+                  <line x1="16" y1="2" x2="16" y2="6" />
+                  <line x1="8" y1="2" x2="8" y2="6" />
+                  <line x1="3" y1="10" x2="21" y2="10" />
+                </svg>
+                <h3
+                  className="text-2xl"
+                  style={{ fontFamily: 'var(--font-display)', color: 'var(--text-primary)' }}
+                >
+                  Schedule
+                </h3>
+                <p className="text-sm leading-relaxed max-w-[220px]" style={{ color: 'var(--text-secondary)' }}>
+                  View all events, venues, dress codes, and directions
+                </p>
+              </div>
+              <div className="mt-5 flex items-center gap-2 text-xs font-semibold tracking-widest uppercase" style={{ color: 'var(--color-gold-dark)' }}>
+                Explore Events
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                  <path d="M5 12h14M12 5l7 7-7 7" />
+                </svg>
+              </div>
+            </div>
+            <div className="w-full sm:w-1/2 h-48 sm:h-auto overflow-hidden relative">
+              <div
+                className="w-full h-full transition-transform duration-700 group-hover:scale-105"
+                style={{
+                  background: 'linear-gradient(135deg, var(--color-gold-faint) 0%, rgba(212,175,55,0.15) 100%)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="var(--color-gold-rule)" strokeWidth="0.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.6">
+                  <rect x="3" y="4" width="18" height="18" rx="2" />
+                  <line x1="16" y1="2" x2="16" y2="6" />
+                  <line x1="8" y1="2" x2="8" y2="6" />
+                  <line x1="3" y1="10" x2="21" y2="10" />
+                </svg>
+              </div>
+            </div>
+          </Link>
+
+          {/* Gallery Card */}
+          <Link
+            href={`/w/${slug}/gallery`}
+            className="lg:col-span-2 group p-7 rounded-xl flex flex-col justify-between transition-all duration-300 hover:shadow-md"
+            style={{
+              background: 'var(--bg-pure-white)',
+              border: '1px solid var(--border-light)',
+              textDecoration: 'none',
+            }}
+          >
+            <div className="space-y-3">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--color-terracotta)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="2" />
+                <circle cx="8.5" cy="8.5" r="1.5" />
+                <polyline points="21 15 16 10 5 21" />
+              </svg>
+              <h3
+                className="text-2xl"
+                style={{ fontFamily: 'var(--font-display)', color: 'var(--text-primary)' }}
+              >
+                Gallery
+              </h3>
+              <p className="text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+                Take pictures and videos — edit with AI in the gallery!
+              </p>
+            </div>
+            <div className="pt-6 flex -space-x-2">
+              {[1, 2, 3].map((i) => (
+                <div
+                  key={i}
+                  className="w-9 h-9 rounded-full border-2"
+                  style={{
+                    borderColor: 'var(--bg-pure-white)',
+                    background: `linear-gradient(${135 + i * 30}deg, var(--color-gold-faint), rgba(198,163,85,0.15))`,
+                  }}
+                />
+              ))}
+              <div
+                className="w-9 h-9 rounded-full border-2 flex items-center justify-center"
+                style={{
+                  borderColor: 'var(--bg-pure-white)',
+                  background: 'linear-gradient(135deg, var(--color-gold-dark), var(--color-gold))',
+                }}
+              >
+                <span className="text-[10px] font-bold" style={{ color: 'var(--bg-warm-white)' }}>+</span>
+              </div>
+            </div>
+          </Link>
+
+          {/* Social Feed */}
+          <Link
+            href={`/w/${slug}/feed`}
+            className="lg:col-span-3 group p-7 rounded-xl flex flex-col space-y-5 transition-all hover:shadow-md"
+            style={{
+              background: 'rgba(122, 139, 92, 0.06)',
+              border: '1px solid rgba(122, 139, 92, 0.1)',
+              textDecoration: 'none',
+            }}
+          >
+            <div className="flex justify-between items-start">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--color-olive)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
+                <circle cx="9" cy="7" r="4" />
+                <path d="M23 21v-2a4 4 0 00-3-3.87" />
+                <path d="M16 3.13a4 4 0 010 7.75" />
+              </svg>
+              <span
+                className="text-[10px] font-bold uppercase tracking-tight px-2 py-1 rounded"
+                style={{ background: 'rgba(122, 139, 92, 0.1)', color: 'var(--color-olive)' }}
+              >
+                Live Feed
+              </span>
+            </div>
+            <div className="space-y-1">
+              <h3
+                className="text-2xl"
+                style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', color: 'var(--text-primary)' }}
+              >
+                Social Feed
+              </h3>
+              <p className="text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+                Share photos, videos, and moments with everyone
+              </p>
+            </div>
+            <div
+              className="relative h-28 w-full rounded-lg overflow-hidden"
+              style={{
+                background: 'linear-gradient(135deg, rgba(122, 139, 92, 0.08), rgba(122, 139, 92, 0.15))',
+              }}
+            >
+              <div className="absolute bottom-3 left-3 flex items-center gap-2">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="var(--color-terracotta)" stroke="none">
+                  <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" />
+                </svg>
+                <span className="text-[10px] font-bold" style={{ color: 'var(--text-secondary)' }}>
+                  Moments Shared
+                </span>
+              </div>
+            </div>
+          </Link>
+
+          {/* My Table */}
+          <Link
+            href={`/w/${slug}/seating`}
+            className="lg:col-span-3 group p-7 rounded-xl flex flex-col justify-between transition-all hover:shadow-md"
+            style={{
+              background: 'var(--bg-pure-white)',
+              border: '1px solid var(--border-light)',
+              textDecoration: 'none',
+            }}
+          >
+            <div className="space-y-3">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--color-gold-dark)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M4 18v-4a2 2 0 012-2h12a2 2 0 012 2v4" />
+                <path d="M8 12V8a4 4 0 018 0v4" />
+                <line x1="2" y1="18" x2="22" y2="18" />
+              </svg>
+              <h3
+                className="text-2xl"
+                style={{ fontFamily: 'var(--font-display)', color: 'var(--text-primary)' }}
+              >
+                My Table
+              </h3>
+              <p className="text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+                Seating chart — See who&apos;s at your table and get to know them
+              </p>
+            </div>
+            <div
+              className="pt-5 border-t flex items-center justify-between"
+              style={{ borderColor: 'var(--border-light)' }}
+            >
+              <span
+                className="text-lg"
+                style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', color: 'var(--color-gold-dark)' }}
+              >
+                Your Table
+              </span>
+              <div className="flex items-center gap-1 text-xs" style={{ color: 'var(--text-secondary)' }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
+                  <circle cx="9" cy="7" r="4" />
+                </svg>
+                Guests
+              </div>
+            </div>
+          </Link>
+
+          {/* Song Requests */}
+          <Link
+            href={`/w/${slug}/music`}
+            className="lg:col-span-2 group p-7 rounded-xl flex flex-col justify-center items-center text-center space-y-3 transition-colors hover:shadow-md"
+            style={{
+              background: 'rgba(232, 134, 90, 0.06)',
+              border: '1px solid rgba(157, 66, 43, 0.1)',
+              textDecoration: 'none',
+            }}
+          >
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--color-terracotta)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 18V5l12-2v13" />
+              <circle cx="6" cy="18" r="3" />
+              <circle cx="18" cy="16" r="3" />
+            </svg>
+            <div className="space-y-1">
+              <h3
+                className="text-xl"
+                style={{ fontFamily: 'var(--font-display)', color: 'var(--text-primary)' }}
+              >
+                Song Requests
+              </h3>
+              <p className="text-[13px]" style={{ color: 'var(--text-secondary)' }}>
+                What song gets you on the dance floor?
+              </p>
+            </div>
+            <div
+              className="w-full py-2 px-4 rounded-lg text-sm"
+              style={{
+                background: 'rgba(255,255,255,0.5)',
+                border: '1px solid var(--border-light)',
+                fontStyle: 'italic',
+                color: 'var(--text-tertiary)',
+              }}
+            >
+              Search for a track...
+            </div>
+          </Link>
+
+          {/* Travel — Wide Card */}
+          <Link
+            href={`/w/${slug}/travel`}
+            className="lg:col-span-4 group overflow-hidden rounded-xl flex flex-col transition-all hover:shadow-xl"
+            style={{
+              background: 'var(--bg-soft-cream)',
+              textDecoration: 'none',
+            }}
+          >
+            <div
+              className="h-36 overflow-hidden relative"
+              style={{
+                background: 'linear-gradient(135deg, var(--color-gold-faint) 0%, rgba(43, 95, 138, 0.08) 100%)',
+              }}
+            >
+              <div className="absolute inset-0 flex items-center justify-center">
+                <svg width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="var(--color-gold-rule)" strokeWidth="0.4" strokeLinecap="round" strokeLinejoin="round" opacity="0.5">
+                  <path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.4-.1.9.3 1.1l5.6 3.3-3 3-2.3-.8c-.3-.1-.7 0-.9.3l-.2.3c-.2.3-.1.7.1.9l3.3 2.5 2.5 3.3c.2.3.6.4.9.1l.3-.2c.3-.2.4-.6.3-.9l-.8-2.3 3-3 3.3 5.6c.2.4.7.5 1.1.3l.5-.3c.4-.2.6-.6.5-1.1z" />
+                </svg>
+              </div>
+            </div>
+            <div className="p-7 space-y-3">
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-3">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--color-gold-dark)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.4-.1.9.3 1.1l5.6 3.3-3 3-2.3-.8c-.3-.1-.7 0-.9.3l-.2.3c-.2.3-.1.7.1.9l3.3 2.5 2.5 3.3c.2.3.6.4.9.1l.3-.2c.3-.2.4-.6.3-.9l-.8-2.3 3-3 3.3 5.6c.2.4.7.5 1.1.3l.5-.3c.4-.2.6-.6.5-1.1z" />
+                  </svg>
+                  <h3
+                    className="text-2xl"
+                    style={{ fontFamily: 'var(--font-display)', color: 'var(--text-primary)' }}
+                  >
+                    Travel
+                  </h3>
+                </div>
+                <span
+                  className="text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full"
+                  style={{ background: 'var(--color-gold-faint)', color: 'var(--color-gold-dark)' }}
+                >
+                  Friends Nearby
+                </span>
+              </div>
+              <p className="text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+                Plans &amp; meetups — Share your travel plans, find friends nearby, or share a ride
+              </p>
+            </div>
+          </Link>
+
+          {/* FAQ */}
+          <Link
+            href={`/w/${slug}/faq`}
+            className="lg:col-span-2 group p-7 rounded-xl flex flex-col justify-between transition-all hover:shadow-md"
+            style={{
+              background: 'var(--bg-pure-white)',
+              border: '1px solid var(--border-light)',
+              textDecoration: 'none',
+            }}
+          >
+            <div className="space-y-3">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--color-mediterranean-blue)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3" />
+                <line x1="12" y1="17" x2="12.01" y2="17" />
+              </svg>
+              <h3
+                className="text-2xl"
+                style={{ fontFamily: 'var(--font-display)', color: 'var(--text-primary)' }}
+              >
+                FAQ
+              </h3>
+              <p className="text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+                Ask the chatbot anything about the wedding
+              </p>
+            </div>
+          </Link>
+        </section>
+      </main>
 
       {/* Password prompt for preview mode */}
       {showPasswordPrompt && (
