@@ -51,14 +51,15 @@ const navItems: NavItem[] = [
     ],
   },
   {
-    id: 'more',
-    label: 'More',
-    path: '/_more',
+    id: 'travel',
+    label: 'Travel',
+    path: '/travel',
     paths: [
-      'M12 13a1 1 0 100-2 1 1 0 000 2z',
-      'M19 13a1 1 0 100-2 1 1 0 000 2z',
-      'M5 13a1 1 0 100-2 1 1 0 000 2z',
+      'M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z',
+      'M12 10a3 3 0 100-6 3 3 0 000 6z',
     ],
+    filledPaths: ['M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z'],
+    fillWhenActive: true,
   },
 ];
 
@@ -81,8 +82,7 @@ export default function BottomNav() {
     >
       <div className="flex items-center justify-around max-w-lg mx-auto px-4 pt-2 pb-2">
         {navItems.map((item) => {
-          // Skip "more" for now — it's a placeholder
-          const href = item.id === 'more' ? `${basePath}/home` : `${basePath}${item.path}`;
+          const href = `${basePath}${item.path}`;
 
           const isActive =
             item.id === 'home'
