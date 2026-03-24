@@ -4,7 +4,7 @@ import { useWedding } from '@/components/WeddingProvider';
 import BottomNav from '@/components/guest/BottomNav';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import TravelListView from '@/components/travel/TravelListView';
 
 interface Reminder {
@@ -20,6 +20,7 @@ export default function GuestHomePage() {
   const router = useRouter();
   const [hasPlan, setHasPlan] = useState<boolean | null>(null);
   const [reminders, setReminders] = useState<Reminder[]>([]);
+  const [comingSoonOpen, setComingSoonOpen] = useState(false);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -90,18 +91,21 @@ export default function GuestHomePage() {
     );
   }
 
-  const links = [
+  const activeLinks = [
     { label: 'Schedule', sub: `${config.events.length} event${config.events.length !== 1 ? 's' : ''}`, desc: 'View all events, venues, dress codes, and directions', href: `/w/${slug}/schedule` },
-    { label: 'Gallery', sub: 'Photos & video', desc: 'Take pictures and videos \u2014 edit with AI in the gallery!', href: `/w/${slug}/gallery` },
-    { label: 'Social Feed', sub: 'Posts & updates', desc: 'Share photos, videos, and moments with everyone', href: `/w/${slug}/feed` },
-    { label: 'My Table', sub: 'Seating chart', desc: 'See who\u2019s at your table and get to know them', href: `/w/${slug}/seating` },
-    { label: 'Song Requests', sub: 'DJ requests', desc: 'What song gets you on the dance floor?', href: `/w/${slug}/music` },
     { label: 'Travel', sub: 'Plans & meetups', desc: 'Share your travel plans, find friends nearby, or share a ride', href: `/w/${slug}/travel` },
-    { label: 'Everyone\u2019s Photos', sub: 'Shared gallery', desc: 'Browse all photos and videos from every guest', href: `/w/${slug}/shared-gallery` },
     { label: 'FAQ', sub: 'Questions?', desc: 'Ask the chatbot anything about the wedding', href: `/w/${slug}/faq` },
-    { label: 'Guest List', sub: 'See who\u2019s coming', href: `/w/${slug}/directory` },
-    { label: 'Keep in Touch', sub: 'Stay connected', desc: 'Share your contact info with guests you met', href: `/w/${slug}/keep-in-touch` },
-    { label: 'My Memories', sub: 'Your personal page', desc: 'View and share your curated memories from the wedding', href: `/w/${slug}/memories/${guest.id}` },
+    { label: 'Social Feed', sub: 'Posts & updates', desc: 'Share photos, videos, and moments with everyone', href: `/w/${slug}/feed` },
+  ];
+
+  const comingSoonLinks = [
+    { label: 'Gallery', sub: 'Photos & video' },
+    { label: 'My Table', sub: 'Seating chart' },
+    { label: 'Song Requests', sub: 'DJ requests' },
+    { label: 'Everyone\u2019s Photos', sub: 'Shared gallery' },
+    { label: 'Guest List', sub: 'See who\u2019s coming' },
+    { label: 'Keep in Touch', sub: 'Stay connected' },
+    { label: 'My Memories', sub: 'Your personal page' },
   ];
 
   return (
@@ -181,9 +185,9 @@ export default function GuestHomePage() {
         </div>
       )}
 
-      {/* Quick Links — with welcoming descriptions */}
-      <div className="mb-8">
-        {links.map((link, i) => (
+      {/* Active Quick Links */}
+      <div className="mb-2">
+        {activeLinks.map((link, i) => (
           <div key={i}>
             <Link
               href={link.href}
@@ -209,11 +213,93 @@ export default function GuestHomePage() {
                 <polyline points="9 6 15 12 9 18" />
               </svg>
             </Link>
-            {i < links.length - 1 && (
+            {i < activeLinks.length - 1 && (
               <div style={{ height: 0.5, background: 'var(--border-light)' }} />
             )}
           </div>
         ))}
+      </div>
+
+      {/* Coming Soon — collapsible */}
+      <div className="mb-8">
+        <button
+          onClick={() => setComingSoonOpen((prev) => !prev)}
+          className="flex items-center justify-between w-full py-3"
+          style={{ background: 'none', border: 'none', cursor: 'pointer' }}
+        >
+          <div className="flex items-center gap-2">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-gold)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <polyline points="12 6 12 12 16 14" />
+            </svg>
+            <span
+              className="text-[13px]"
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontStyle: 'italic',
+                color: 'var(--text-secondary)',
+              }}
+            >
+              More features
+            </span>
+          </div>
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="var(--text-tertiary)"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            style={{
+              transform: comingSoonOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+              transition: 'transform 0.2s ease',
+            }}
+          >
+            <polyline points="6 9 12 15 18 9" />
+          </svg>
+        </button>
+
+        {comingSoonOpen && (
+          <div
+            className="rounded-2xl p-5 mt-1"
+            style={{
+              background: 'var(--color-gold-faint)',
+              border: '0.5px solid var(--color-gold-rule)',
+            }}
+          >
+            <p
+              className="text-center mb-4"
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontStyle: 'italic',
+                fontSize: 15,
+                color: 'var(--text-primary)',
+                lineHeight: 1.4,
+              }}
+            >
+              Coming soon &mdash; more features will be revealed closer to the wedding!
+            </p>
+            <div style={{ opacity: 0.5 }}>
+              {comingSoonLinks.map((link, i) => (
+                <div key={i}>
+                  <div className="flex items-baseline gap-2 py-3">
+                    <p className="text-[14px] font-medium" style={{ color: 'var(--text-secondary)' }}>
+                      {link.label}
+                    </p>
+                    <p className="text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
+                      {link.sub}
+                    </p>
+                  </div>
+                  {i < comingSoonLinks.length - 1 && (
+                    <div style={{ height: 0.5, background: 'var(--color-gold-rule)' }} />
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Travel CTA */}
