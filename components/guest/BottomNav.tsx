@@ -4,6 +4,7 @@ import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useState } from 'react';
 import { useWedding } from '@/components/WeddingProvider';
+import { usePreviewMode } from '@/lib/hooks/usePreviewMode';
 
 const COMING_SOON_IDS = new Set(['capture', 'gallery']);
 
@@ -45,6 +46,7 @@ export default function BottomNav() {
   const pathname = usePathname();
   const { slug } = useWedding();
   const basePath = `/w/${slug}`;
+  const { unlocked } = usePreviewMode();
   const [toast, setToast] = useState(false);
 
   const handleComingSoon = () => {
@@ -83,7 +85,7 @@ export default function BottomNav() {
                   pathname.startsWith(`${basePath}/photo`) ||
                   pathname.startsWith(`${basePath}/video`)
                 : pathname.startsWith(`${basePath}${item.path}`);
-          const isComingSoon = COMING_SOON_IDS.has(item.id);
+          const isComingSoon = !unlocked && COMING_SOON_IDS.has(item.id);
 
           if (item.elevated) {
             return (

@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useMemo } from 'react';
 import TravelListView from '@/components/travel/TravelListView';
+import { usePreviewMode } from '@/lib/hooks/usePreviewMode';
 
 interface Reminder {
   type: string;
@@ -21,6 +22,10 @@ export default function GuestHomePage() {
   const [hasPlan, setHasPlan] = useState<boolean | null>(null);
   const [reminders, setReminders] = useState<Reminder[]>([]);
   const [comingSoonOpen, setComingSoonOpen] = useState(false);
+  const { unlocked, tryUnlock } = usePreviewMode();
+  const [showPasswordPrompt, setShowPasswordPrompt] = useState(false);
+  const [passwordInput, setPasswordInput] = useState('');
+  const [passwordError, setPasswordError] = useState(false);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -91,22 +96,22 @@ export default function GuestHomePage() {
     );
   }
 
-  const activeLinks = [
-    { label: 'Schedule', sub: `${config.events.length} event${config.events.length !== 1 ? 's' : ''}`, desc: 'View all events, venues, dress codes, and directions', href: `/w/${slug}/schedule` },
-    { label: 'Travel', sub: 'Plans & meetups', desc: 'Share your travel plans, find friends nearby, or share a ride', href: `/w/${slug}/travel` },
-    { label: 'FAQ', sub: 'Questions?', desc: 'Ask the chatbot anything about the wedding', href: `/w/${slug}/faq` },
-    { label: 'Social Feed', sub: 'Posts & updates', desc: 'Share photos, videos, and moments with everyone', href: `/w/${slug}/feed` },
+  const allLinks = [
+    { label: 'Schedule', sub: `${config.events.length} event${config.events.length !== 1 ? 's' : ''}`, desc: 'View all events, venues, dress codes, and directions', href: `/w/${slug}/schedule`, live: true },
+    { label: 'Travel', sub: 'Plans & meetups', desc: 'Share your travel plans, find friends nearby, or share a ride', href: `/w/${slug}/travel`, live: true },
+    { label: 'FAQ', sub: 'Questions?', desc: 'Ask the chatbot anything about the wedding', href: `/w/${slug}/faq`, live: true },
+    { label: 'Social Feed', sub: 'Posts & updates', desc: 'Share photos, videos, and moments with everyone', href: `/w/${slug}/feed`, live: true },
+    { label: 'Gallery', sub: 'Photos & video', desc: 'Take pictures and videos \u2014 edit with AI in the gallery!', href: `/w/${slug}/gallery`, live: false },
+    { label: 'My Table', sub: 'Seating chart', desc: 'See who\u2019s at your table and get to know them', href: `/w/${slug}/seating`, live: false },
+    { label: 'Song Requests', sub: 'DJ requests', desc: 'What song gets you on the dance floor?', href: `/w/${slug}/music`, live: false },
+    { label: 'Everyone\u2019s Photos', sub: 'Shared gallery', desc: 'Browse all photos and videos from every guest', href: `/w/${slug}/shared-gallery`, live: false },
+    { label: 'Guest List', sub: 'See who\u2019s coming', desc: undefined, href: `/w/${slug}/directory`, live: false },
+    { label: 'Keep in Touch', sub: 'Stay connected', desc: 'Share your contact info with guests you met', href: `/w/${slug}/keep-in-touch`, live: false },
+    { label: 'My Memories', sub: 'Your personal page', desc: 'View and share your curated memories from the wedding', href: `/w/${slug}/memories/${guest.id}`, live: false },
   ];
 
-  const comingSoonLinks = [
-    { label: 'Gallery', sub: 'Photos & video' },
-    { label: 'My Table', sub: 'Seating chart' },
-    { label: 'Song Requests', sub: 'DJ requests' },
-    { label: 'Everyone\u2019s Photos', sub: 'Shared gallery' },
-    { label: 'Guest List', sub: 'See who\u2019s coming' },
-    { label: 'Keep in Touch', sub: 'Stay connected' },
-    { label: 'My Memories', sub: 'Your personal page' },
-  ];
+  const activeLinks = unlocked ? allLinks : allLinks.filter((l) => l.live);
+  const comingSoonLinks = unlocked ? [] : allLinks.filter((l) => !l.live);
 
   return (
     <div className="pb-24 px-7 pt-8 max-w-lg mx-auto">
@@ -139,11 +144,17 @@ export default function GuestHomePage() {
         {guest.first_name}
       </h1>
 
-      {/* Countdown + wedding name */}
+      {/* Countdown + wedding name — diamond is the secret preview mode trigger */}
       <div className="flex items-center gap-2 mb-8">
-        <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-          <path d="M5 0L9.33 4.5L5 10L0.67 4.5L5 0Z" fill="var(--color-gold)" opacity="0.5" />
-        </svg>
+        <button
+          onClick={() => { if (!unlocked) setShowPasswordPrompt(true); }}
+          style={{ background: 'none', border: 'none', padding: 4, margin: -4, cursor: 'default', lineHeight: 0 }}
+          aria-label="decorative"
+        >
+          <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+            <path d="M5 0L9.33 4.5L5 10L0.67 4.5L5 0Z" fill="var(--color-gold)" opacity="0.5" />
+          </svg>
+        </button>
         <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
           {daysToGo !== null && (
             <>
@@ -220,8 +231,8 @@ export default function GuestHomePage() {
         ))}
       </div>
 
-      {/* Coming Soon — collapsible */}
-      <div className="mb-8">
+      {/* Coming Soon — collapsible (hidden when preview mode is unlocked) */}
+      {comingSoonLinks.length > 0 && <div className="mb-8">
         <button
           onClick={() => setComingSoonOpen((prev) => !prev)}
           className="flex items-center justify-between w-full py-3"
@@ -300,7 +311,7 @@ export default function GuestHomePage() {
             </div>
           </div>
         )}
-      </div>
+      </div>}
 
       {/* Travel CTA */}
       {hasPlan === false && (
@@ -354,6 +365,98 @@ export default function GuestHomePage() {
         hasPlan={hasPlan}
         onAddPlan={() => router.push(`/w/${slug}/travel`)}
       />
+
+      {/* Password prompt for preview mode */}
+      {showPasswordPrompt && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.5)',
+            zIndex: 70,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 24,
+          }}
+          onClick={() => { setShowPasswordPrompt(false); setPasswordInput(''); setPasswordError(false); }}
+        >
+          <div
+            className="rounded-2xl p-6"
+            style={{
+              background: 'var(--bg-warm-white)',
+              width: '100%',
+              maxWidth: 300,
+              boxShadow: '0 16px 48px rgba(0,0,0,0.2)',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <p
+              className="text-center mb-4"
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontStyle: 'italic',
+                fontSize: 16,
+                color: 'var(--text-primary)',
+              }}
+            >
+              Preview mode
+            </p>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (tryUnlock(passwordInput)) {
+                  setShowPasswordPrompt(false);
+                  setPasswordInput('');
+                  setPasswordError(false);
+                } else {
+                  setPasswordError(true);
+                }
+              }}
+            >
+              <input
+                type="password"
+                value={passwordInput}
+                onChange={(e) => { setPasswordInput(e.target.value); setPasswordError(false); }}
+                placeholder="Password"
+                autoFocus
+                style={{
+                  width: '100%',
+                  padding: '10px 14px',
+                  borderRadius: 10,
+                  border: `1.5px solid ${passwordError ? '#ef4444' : 'var(--border-medium)'}`,
+                  background: 'var(--bg-pure-white)',
+                  fontSize: 14,
+                  fontFamily: 'var(--font-body)',
+                  color: 'var(--text-primary)',
+                  outline: 'none',
+                  boxSizing: 'border-box',
+                }}
+              />
+              {passwordError && (
+                <p className="text-xs mt-1.5" style={{ color: '#ef4444' }}>
+                  Incorrect password
+                </p>
+              )}
+              <button
+                type="submit"
+                className="w-full mt-3 text-xs font-medium uppercase tracking-wide"
+                style={{
+                  padding: '10px 0',
+                  background: 'linear-gradient(135deg, var(--color-gold-dark), var(--color-gold))',
+                  color: 'var(--bg-warm-white)',
+                  border: 'none',
+                  borderRadius: 50,
+                  cursor: 'pointer',
+                  letterSpacing: '0.06em',
+                }}
+              >
+                Unlock
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
 
       <BottomNav />
     </div>
