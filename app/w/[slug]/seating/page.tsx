@@ -75,6 +75,37 @@ function getInitials(mate: Tablemate): string {
   return `${mate.first_name[0] || ''}${mate.last_name[0] || ''}`;
 }
 
+// --- Fixed Header ---
+
+function FixedHeader({ slug }: { slug: string }) {
+  return (
+    <header
+      className="fixed top-0 w-full z-50 flex justify-between items-center px-6 py-4"
+      style={{
+        background: 'rgba(250, 249, 245, 0.90)',
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+      }}
+    >
+      <div className="flex items-center gap-3">
+        <BackButton href={`/w/${slug}/home`} label="" />
+      </div>
+      <h1
+        className="text-2xl tracking-wide"
+        style={{
+          fontFamily: 'var(--font-display)',
+          fontStyle: 'italic',
+          color: 'var(--color-gold-dark)',
+        }}
+      >
+        ReWed
+      </h1>
+      <div className="w-8" />
+    </header>
+  );
+}
+
 // --- Component ---
 
 export default function SeatingPage() {
@@ -161,17 +192,19 @@ export default function SeatingPage() {
   // --- Loading skeleton ---
   if (configLoading || loading) {
     return (
-      <div className="pb-24 px-5 pt-8 max-w-lg mx-auto">
-        <div className="skeleton h-6 w-24 mb-6 rounded" />
-        <div className="skeleton h-8 w-56 mb-2 rounded" />
-        <div className="skeleton h-4 w-40 mb-6 rounded" />
-        <div className="skeleton h-40 w-full rounded-2xl mb-4" />
-        <div className="skeleton h-24 w-full rounded-2xl mb-4" />
-        <div className="space-y-3">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="skeleton h-20 w-full rounded-2xl" />
-          ))}
-        </div>
+      <div className="min-h-screen flex flex-col" style={{ background: 'var(--bg-warm-white)' }}>
+        <FixedHeader slug={slug} />
+        <main className="pt-24 pb-32 px-6 max-w-2xl mx-auto flex-1">
+          <div className="skeleton h-8 w-56 mb-2 rounded" />
+          <div className="skeleton h-4 w-40 mb-6 rounded" />
+          <div className="skeleton h-40 w-full rounded-2xl mb-4" />
+          <div className="skeleton h-24 w-full rounded-2xl mb-4" />
+          <div className="space-y-3">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="skeleton h-20 w-full rounded-2xl" />
+            ))}
+          </div>
+        </main>
         <BottomNav />
       </div>
     );
@@ -180,16 +213,40 @@ export default function SeatingPage() {
   // --- Error state ---
   if (error) {
     return (
-      <div className="pb-24 px-5 pt-8 max-w-lg mx-auto">
-        <BackButton href={`/w/${slug}/home`} label="Home" />
-        <div className="text-center py-16">
-          <p className="text-lg mb-2" style={{ color: 'var(--text-primary)' }}>
-            Oops
-          </p>
-          <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-            {error}
-          </p>
-        </div>
+      <div className="min-h-screen flex flex-col" style={{ background: 'var(--bg-warm-white)' }}>
+        <FixedHeader slug={slug} />
+        <main className="pt-24 pb-32 px-6 max-w-2xl mx-auto flex-1">
+          <section className="mb-8 text-center">
+            <h2
+              className="text-5xl mb-3 tracking-tight"
+              style={{
+                fontFamily: 'var(--font-display)',
+                color: 'var(--text-primary)',
+              }}
+            >
+              Your Table
+            </h2>
+            <div className="flex items-center justify-center gap-3">
+              <span className="h-px w-8" style={{ background: 'var(--border-light)' }} />
+              <p
+                className="text-lg"
+                style={{
+                  fontFamily: 'var(--font-display)',
+                  fontStyle: 'italic',
+                  color: 'var(--color-terracotta)',
+                }}
+              >
+                Something went wrong
+              </p>
+              <span className="h-px w-8" style={{ background: 'var(--border-light)' }} />
+            </div>
+          </section>
+          <div className="text-center py-16">
+            <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+              {error}
+            </p>
+          </div>
+        </main>
         <BottomNav />
       </div>
     );
@@ -198,36 +255,54 @@ export default function SeatingPage() {
   // --- Not assigned ---
   if (!seating?.assigned) {
     return (
-      <div className="pb-24 px-5 pt-8 max-w-lg mx-auto">
-        <BackButton href={`/w/${slug}/home`} label="Home" />
-        <h1
-          className="text-2xl font-medium mb-2"
-          style={{
-            fontFamily: 'var(--font-display)',
-            color: 'var(--text-primary)',
-          }}
-        >
-          Your Table
-        </h1>
-        <div
-          className="rounded-2xl p-8 text-center mt-6"
-          style={{
-            background: 'var(--bg-pure-white, #fff)',
-            border: '1px solid var(--border-light)',
-            boxShadow: 'var(--shadow-soft)',
-          }}
-        >
-          <div className="text-4xl mb-4">&#127869;</div>
-          <p
-            className="text-base font-medium mb-1"
-            style={{ color: 'var(--text-primary)' }}
+      <div className="min-h-screen flex flex-col" style={{ background: 'var(--bg-warm-white)' }}>
+        <FixedHeader slug={slug} />
+        <main className="pt-24 pb-32 px-6 max-w-2xl mx-auto flex-1">
+          <section className="mb-8 text-center">
+            <h2
+              className="text-5xl mb-3 tracking-tight"
+              style={{
+                fontFamily: 'var(--font-display)',
+                color: 'var(--text-primary)',
+              }}
+            >
+              Your Table
+            </h2>
+            <div className="flex items-center justify-center gap-3">
+              <span className="h-px w-8" style={{ background: 'var(--border-light)' }} />
+              <p
+                className="text-lg"
+                style={{
+                  fontFamily: 'var(--font-display)',
+                  fontStyle: 'italic',
+                  color: 'var(--color-terracotta)',
+                }}
+              >
+                Check back closer to the big day
+              </p>
+              <span className="h-px w-8" style={{ background: 'var(--border-light)' }} />
+            </div>
+          </section>
+          <div
+            className="rounded-2xl p-8 text-center mt-6"
+            style={{
+              background: 'var(--bg-pure-white, #fff)',
+              border: '1px solid var(--border-light)',
+              boxShadow: 'var(--shadow-soft)',
+            }}
           >
-            Table assignment coming soon
-          </p>
-          <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-            Check back closer to the big day to find your seat and meet your tablemates!
-          </p>
-        </div>
+            <div className="text-4xl mb-4">&#127869;</div>
+            <p
+              className="text-base font-medium mb-1"
+              style={{ color: 'var(--text-primary)' }}
+            >
+              Table assignment coming soon
+            </p>
+            <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+              Check back closer to the big day to find your seat and meet your tablemates!
+            </p>
+          </div>
+        </main>
         <BottomNav />
       </div>
     );
@@ -235,175 +310,187 @@ export default function SeatingPage() {
 
   // --- Main content ---
   return (
-    <div className="pb-24 px-5 pt-8 max-w-lg mx-auto">
-      <BackButton href={`/w/${slug}/home`} label="Home" />
-
-      {/* Header */}
-      <h1
-        className="text-2xl font-medium mb-1"
-        style={{
-          fontFamily: 'var(--font-display)',
-          color: 'var(--text-primary)',
-        }}
-      >
-        Your Table
-      </h1>
-      <p className="text-sm mb-5" style={{ color: 'var(--text-secondary)' }}>
-        Find your seat and get to know your tablemates
-      </p>
-
-      {/* Table assignment card */}
-      <div
-        className="rounded-2xl p-6 mb-5 text-center"
-        style={{
-          background: 'var(--bg-pure-white, #fff)',
-          border: '1px solid var(--border-light)',
-          boxShadow: 'var(--shadow-soft)',
-        }}
-      >
-        <p
-          className="text-xs font-semibold uppercase tracking-wider mb-2"
-          style={{ color: 'var(--color-terracotta)' }}
-        >
-          You are seated at
-        </p>
-        <p
-          className="text-3xl font-medium mb-1"
-          style={{
-            fontFamily: 'var(--font-display)',
-            color: 'var(--text-primary)',
-          }}
-        >
-          {seating.table_name}
-        </p>
-        {seating.seat_number != null && (
-          <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-            Seat {seating.seat_number}
-          </p>
-        )}
-      </div>
-
-      {/* Icebreaker card */}
-      <div
-        className="rounded-2xl p-5 mb-5"
-        style={{
-          background: 'var(--bg-pure-white, #fff)',
-          border: '1px solid var(--border-light)',
-          boxShadow: 'var(--shadow-soft)',
-        }}
-      >
-        <p
-          className="text-xs font-semibold uppercase tracking-wider mb-3"
-          style={{ color: 'var(--color-gold)' }}
-        >
-          Icebreaker
-        </p>
-        <p
-          className="text-base font-medium mb-3"
-          style={{
-            fontFamily: 'var(--font-display)',
-            color: 'var(--text-primary)',
-          }}
-        >
-          {icebreakerQuestion}
-        </p>
-
-        {submitted ? (
-          <div
-            className="rounded-xl px-4 py-3"
-            style={{ background: 'var(--bg-muted, #f5f3f0)' }}
+    <div className="min-h-screen flex flex-col" style={{ background: 'var(--bg-warm-white)' }}>
+      <FixedHeader slug={slug} />
+      <main className="pt-24 pb-32 px-6 max-w-2xl mx-auto flex-1">
+        <section className="mb-8 text-center">
+          <h2
+            className="text-5xl mb-3 tracking-tight"
+            style={{
+              fontFamily: 'var(--font-display)',
+              color: 'var(--text-primary)',
+            }}
           >
-            <p className="text-sm" style={{ color: 'var(--text-primary)' }}>
-              {icebreakerAnswer}
-            </p>
-            <button
-              className="text-xs mt-2 font-medium"
-              style={{ color: 'var(--color-terracotta)' }}
-              onClick={() => setSubmitted(false)}
-            >
-              Edit answer
-            </button>
-          </div>
-        ) : (
-          <div>
-            <textarea
-              className="w-full rounded-xl px-4 py-3 text-sm resize-none outline-none"
+            Your Table
+          </h2>
+          <div className="flex items-center justify-center gap-3">
+            <span className="h-px w-8" style={{ background: 'var(--border-light)' }} />
+            <p
+              className="text-lg"
               style={{
-                background: 'var(--bg-muted, #f5f3f0)',
-                color: 'var(--text-primary)',
-                border: '1px solid var(--border-light)',
-                fontFamily: 'var(--font-body)',
+                fontFamily: 'var(--font-display)',
+                fontStyle: 'italic',
+                color: 'var(--color-terracotta)',
               }}
-              rows={2}
-              maxLength={200}
-              placeholder="Type your answer..."
-              value={icebreakerAnswer}
-              onChange={(e) => setIcebreakerAnswer(e.target.value)}
-            />
-            <div className="flex items-center justify-between mt-2">
-              <span
-                className="text-xs"
-                style={{ color: 'var(--text-tertiary)' }}
-              >
-                {icebreakerAnswer.length}/200
-              </span>
-              <button
-                className="px-4 py-2 rounded-lg text-sm font-medium transition-opacity"
-                style={{
-                  background: 'var(--color-terracotta)',
-                  color: '#fff',
-                  opacity: icebreakerAnswer.trim() && !submitting ? 1 : 0.5,
-                }}
-                disabled={!icebreakerAnswer.trim() || submitting}
-                onClick={handleSubmitIcebreaker}
-              >
-                {submitting ? 'Saving...' : 'Share'}
-              </button>
-            </div>
+            >
+              Meet your tablemates
+            </p>
+            <span className="h-px w-8" style={{ background: 'var(--border-light)' }} />
           </div>
-        )}
-      </div>
+        </section>
 
-      {/* Tablemates */}
-      <div className="mb-4">
-        <p
-          className="text-xs font-semibold uppercase tracking-wider mb-3"
-          style={{ color: 'var(--text-secondary)' }}
-        >
-          At your table ({(others.length + (me ? 1 : 0))})
-        </p>
-
-        <div className="space-y-3">
-          {/* Current user first */}
-          {me && (
-            <TablemateCard
-              mate={me}
-              isYou
-            />
-          )}
-
-          {/* Other tablemates */}
-          {others.map((mate) => (
-            <TablemateCard key={mate.id} mate={mate} />
-          ))}
-        </div>
-      </div>
-
-      {others.length === 0 && (
+        {/* Table assignment card */}
         <div
-          className="rounded-2xl p-6 text-center"
+          className="rounded-2xl p-6 mb-5 text-center"
           style={{
             background: 'var(--bg-pure-white, #fff)',
             border: '1px solid var(--border-light)',
             boxShadow: 'var(--shadow-soft)',
           }}
         >
-          <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-            Looks like you have the table to yourself for now. More guests may be assigned soon!
+          <p
+            className="text-xs font-semibold uppercase tracking-wider mb-2"
+            style={{ color: 'var(--color-terracotta)' }}
+          >
+            You are seated at
           </p>
+          <p
+            className="text-3xl font-medium mb-1"
+            style={{
+              fontFamily: 'var(--font-display)',
+              color: 'var(--text-primary)',
+            }}
+          >
+            {seating.table_name}
+          </p>
+          {seating.seat_number != null && (
+            <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+              Seat {seating.seat_number}
+            </p>
+          )}
         </div>
-      )}
 
+        {/* Icebreaker card */}
+        <div
+          className="rounded-2xl p-5 mb-5"
+          style={{
+            background: 'var(--bg-pure-white, #fff)',
+            border: '1px solid var(--border-light)',
+            boxShadow: 'var(--shadow-soft)',
+          }}
+        >
+          <p
+            className="text-xs font-semibold uppercase tracking-wider mb-3"
+            style={{ color: 'var(--color-gold)' }}
+          >
+            Icebreaker
+          </p>
+          <p
+            className="text-base font-medium mb-3"
+            style={{
+              fontFamily: 'var(--font-display)',
+              color: 'var(--text-primary)',
+            }}
+          >
+            {icebreakerQuestion}
+          </p>
+
+          {submitted ? (
+            <div
+              className="rounded-xl px-4 py-3"
+              style={{ background: 'var(--bg-muted, #f5f3f0)' }}
+            >
+              <p className="text-sm" style={{ color: 'var(--text-primary)' }}>
+                {icebreakerAnswer}
+              </p>
+              <button
+                className="text-xs mt-2 font-medium"
+                style={{ color: 'var(--color-terracotta)' }}
+                onClick={() => setSubmitted(false)}
+              >
+                Edit answer
+              </button>
+            </div>
+          ) : (
+            <div>
+              <textarea
+                className="w-full rounded-xl px-4 py-3 text-sm resize-none outline-none"
+                style={{
+                  background: 'var(--bg-muted, #f5f3f0)',
+                  color: 'var(--text-primary)',
+                  border: '1px solid var(--border-light)',
+                  fontFamily: 'var(--font-body)',
+                }}
+                rows={2}
+                maxLength={200}
+                placeholder="Type your answer..."
+                value={icebreakerAnswer}
+                onChange={(e) => setIcebreakerAnswer(e.target.value)}
+              />
+              <div className="flex items-center justify-between mt-2">
+                <span
+                  className="text-xs"
+                  style={{ color: 'var(--text-tertiary)' }}
+                >
+                  {icebreakerAnswer.length}/200
+                </span>
+                <button
+                  className="px-4 py-2 rounded-lg text-sm font-medium transition-opacity"
+                  style={{
+                    background: 'var(--color-terracotta)',
+                    color: '#fff',
+                    opacity: icebreakerAnswer.trim() && !submitting ? 1 : 0.5,
+                  }}
+                  disabled={!icebreakerAnswer.trim() || submitting}
+                  onClick={handleSubmitIcebreaker}
+                >
+                  {submitting ? 'Saving...' : 'Share'}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Tablemates */}
+        <div className="mb-4">
+          <p
+            className="text-xs font-semibold uppercase tracking-wider mb-3"
+            style={{ color: 'var(--text-secondary)' }}
+          >
+            At your table ({(others.length + (me ? 1 : 0))})
+          </p>
+
+          <div className="space-y-3">
+            {/* Current user first */}
+            {me && (
+              <TablemateCard
+                mate={me}
+                isYou
+              />
+            )}
+
+            {/* Other tablemates */}
+            {others.map((mate) => (
+              <TablemateCard key={mate.id} mate={mate} />
+            ))}
+          </div>
+        </div>
+
+        {others.length === 0 && (
+          <div
+            className="rounded-2xl p-6 text-center"
+            style={{
+              background: 'var(--bg-pure-white, #fff)',
+              border: '1px solid var(--border-light)',
+              boxShadow: 'var(--shadow-soft)',
+            }}
+          >
+            <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+              Looks like you have the table to yourself for now. More guests may be assigned soon!
+            </p>
+          </div>
+        )}
+      </main>
       <BottomNav />
     </div>
   );

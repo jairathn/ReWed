@@ -125,9 +125,21 @@ export default function GuestRegistrationPage() {
       style={{ background: 'var(--bg-warm-gradient)' }}
     >
       <div className="w-full max-w-md text-center">
+        {/* ReWed Branding */}
+        <p
+          className="text-2xl tracking-wide mb-8"
+          style={{
+            fontFamily: 'var(--font-display)',
+            fontStyle: 'italic',
+            color: 'var(--color-gold-dark)',
+          }}
+        >
+          ReWed
+        </p>
+
         {/* Wedding Name */}
         <h1
-          className="text-3xl md:text-4xl font-medium mb-2"
+          className="text-5xl tracking-tight mb-2"
           style={{
             fontFamily: 'var(--font-display)',
             color: 'var(--text-primary)',
@@ -153,12 +165,28 @@ export default function GuestRegistrationPage() {
 
         {config?.hashtag && (
           <p
-            className="text-sm mb-8"
+            className="text-sm mb-1"
             style={{ color: 'var(--color-terracotta)' }}
           >
             {config.hashtag}
           </p>
         )}
+
+        {/* Decorative Line */}
+        <div className="flex items-center justify-center gap-3 mb-8 mt-4">
+          <div
+            className="h-px w-12"
+            style={{ background: 'var(--border-medium)' }}
+          />
+          <div
+            className="w-1.5 h-1.5 rounded-full"
+            style={{ background: 'var(--color-gold)' }}
+          />
+          <div
+            className="h-px w-12"
+            style={{ background: 'var(--border-medium)' }}
+          />
+        </div>
 
         {/* Search Input */}
         <div className="relative mb-4">

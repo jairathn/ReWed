@@ -162,13 +162,39 @@ function ReviewContent() {
   // Loading skeleton
   if (isLoading || !guest) {
     return (
-      <div className="pb-24 px-5 pt-8 max-w-lg mx-auto">
-        <div className="skeleton h-8 w-40 mb-6" />
-        <div className="skeleton aspect-[3/4] w-full rounded-2xl mb-6" />
-        <div className="flex gap-4">
-          <div className="skeleton h-14 flex-1 rounded-full" />
-          <div className="skeleton h-14 flex-1 rounded-full" />
-        </div>
+      <div className="min-h-screen flex flex-col" style={{ background: 'var(--bg-warm-white)' }}>
+        <header
+          className="fixed top-0 w-full z-50 flex justify-between items-center px-6 py-4"
+          style={{
+            background: 'rgba(250, 249, 245, 0.90)',
+            backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+          }}
+        >
+          <div className="flex items-center gap-3">
+            <BackButton href={`/w/${slug}/capture`} label="" />
+          </div>
+          <h1
+            className="text-2xl tracking-wide"
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontStyle: 'italic',
+              color: 'var(--color-gold-dark)',
+            }}
+          >
+            ReWed
+          </h1>
+          <div className="w-8" />
+        </header>
+        <main className="pt-24 pb-32 px-6 max-w-2xl mx-auto flex-1 flex flex-col">
+          <div className="skeleton h-8 w-40 mb-6" />
+          <div className="skeleton aspect-[3/4] w-full rounded-2xl mb-6" />
+          <div className="flex gap-4">
+            <div className="skeleton h-14 flex-1 rounded-full" />
+            <div className="skeleton h-14 flex-1 rounded-full" />
+          </div>
+        </main>
         <BottomNav />
       </div>
     );
@@ -177,64 +203,130 @@ function ReviewContent() {
   // No media to review
   if (loadError && phase === 'review') {
     return (
-      <div className="pb-24 px-5 pt-8 max-w-lg mx-auto">
-        <div className="flex-1 flex flex-col items-center justify-center py-20">
-          <div
-            className="w-20 h-20 rounded-full flex items-center justify-center mb-6"
-            style={{ background: 'var(--bg-soft-cream)' }}
-          >
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
-              <circle cx="12" cy="13" r="4" />
-            </svg>
+      <div className="min-h-screen flex flex-col" style={{ background: 'var(--bg-warm-white)' }}>
+        <header
+          className="fixed top-0 w-full z-50 flex justify-between items-center px-6 py-4"
+          style={{
+            background: 'rgba(250, 249, 245, 0.90)',
+            backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+          }}
+        >
+          <div className="flex items-center gap-3">
+            <BackButton href={`/w/${slug}/capture`} label="" />
           </div>
-          <h2
-            className="text-xl font-medium mb-3"
+          <h1
+            className="text-2xl tracking-wide"
             style={{
               fontFamily: 'var(--font-display)',
-              color: 'var(--text-primary)',
+              fontStyle: 'italic',
+              color: 'var(--color-gold-dark)',
             }}
           >
-            Nothing to Review
-          </h2>
-          <p className="text-sm mb-8 text-center" style={{ color: 'var(--text-secondary)' }}>
-            Capture a photo or record a video first, then come back here to review and save it.
-          </p>
-          <div className="flex gap-3">
-            <button
-              onClick={() => router.push(`/w/${slug}/photo`)}
-              className="btn-primary px-6"
+            ReWed
+          </h1>
+          <div className="w-8" />
+        </header>
+        <main className="pt-24 pb-32 px-6 max-w-2xl mx-auto flex-1 flex flex-col">
+          <div className="flex-1 flex flex-col items-center justify-center py-20">
+            <div
+              className="w-20 h-20 rounded-full flex items-center justify-center mb-6"
+              style={{ background: 'var(--bg-soft-cream)' }}
             >
-              Take Photo
-            </button>
-            <button
-              onClick={() => router.push(`/w/${slug}/video`)}
-              className="btn-secondary px-6"
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                <circle cx="12" cy="13" r="4" />
+              </svg>
+            </div>
+            <h2
+              className="text-xl font-medium mb-3"
+              style={{
+                fontFamily: 'var(--font-display)',
+                color: 'var(--text-primary)',
+              }}
             >
-              Record Video
-            </button>
+              Nothing to Review
+            </h2>
+            <p className="text-sm mb-8 text-center" style={{ color: 'var(--text-secondary)' }}>
+              Capture a photo or record a video first, then come back here to review and save it.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => router.push(`/w/${slug}/photo`)}
+                className="btn-primary px-6"
+              >
+                Take Photo
+              </button>
+              <button
+                onClick={() => router.push(`/w/${slug}/video`)}
+                className="btn-secondary px-6"
+              >
+                Record Video
+              </button>
+            </div>
           </div>
-        </div>
+        </main>
         <BottomNav />
       </div>
     );
   }
 
   return (
-    <div className="pb-24 px-5 pt-8 max-w-lg mx-auto min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col" style={{ background: 'var(--bg-warm-white)' }}>
+      <header
+        className="fixed top-0 w-full z-50 flex justify-between items-center px-6 py-4"
+        style={{
+          background: 'rgba(250, 249, 245, 0.90)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+        }}
+      >
+        <div className="flex items-center gap-3">
+          <BackButton href={`/w/${slug}/capture`} label="" />
+        </div>
+        <h1
+          className="text-2xl tracking-wide"
+          style={{
+            fontFamily: 'var(--font-display)',
+            fontStyle: 'italic',
+            color: 'var(--color-gold-dark)',
+          }}
+        >
+          ReWed
+        </h1>
+        <div className="w-8" />
+      </header>
+      <main className="pt-24 pb-32 px-6 max-w-2xl mx-auto flex-1 flex flex-col">
       {/* ========== REVIEW PHASE ========== */}
       {phase === 'review' && (
         <>
-          <BackButton href={`/w/${slug}/capture`} label="Capture" />
-          <h1
-            className="text-2xl font-medium mb-6"
-            style={{
-              fontFamily: 'var(--font-display)',
-              color: 'var(--text-primary)',
-            }}
-          >
-            Review
-          </h1>
+          <section className="mb-6 text-center">
+            <h2
+              className="text-5xl mb-3 tracking-tight"
+              style={{
+                fontFamily: 'var(--font-display)',
+                color: 'var(--text-primary)',
+              }}
+            >
+              Review
+            </h2>
+            <div className="flex items-center justify-center gap-3">
+              <span className="h-px w-8" style={{ background: 'var(--border-light)' }} />
+              <p
+                className="text-lg"
+                style={{
+                  fontFamily: 'var(--font-display)',
+                  fontStyle: 'italic',
+                  color: 'var(--color-terracotta)',
+                }}
+              >
+                Looking good!
+              </p>
+              <span className="h-px w-8" style={{ background: 'var(--border-light)' }} />
+            </div>
+          </section>
 
           {/* Media Preview */}
           <div
@@ -374,6 +466,7 @@ function ReviewContent() {
         </div>
       )}
 
+      </main>
       <BottomNav />
 
       {/* Inline keyframes for success animation */}
@@ -402,13 +495,37 @@ export default function ReviewPage() {
   return (
     <Suspense
       fallback={
-        <div className="pb-24 px-5 pt-8 max-w-lg mx-auto">
-          <div className="skeleton h-8 w-40 mb-6" />
-          <div className="skeleton aspect-[3/4] w-full rounded-2xl mb-6" />
-          <div className="flex gap-4">
-            <div className="skeleton h-14 flex-1 rounded-full" />
-            <div className="skeleton h-14 flex-1 rounded-full" />
-          </div>
+        <div className="min-h-screen flex flex-col" style={{ background: 'var(--bg-warm-white)' }}>
+          <header
+            className="fixed top-0 w-full z-50 flex justify-between items-center px-6 py-4"
+            style={{
+              background: 'rgba(250, 249, 245, 0.90)',
+              backdropFilter: 'blur(20px)',
+              WebkitBackdropFilter: 'blur(20px)',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+            }}
+          >
+            <div className="w-8" />
+            <h1
+              className="text-2xl tracking-wide"
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontStyle: 'italic',
+                color: 'var(--color-gold-dark)',
+              }}
+            >
+              ReWed
+            </h1>
+            <div className="w-8" />
+          </header>
+          <main className="pt-24 pb-32 px-6 max-w-2xl mx-auto flex-1 flex flex-col">
+            <div className="skeleton h-8 w-40 mb-6" />
+            <div className="skeleton aspect-[3/4] w-full rounded-2xl mb-6" />
+            <div className="flex gap-4">
+              <div className="skeleton h-14 flex-1 rounded-full" />
+              <div className="skeleton h-14 flex-1 rounded-full" />
+            </div>
+          </main>
           <BottomNav />
         </div>
       }

@@ -163,45 +163,60 @@ export default async function SchedulePage({
   }
 
   return (
-    <div className="pb-24 px-5 pt-8 max-w-lg mx-auto">
-      <BackButton href={`/w/${slug}/home`} label="Home" />
-
-      {/* Header */}
-      <h1
-        className="text-2xl font-medium"
+    <div className="min-h-screen flex flex-col" style={{ background: 'var(--bg-warm-white)' }}>
+      <header
+        className="fixed top-0 w-full z-50 flex justify-between items-center px-6 py-4"
         style={{
-          fontFamily: 'var(--font-display)',
-          color: 'var(--text-primary)',
+          background: 'rgba(250, 249, 245, 0.90)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
         }}
       >
-        Schedule
-      </h1>
-
-      {/* Subtitle: city + date range */}
-      {(venueCity || dateRangeStr) && (
-        <div className="flex items-center gap-2 mt-2 mb-1">
-          <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-            <path d="M5 0L9.33 4.5L5 10L0.67 4.5L5 0Z" fill="var(--color-golden)" opacity="0.5" />
-          </svg>
-          <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-            {venueCity && <>{venueCity}{venueCountry ? `, ${venueCountry}` : ''}</>}
-            {venueCity && dateRangeStr && ' · '}
-            {dateRangeStr}
-          </span>
+        <div className="flex items-center gap-3">
+          <BackButton href={`/w/${slug}/home`} label="" />
         </div>
-      )}
+        <h1
+          className="text-2xl tracking-wide"
+          style={{
+            fontFamily: 'var(--font-display)',
+            fontStyle: 'italic',
+            color: 'var(--color-gold-dark)',
+          }}
+        >
+          ReWed
+        </h1>
+        <div className="w-8" />
+      </header>
 
-      {/* Divider */}
-      <div
-        className="mt-4 mb-6"
-        style={{
-          height: 1,
-          background: 'linear-gradient(90deg, transparent, var(--color-golden) 30%, var(--color-golden) 70%, transparent)',
-          opacity: 0.3,
-        }}
-      />
+      <main className="pt-24 pb-32 px-6 max-w-2xl mx-auto flex-1">
+        <section className="mb-10 text-center">
+          <h2
+            className="text-5xl mb-3 tracking-tight"
+            style={{
+              fontFamily: 'var(--font-display)',
+              color: 'var(--text-primary)',
+            }}
+          >
+            Schedule
+          </h2>
+          <div className="flex items-center justify-center gap-3">
+            <span className="h-px w-8" style={{ background: 'var(--border-light)' }} />
+            <p
+              className="text-lg"
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontStyle: 'italic',
+                color: 'var(--color-terracotta)',
+              }}
+            >
+              {venueCity ? `${venueCity}${venueCountry ? `, ${venueCountry}` : ''}` : dateRangeStr || 'Your weekend itinerary'}
+            </p>
+            <span className="h-px w-8" style={{ background: 'var(--border-light)' }} />
+          </div>
+        </section>
 
-      {/* Timeline */}
+        {/* Timeline */}
       {events.length === 0 ? (
         <div className="text-center py-12">
           <p className="text-4xl mb-4">&#128197;</p>
@@ -435,6 +450,8 @@ export default async function SchedulePage({
           })}
         </div>
       )}
+
+      </main>
 
       <BottomNav />
     </div>

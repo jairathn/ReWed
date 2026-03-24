@@ -228,13 +228,37 @@ export default function GalleryPage() {
 
   if (isLoading || !guest) {
     return (
-      <div className="pb-24 px-7 pt-8">
-        <div className="skeleton h-8 w-40 mb-6" />
-        <div className="grid grid-cols-3 gap-[3px]">
-          {Array.from({ length: 9 }).map((_, i) => (
-            <div key={i} className="skeleton aspect-square" />
-          ))}
-        </div>
+      <div className="min-h-screen flex flex-col" style={{ background: 'var(--bg-warm-white)' }}>
+        <header
+          className="fixed top-0 w-full z-50 flex justify-between items-center px-6 py-4"
+          style={{
+            background: 'rgba(250, 249, 245, 0.90)',
+            backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+          }}
+        >
+          <div className="w-8" />
+          <h1
+            className="text-2xl tracking-wide"
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontStyle: 'italic',
+              color: 'var(--color-gold-dark)',
+            }}
+          >
+            ReWed
+          </h1>
+          <div className="w-8" />
+        </header>
+        <main className="pt-24 pb-32 px-6 max-w-2xl mx-auto flex-1">
+          <div className="skeleton h-12 w-48 mx-auto mb-4" />
+          <div className="grid grid-cols-3 gap-[3px]">
+            {Array.from({ length: 9 }).map((_, i) => (
+              <div key={i} className="skeleton aspect-square" />
+            ))}
+          </div>
+        </main>
         <BottomNav />
       </div>
     );
@@ -248,22 +272,57 @@ export default function GalleryPage() {
   ];
 
   return (
-    <div className="pb-24 px-7 pt-8 max-w-lg mx-auto">
-      <BackButton href={`/w/${slug}/home`} label="Home" />
-
-      <h1
-        className="text-[32px] font-normal mb-1"
+    <div className="min-h-screen flex flex-col" style={{ background: 'var(--bg-warm-white)' }}>
+      <header
+        className="fixed top-0 w-full z-50 flex justify-between items-center px-6 py-4"
         style={{
-          fontFamily: 'var(--font-display)',
-          color: 'var(--text-primary)',
-          letterSpacing: '-0.01em',
+          background: 'rgba(250, 249, 245, 0.90)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
         }}
       >
-        My Memories
-      </h1>
-
-      {/* Gold divider */}
-      <div className="gold-divider" style={{ margin: '12px 0 20px' }} />
+        <div className="flex items-center gap-3">
+          <BackButton href={`/w/${slug}/home`} label="" />
+        </div>
+        <h1
+          className="text-2xl tracking-wide"
+          style={{
+            fontFamily: 'var(--font-display)',
+            fontStyle: 'italic',
+            color: 'var(--color-gold-dark)',
+          }}
+        >
+          ReWed
+        </h1>
+        <div className="w-8" />
+      </header>
+      <main className="pt-24 pb-32 px-6 max-w-2xl mx-auto flex-1">
+        <section className="mb-6 text-center">
+          <h2
+            className="text-5xl mb-3 tracking-tight"
+            style={{
+              fontFamily: 'var(--font-display)',
+              color: 'var(--text-primary)',
+            }}
+          >
+            My Memories
+          </h2>
+          <div className="flex items-center justify-center gap-3">
+            <span className="h-px w-8" style={{ background: 'var(--border-light)' }} />
+            <p
+              className="text-lg"
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontStyle: 'italic',
+                color: 'var(--color-terracotta)',
+              }}
+            >
+              Your captured moments
+            </p>
+            <span className="h-px w-8" style={{ background: 'var(--border-light)' }} />
+          </div>
+        </section>
 
       {/* ── Highlight Reels Section ── */}
       {(highlightReels.keeper?.status === 'ready' || highlightReels.reel?.status === 'ready') && (
@@ -879,6 +938,7 @@ export default function GalleryPage() {
         </div>
       )}
 
+      </main>
       <BottomNav />
     </div>
   );
