@@ -4,8 +4,9 @@ import { useWedding } from '@/components/WeddingProvider';
 import BottomNav from '@/components/guest/BottomNav';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import TravelListView from '@/components/travel/TravelListView';
+import { usePreviewMode } from '@/lib/hooks/usePreviewMode';
 
 interface Reminder {
   type: string;
@@ -20,6 +21,11 @@ export default function GuestHomePage() {
   const router = useRouter();
   const [hasPlan, setHasPlan] = useState<boolean | null>(null);
   const [reminders, setReminders] = useState<Reminder[]>([]);
+  const [comingSoonOpen, setComingSoonOpen] = useState(false);
+  const { unlocked, tryUnlock } = usePreviewMode();
+  const [showPasswordPrompt, setShowPasswordPrompt] = useState(false);
+  const [passwordInput, setPasswordInput] = useState('');
+  const [passwordError, setPasswordError] = useState(false);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -90,19 +96,22 @@ export default function GuestHomePage() {
     );
   }
 
-  const links = [
-    { label: 'Schedule', sub: `${config.events.length} event${config.events.length !== 1 ? 's' : ''}`, desc: 'View all events, venues, dress codes, and directions', href: `/w/${slug}/schedule` },
-    { label: 'Gallery', sub: 'Photos & video', desc: 'Take pictures and videos \u2014 edit with AI in the gallery!', href: `/w/${slug}/gallery` },
-    { label: 'Social Feed', sub: 'Posts & updates', desc: 'Share photos, videos, and moments with everyone', href: `/w/${slug}/feed` },
-    { label: 'My Table', sub: 'Seating chart', desc: 'See who\u2019s at your table and get to know them', href: `/w/${slug}/seating` },
-    { label: 'Song Requests', sub: 'DJ requests', desc: 'What song gets you on the dance floor?', href: `/w/${slug}/music` },
-    { label: 'Travel', sub: 'Plans & meetups', desc: 'Share your travel plans, find friends nearby, or share a ride', href: `/w/${slug}/travel` },
-    { label: 'Everyone\u2019s Photos', sub: 'Shared gallery', desc: 'Browse all photos and videos from every guest', href: `/w/${slug}/shared-gallery` },
-    { label: 'FAQ', sub: 'Questions?', desc: 'Ask the chatbot anything about the wedding', href: `/w/${slug}/faq` },
-    { label: 'Guest List', sub: 'See who\u2019s coming', href: `/w/${slug}/directory` },
-    { label: 'Keep in Touch', sub: 'Stay connected', desc: 'Share your contact info with guests you met', href: `/w/${slug}/keep-in-touch` },
-    { label: 'My Memories', sub: 'Your personal page', desc: 'View and share your curated memories from the wedding', href: `/w/${slug}/memories/${guest.id}` },
+  const allLinks = [
+    { label: 'Schedule', sub: `${config.events.length} event${config.events.length !== 1 ? 's' : ''}`, desc: 'View all events, venues, dress codes, and directions', href: `/w/${slug}/schedule`, live: true },
+    { label: 'Travel', sub: 'Plans & meetups', desc: 'Share your travel plans, find friends nearby, or share a ride', href: `/w/${slug}/travel`, live: true },
+    { label: 'FAQ', sub: 'Questions?', desc: 'Ask the chatbot anything about the wedding', href: `/w/${slug}/faq`, live: true },
+    { label: 'Social Feed', sub: 'Posts & updates', desc: 'Share photos, videos, and moments with everyone', href: `/w/${slug}/feed`, live: true },
+    { label: 'Gallery', sub: 'Photos & video', desc: 'Take pictures and videos \u2014 edit with AI in the gallery!', href: `/w/${slug}/gallery`, live: false },
+    { label: 'My Table', sub: 'Seating chart', desc: 'See who\u2019s at your table and get to know them', href: `/w/${slug}/seating`, live: false },
+    { label: 'Song Requests', sub: 'DJ requests', desc: 'What song gets you on the dance floor?', href: `/w/${slug}/music`, live: false },
+    { label: 'Everyone\u2019s Photos', sub: 'Shared gallery', desc: 'Browse all photos and videos from every guest', href: `/w/${slug}/shared-gallery`, live: false },
+    { label: 'Guest List', sub: 'See who\u2019s coming', desc: undefined, href: `/w/${slug}/directory`, live: false },
+    { label: 'Keep in Touch', sub: 'Stay connected', desc: 'Share your contact info with guests you met', href: `/w/${slug}/keep-in-touch`, live: false },
+    { label: 'My Memories', sub: 'Your personal page', desc: 'View and share your curated memories from the wedding', href: `/w/${slug}/memories/${guest.id}`, live: false },
   ];
+
+  const activeLinks = unlocked ? allLinks : allLinks.filter((l) => l.live);
+  const comingSoonLinks = unlocked ? [] : allLinks.filter((l) => !l.live);
 
   return (
     <div className="pb-24 px-7 pt-8 max-w-lg mx-auto">
@@ -135,11 +144,17 @@ export default function GuestHomePage() {
         {guest.first_name}
       </h1>
 
-      {/* Countdown + wedding name */}
+      {/* Countdown + wedding name — diamond is the secret preview mode trigger */}
       <div className="flex items-center gap-2 mb-8">
-        <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-          <path d="M5 0L9.33 4.5L5 10L0.67 4.5L5 0Z" fill="var(--color-gold)" opacity="0.5" />
-        </svg>
+        <button
+          onClick={() => { if (!unlocked) setShowPasswordPrompt(true); }}
+          style={{ background: 'none', border: 'none', padding: 4, margin: -4, cursor: 'default', lineHeight: 0 }}
+          aria-label="decorative"
+        >
+          <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+            <path d="M5 0L9.33 4.5L5 10L0.67 4.5L5 0Z" fill="var(--color-gold)" opacity="0.5" />
+          </svg>
+        </button>
         <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
           {daysToGo !== null && (
             <>
@@ -181,9 +196,9 @@ export default function GuestHomePage() {
         </div>
       )}
 
-      {/* Quick Links — with welcoming descriptions */}
-      <div className="mb-8">
-        {links.map((link, i) => (
+      {/* Active Quick Links */}
+      <div className="mb-2">
+        {activeLinks.map((link, i) => (
           <div key={i}>
             <Link
               href={link.href}
@@ -209,12 +224,94 @@ export default function GuestHomePage() {
                 <polyline points="9 6 15 12 9 18" />
               </svg>
             </Link>
-            {i < links.length - 1 && (
+            {i < activeLinks.length - 1 && (
               <div style={{ height: 0.5, background: 'var(--border-light)' }} />
             )}
           </div>
         ))}
       </div>
+
+      {/* Coming Soon — collapsible (hidden when preview mode is unlocked) */}
+      {comingSoonLinks.length > 0 && <div className="mb-8">
+        <button
+          onClick={() => setComingSoonOpen((prev) => !prev)}
+          className="flex items-center justify-between w-full py-3"
+          style={{ background: 'none', border: 'none', cursor: 'pointer' }}
+        >
+          <div className="flex items-center gap-2">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-gold)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <polyline points="12 6 12 12 16 14" />
+            </svg>
+            <span
+              className="text-[13px]"
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontStyle: 'italic',
+                color: 'var(--text-secondary)',
+              }}
+            >
+              More features
+            </span>
+          </div>
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="var(--text-tertiary)"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            style={{
+              transform: comingSoonOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+              transition: 'transform 0.2s ease',
+            }}
+          >
+            <polyline points="6 9 12 15 18 9" />
+          </svg>
+        </button>
+
+        {comingSoonOpen && (
+          <div
+            className="rounded-2xl p-5 mt-1"
+            style={{
+              background: 'var(--color-gold-faint)',
+              border: '0.5px solid var(--color-gold-rule)',
+            }}
+          >
+            <p
+              className="text-center mb-4"
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontStyle: 'italic',
+                fontSize: 15,
+                color: 'var(--text-primary)',
+                lineHeight: 1.4,
+              }}
+            >
+              Coming soon &mdash; more features will be revealed closer to the wedding!
+            </p>
+            <div style={{ opacity: 0.5 }}>
+              {comingSoonLinks.map((link, i) => (
+                <div key={i}>
+                  <div className="flex items-baseline gap-2 py-3">
+                    <p className="text-[14px] font-medium" style={{ color: 'var(--text-secondary)' }}>
+                      {link.label}
+                    </p>
+                    <p className="text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
+                      {link.sub}
+                    </p>
+                  </div>
+                  {i < comingSoonLinks.length - 1 && (
+                    <div style={{ height: 0.5, background: 'var(--color-gold-rule)' }} />
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>}
 
       {/* Travel CTA */}
       {hasPlan === false && (
@@ -268,6 +365,98 @@ export default function GuestHomePage() {
         hasPlan={hasPlan}
         onAddPlan={() => router.push(`/w/${slug}/travel`)}
       />
+
+      {/* Password prompt for preview mode */}
+      {showPasswordPrompt && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.5)',
+            zIndex: 70,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 24,
+          }}
+          onClick={() => { setShowPasswordPrompt(false); setPasswordInput(''); setPasswordError(false); }}
+        >
+          <div
+            className="rounded-2xl p-6"
+            style={{
+              background: 'var(--bg-warm-white)',
+              width: '100%',
+              maxWidth: 300,
+              boxShadow: '0 16px 48px rgba(0,0,0,0.2)',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <p
+              className="text-center mb-4"
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontStyle: 'italic',
+                fontSize: 16,
+                color: 'var(--text-primary)',
+              }}
+            >
+              Preview mode
+            </p>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (tryUnlock(passwordInput)) {
+                  setShowPasswordPrompt(false);
+                  setPasswordInput('');
+                  setPasswordError(false);
+                } else {
+                  setPasswordError(true);
+                }
+              }}
+            >
+              <input
+                type="password"
+                value={passwordInput}
+                onChange={(e) => { setPasswordInput(e.target.value); setPasswordError(false); }}
+                placeholder="Password"
+                autoFocus
+                style={{
+                  width: '100%',
+                  padding: '10px 14px',
+                  borderRadius: 10,
+                  border: `1.5px solid ${passwordError ? '#ef4444' : 'var(--border-medium)'}`,
+                  background: 'var(--bg-pure-white)',
+                  fontSize: 14,
+                  fontFamily: 'var(--font-body)',
+                  color: 'var(--text-primary)',
+                  outline: 'none',
+                  boxSizing: 'border-box',
+                }}
+              />
+              {passwordError && (
+                <p className="text-xs mt-1.5" style={{ color: '#ef4444' }}>
+                  Incorrect password
+                </p>
+              )}
+              <button
+                type="submit"
+                className="w-full mt-3 text-xs font-medium uppercase tracking-wide"
+                style={{
+                  padding: '10px 0',
+                  background: 'linear-gradient(135deg, var(--color-gold-dark), var(--color-gold))',
+                  color: 'var(--bg-warm-white)',
+                  border: 'none',
+                  borderRadius: 50,
+                  cursor: 'pointer',
+                  letterSpacing: '0.06em',
+                }}
+              >
+                Unlock
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
 
       <BottomNav />
     </div>

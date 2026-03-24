@@ -2,7 +2,11 @@
 
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
+import { useState } from 'react';
 import { useWedding } from '@/components/WeddingProvider';
+import { usePreviewMode } from '@/lib/hooks/usePreviewMode';
+
+const COMING_SOON_IDS = new Set(['capture', 'gallery']);
 
 const navItems = [
   {
@@ -42,6 +46,13 @@ export default function BottomNav() {
   const pathname = usePathname();
   const { slug } = useWedding();
   const basePath = `/w/${slug}`;
+  const { unlocked } = usePreviewMode();
+  const [toast, setToast] = useState(false);
+
+  const handleComingSoon = () => {
+    setToast(true);
+    setTimeout(() => setToast(false), 2500);
+  };
 
   return (
     <nav
@@ -74,6 +85,7 @@ export default function BottomNav() {
                   pathname.startsWith(`${basePath}/photo`) ||
                   pathname.startsWith(`${basePath}/video`)
                 : pathname.startsWith(`${basePath}${item.path}`);
+          const isComingSoon = !unlocked && COMING_SOON_IDS.has(item.id);
 
           if (item.elevated) {
             return (
@@ -110,7 +122,35 @@ export default function BottomNav() {
             );
           }
 
-          const stroke = isActive ? '#C6A355' : '#C8BFB3';
+          const stroke = isComingSoon ? '#D8D0C4' : isActive ? '#C6A355' : '#C8BFB3';
+
+          if (isComingSoon) {
+            return (
+              <button
+                key={item.id}
+                onClick={handleComingSoon}
+                className="flex flex-col items-center gap-1 py-1 min-w-[56px]"
+                aria-label={item.label}
+                style={{ background: 'none', border: 'none', cursor: 'pointer' }}
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={stroke} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+                  {item.paths.map((d, i) => <path key={i} d={d} />)}
+                </svg>
+                <span
+                  style={{
+                    fontSize: 9,
+                    fontWeight: 500,
+                    letterSpacing: '0.06em',
+                    textTransform: 'uppercase',
+                    color: '#D8D0C4',
+                    fontFamily: 'var(--font-body)',
+                  }}
+                >
+                  {item.label}
+                </span>
+              </button>
+            );
+          }
 
           return (
             <Link
@@ -138,6 +178,32 @@ export default function BottomNav() {
           );
         })}
       </div>
+
+      {/* Coming soon toast */}
+      {toast && (
+        <div
+          style={{
+            position: 'fixed',
+            bottom: 100,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            background: 'rgba(45, 40, 35, 0.92)',
+            backdropFilter: 'blur(12px)',
+            color: 'var(--bg-warm-white)',
+            padding: '10px 20px',
+            borderRadius: 24,
+            fontSize: 13,
+            fontFamily: 'var(--font-display)',
+            fontStyle: 'italic',
+            whiteSpace: 'nowrap',
+            zIndex: 60,
+            boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+            animation: 'fadeIn 0.2s ease',
+          }}
+        >
+          Coming soon &mdash; closer to the wedding!
+        </div>
+      )}
     </nav>
   );
 }
