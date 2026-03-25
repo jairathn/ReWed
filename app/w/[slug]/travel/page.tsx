@@ -103,7 +103,7 @@ export default function TravelPage() {
               color: 'var(--text-primary)',
             }}
           >
-            Guest Travel
+            Travel
           </h2>
           <div className="flex items-center justify-center gap-3">
             <span className="h-px w-8" style={{ background: 'var(--border-light)' }} />
@@ -115,7 +115,7 @@ export default function TravelPage() {
                 color: 'var(--color-terracotta)',
               }}
             >
-              Find nearby matches
+              Connect with fellow guests
             </p>
             <span className="h-px w-8" style={{ background: 'var(--border-light)' }} />
           </div>
@@ -123,27 +123,39 @@ export default function TravelPage() {
 
         {/* Tab bar */}
         <div
-          className="flex rounded-xl p-1 mb-5"
-          style={{ background: 'var(--bg-muted, #f5f3f0)' }}
+          className="flex rounded-2xl p-1.5 mb-6"
+          style={{
+            background: 'var(--bg-pure-white)',
+            border: '1px solid var(--border-light)',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
+          }}
         >
           {([
-            { id: 'travel' as Tab, label: 'Travel' },
-            { id: 'arrivals' as Tab, label: 'Arrivals' },
-            { id: 'my-plan' as Tab, label: 'My Plan' },
-          ]).map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className="flex-1 py-2 text-sm font-medium rounded-lg transition-colors"
-              style={{
-                background: activeTab === tab.id ? 'white' : 'transparent',
-                color: activeTab === tab.id ? 'var(--text-primary)' : 'var(--text-tertiary)',
-                boxShadow: activeTab === tab.id ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
-              }}
-            >
-              {tab.label}
-            </button>
-          ))}
+            { id: 'travel' as Tab, label: 'Explore', icon: 'M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z' },
+            { id: 'arrivals' as Tab, label: 'Arrivals', icon: 'M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 00-2.91-.09zM12 15l-3-3a22 22 0 012-3.95A12.88 12.88 0 0122 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 01-4 2z' },
+            { id: 'my-plan' as Tab, label: 'My Plan', icon: 'M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7' },
+          ]).map((tab) => {
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-sm font-medium rounded-xl transition-all duration-200"
+                style={{
+                  background: isActive
+                    ? 'linear-gradient(135deg, var(--color-gold-dark), var(--color-gold))'
+                    : 'transparent',
+                  color: isActive ? '#FDFBF7' : 'var(--text-tertiary)',
+                  boxShadow: isActive ? '0 2px 8px rgba(198,163,85,0.25)' : 'none',
+                }}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d={tab.icon} />
+                </svg>
+                {tab.label}
+              </button>
+            );
+          })}
         </div>
 
         {/* Tab content */}
