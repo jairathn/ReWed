@@ -201,12 +201,13 @@ export default function GuestHomePage() {
           )}
         </section>
 
-        {/* Bento Grid */}
-        <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-5">
-          {/* Schedule — Wide Card */}
+        {/* Bento Grid — 2-col base, items span as needed */}
+        <section className="grid grid-cols-2 gap-4">
+
+          {/* Schedule — Full width hero card */}
           <Link
             href={`/w/${slug}/schedule`}
-            className="lg:col-span-4 group overflow-hidden rounded-xl flex flex-col sm:flex-row relative transition-all duration-500 hover:shadow-lg"
+            className="col-span-2 group overflow-hidden rounded-2xl flex flex-col sm:flex-row relative transition-all duration-500 hover:shadow-lg"
             style={{
               background: 'var(--bg-soft-cream)',
               textDecoration: 'none',
@@ -226,8 +227,8 @@ export default function GuestHomePage() {
                 >
                   Schedule
                 </h3>
-                <p className="text-sm leading-relaxed max-w-[220px]" style={{ color: 'var(--text-secondary)' }}>
-                  View all events, venues, dress codes, and directions
+                <p className="text-sm leading-relaxed max-w-[260px]" style={{ color: 'var(--text-secondary)' }}>
+                  Events, venues, dress codes &amp; directions
                 </p>
               </div>
               <div className="mt-5 flex items-center gap-2 text-xs font-semibold tracking-widest uppercase" style={{ color: 'var(--color-gold-dark)' }}>
@@ -237,7 +238,7 @@ export default function GuestHomePage() {
                 </svg>
               </div>
             </div>
-            <div className="w-full sm:w-1/2 h-48 sm:h-auto overflow-hidden relative">
+            <div className="w-full sm:w-2/5 h-40 sm:h-auto overflow-hidden relative">
               <div
                 className="w-full h-full transition-transform duration-700 group-hover:scale-105"
                 style={{
@@ -257,263 +258,232 @@ export default function GuestHomePage() {
             </div>
           </Link>
 
-          {/* Gallery Card — preview mode only */}
-          {unlocked && <Link
-            href={`/w/${slug}/gallery`}
-            className="lg:col-span-2 group p-7 rounded-xl flex flex-col justify-between transition-all duration-300 hover:shadow-md"
-            style={{
-              background: 'var(--bg-pure-white)',
-              border: '1px solid var(--border-light)',
-              textDecoration: 'none',
-            }}
-          >
-            <div className="space-y-3">
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--color-terracotta)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="3" y="3" width="18" height="18" rx="2" />
-                <circle cx="8.5" cy="8.5" r="1.5" />
-                <polyline points="21 15 16 10 5 21" />
-              </svg>
-              <h3
-                className="text-2xl"
-                style={{ fontFamily: 'var(--font-display)', color: 'var(--text-primary)' }}
-              >
-                Gallery
-              </h3>
-              <p className="text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-                Take pictures and videos — edit with AI in the gallery!
-              </p>
-            </div>
-            <div className="pt-6 flex -space-x-2">
-              {[1, 2, 3].map((i) => (
-                <div
-                  key={i}
-                  className="w-9 h-9 rounded-full border-2"
-                  style={{
-                    borderColor: 'var(--bg-pure-white)',
-                    background: `linear-gradient(${135 + i * 30}deg, var(--color-gold-faint), rgba(198,163,85,0.15))`,
-                  }}
-                />
-              ))}
-              <div
-                className="w-9 h-9 rounded-full border-2 flex items-center justify-center"
-                style={{
-                  borderColor: 'var(--bg-pure-white)',
-                  background: 'linear-gradient(135deg, var(--color-gold-dark), var(--color-gold))',
-                }}
-              >
-                <span className="text-[10px] font-bold" style={{ color: 'var(--bg-warm-white)' }}>+</span>
-              </div>
-            </div>
-          </Link>}
-
-          {/* Social Feed */}
+          {/* Social Feed — half width */}
           <Link
             href={`/w/${slug}/feed`}
-            className="lg:col-span-3 group p-7 rounded-xl flex flex-col space-y-5 transition-all hover:shadow-md"
+            className="col-span-1 group p-6 rounded-2xl flex flex-col justify-between transition-all hover:shadow-md"
             style={{
               background: 'rgba(122, 139, 92, 0.06)',
               border: '1px solid rgba(122, 139, 92, 0.1)',
               textDecoration: 'none',
-            }}
-          >
-            <div className="flex justify-between items-start">
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--color-olive)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
-                <circle cx="9" cy="7" r="4" />
-                <path d="M23 21v-2a4 4 0 00-3-3.87" />
-                <path d="M16 3.13a4 4 0 010 7.75" />
-              </svg>
-              <span
-                className="text-[10px] font-bold uppercase tracking-tight px-2 py-1 rounded"
-                style={{ background: 'rgba(122, 139, 92, 0.1)', color: 'var(--color-olive)' }}
-              >
-                Live Feed
-              </span>
-            </div>
-            <div className="space-y-1">
-              <h3
-                className="text-2xl"
-                style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', color: 'var(--text-primary)' }}
-              >
-                Social Feed
-              </h3>
-              <p className="text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-                Share photos, videos, and moments with everyone
-              </p>
-            </div>
-            <div
-              className="relative h-28 w-full rounded-lg overflow-hidden"
-              style={{
-                background: 'linear-gradient(135deg, rgba(122, 139, 92, 0.08), rgba(122, 139, 92, 0.15))',
-              }}
-            >
-              <div className="absolute bottom-3 left-3 flex items-center gap-2">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="var(--color-terracotta)" stroke="none">
-                  <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" />
-                </svg>
-                <span className="text-[10px] font-bold" style={{ color: 'var(--text-secondary)' }}>
-                  Moments Shared
-                </span>
-              </div>
-            </div>
-          </Link>
-
-          {/* My Table — preview mode only */}
-          {unlocked && <Link
-            href={`/w/${slug}/seating`}
-            className="lg:col-span-3 group p-7 rounded-xl flex flex-col justify-between transition-all hover:shadow-md"
-            style={{
-              background: 'var(--bg-pure-white)',
-              border: '1px solid var(--border-light)',
-              textDecoration: 'none',
+              minHeight: 180,
             }}
           >
             <div className="space-y-3">
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--color-gold-dark)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M4 18v-4a2 2 0 012-2h12a2 2 0 012 2v4" />
-                <path d="M8 12V8a4 4 0 018 0v4" />
-                <line x1="2" y1="18" x2="22" y2="18" />
-              </svg>
-              <h3
-                className="text-2xl"
-                style={{ fontFamily: 'var(--font-display)', color: 'var(--text-primary)' }}
-              >
-                My Table
-              </h3>
-              <p className="text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-                Seating chart — See who&apos;s at your table and get to know them
-              </p>
-            </div>
-            <div
-              className="pt-5 border-t flex items-center justify-between"
-              style={{ borderColor: 'var(--border-light)' }}
-            >
-              <span
-                className="text-lg"
-                style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', color: 'var(--color-gold-dark)' }}
-              >
-                Your Table
-              </span>
-              <div className="flex items-center gap-1 text-xs" style={{ color: 'var(--text-secondary)' }}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <div className="flex justify-between items-start">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--color-olive)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
                   <circle cx="9" cy="7" r="4" />
+                  <path d="M23 21v-2a4 4 0 00-3-3.87" />
+                  <path d="M16 3.13a4 4 0 010 7.75" />
                 </svg>
-                Guests
+                <span
+                  className="text-[9px] font-bold uppercase tracking-tight px-2 py-0.5 rounded"
+                  style={{ background: 'rgba(122, 139, 92, 0.1)', color: 'var(--color-olive)' }}
+                >
+                  Live
+                </span>
               </div>
-            </div>
-          </Link>}
-
-          {/* Song Requests — preview mode only */}
-          {unlocked && <Link
-            href={`/w/${slug}/music`}
-            className="lg:col-span-2 group p-7 rounded-xl flex flex-col justify-center items-center text-center space-y-3 transition-colors hover:shadow-md"
-            style={{
-              background: 'rgba(232, 134, 90, 0.06)',
-              border: '1px solid rgba(157, 66, 43, 0.1)',
-              textDecoration: 'none',
-            }}
-          >
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--color-terracotta)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M9 18V5l12-2v13" />
-              <circle cx="6" cy="18" r="3" />
-              <circle cx="18" cy="16" r="3" />
-            </svg>
-            <div className="space-y-1">
               <h3
                 className="text-xl"
                 style={{ fontFamily: 'var(--font-display)', color: 'var(--text-primary)' }}
               >
-                Song Requests
+                Social Feed
               </h3>
-              <p className="text-[13px]" style={{ color: 'var(--text-secondary)' }}>
-                What song gets you on the dance floor?
+              <p className="text-[13px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+                Share moments with everyone
               </p>
             </div>
-            <div
-              className="w-full py-2 px-4 rounded-lg text-sm"
-              style={{
-                background: 'rgba(255,255,255,0.5)',
-                border: '1px solid var(--border-light)',
-                fontStyle: 'italic',
-                color: 'var(--text-tertiary)',
-              }}
-            >
-              Search for a track...
-            </div>
-          </Link>}
+          </Link>
 
-          {/* Travel — Wide Card */}
+          {/* FAQ — half width */}
+          <Link
+            href={`/w/${slug}/faq`}
+            className="col-span-1 group p-6 rounded-2xl flex flex-col justify-between transition-all hover:shadow-md"
+            style={{
+              background: 'var(--bg-pure-white)',
+              border: '1px solid var(--border-light)',
+              textDecoration: 'none',
+              minHeight: 180,
+            }}
+          >
+            <div className="space-y-3">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--color-mediterranean-blue, #2B5F8A)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3" />
+                <line x1="12" y1="17" x2="12.01" y2="17" />
+              </svg>
+              <h3
+                className="text-xl"
+                style={{ fontFamily: 'var(--font-display)', color: 'var(--text-primary)' }}
+              >
+                FAQ
+              </h3>
+              <p className="text-[13px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+                Ask the chatbot anything about the wedding
+              </p>
+            </div>
+          </Link>
+
+          {/* Preview mode cards — slot in when unlocked */}
+          {unlocked && (
+            <>
+              {/* Gallery */}
+              <Link
+                href={`/w/${slug}/gallery`}
+                className="col-span-1 group p-6 rounded-2xl flex flex-col justify-between transition-all hover:shadow-md"
+                style={{
+                  background: 'var(--bg-pure-white)',
+                  border: '1px solid var(--border-light)',
+                  textDecoration: 'none',
+                  minHeight: 180,
+                }}
+              >
+                <div className="space-y-3">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--color-terracotta)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="2" />
+                    <circle cx="8.5" cy="8.5" r="1.5" />
+                    <polyline points="21 15 16 10 5 21" />
+                  </svg>
+                  <h3
+                    className="text-xl"
+                    style={{ fontFamily: 'var(--font-display)', color: 'var(--text-primary)' }}
+                  >
+                    Gallery
+                  </h3>
+                  <p className="text-[13px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+                    Photos, videos &amp; AI portraits
+                  </p>
+                </div>
+                <div className="pt-4 flex -space-x-2">
+                  {[1, 2, 3].map((i) => (
+                    <div
+                      key={i}
+                      className="w-8 h-8 rounded-full border-2"
+                      style={{
+                        borderColor: 'var(--bg-pure-white)',
+                        background: `linear-gradient(${135 + i * 30}deg, var(--color-gold-faint), rgba(198,163,85,0.15))`,
+                      }}
+                    />
+                  ))}
+                  <div
+                    className="w-8 h-8 rounded-full border-2 flex items-center justify-center"
+                    style={{
+                      borderColor: 'var(--bg-pure-white)',
+                      background: 'linear-gradient(135deg, var(--color-gold-dark), var(--color-gold))',
+                    }}
+                  >
+                    <span className="text-[10px] font-bold" style={{ color: 'var(--bg-warm-white)' }}>+</span>
+                  </div>
+                </div>
+              </Link>
+
+              {/* Song Requests */}
+              <Link
+                href={`/w/${slug}/music`}
+                className="col-span-1 group p-6 rounded-2xl flex flex-col justify-between transition-all hover:shadow-md"
+                style={{
+                  background: 'rgba(232, 134, 90, 0.06)',
+                  border: '1px solid rgba(157, 66, 43, 0.1)',
+                  textDecoration: 'none',
+                  minHeight: 180,
+                }}
+              >
+                <div className="space-y-3">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--color-terracotta)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M9 18V5l12-2v13" />
+                    <circle cx="6" cy="18" r="3" />
+                    <circle cx="18" cy="16" r="3" />
+                  </svg>
+                  <h3
+                    className="text-xl"
+                    style={{ fontFamily: 'var(--font-display)', color: 'var(--text-primary)' }}
+                  >
+                    Song Requests
+                  </h3>
+                  <p className="text-[13px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+                    What gets you on the dance floor?
+                  </p>
+                </div>
+              </Link>
+
+              {/* My Table — full width */}
+              <Link
+                href={`/w/${slug}/seating`}
+                className="col-span-2 group p-6 rounded-2xl flex items-center gap-6 transition-all hover:shadow-md"
+                style={{
+                  background: 'var(--bg-pure-white)',
+                  border: '1px solid var(--border-light)',
+                  textDecoration: 'none',
+                }}
+              >
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--color-gold-dark)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0">
+                  <path d="M4 18v-4a2 2 0 012-2h12a2 2 0 012 2v4" />
+                  <path d="M8 12V8a4 4 0 018 0v4" />
+                  <line x1="2" y1="18" x2="22" y2="18" />
+                </svg>
+                <div className="flex-1 min-w-0">
+                  <h3
+                    className="text-xl"
+                    style={{ fontFamily: 'var(--font-display)', color: 'var(--text-primary)' }}
+                  >
+                    My Table
+                  </h3>
+                  <p className="text-[13px]" style={{ color: 'var(--text-secondary)' }}>
+                    Find your seat &amp; meet your tablemates
+                  </p>
+                </div>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-gold-dark)" strokeWidth="2" strokeLinecap="round" className="flex-shrink-0">
+                  <path d="M5 12h14M12 5l7 7-7 7" />
+                </svg>
+              </Link>
+            </>
+          )}
+
+          {/* Travel — Full width */}
           <Link
             href={`/w/${slug}/travel`}
-            className="lg:col-span-4 group overflow-hidden rounded-xl flex flex-col transition-all hover:shadow-xl"
+            className="col-span-2 group overflow-hidden rounded-2xl flex flex-col transition-all hover:shadow-lg"
             style={{
               background: 'var(--bg-soft-cream)',
               textDecoration: 'none',
             }}
           >
             <div
-              className="h-36 overflow-hidden relative"
+              className="h-32 overflow-hidden relative"
               style={{
                 background: 'linear-gradient(135deg, var(--color-gold-faint) 0%, rgba(43, 95, 138, 0.08) 100%)',
               }}
             >
               <div className="absolute inset-0 flex items-center justify-center">
-                <svg width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="var(--color-gold-rule)" strokeWidth="0.4" strokeLinecap="round" strokeLinejoin="round" opacity="0.5">
+                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="var(--color-gold-rule)" strokeWidth="0.4" strokeLinecap="round" strokeLinejoin="round" opacity="0.5">
                   <path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.4-.1.9.3 1.1l5.6 3.3-3 3-2.3-.8c-.3-.1-.7 0-.9.3l-.2.3c-.2.3-.1.7.1.9l3.3 2.5 2.5 3.3c.2.3.6.4.9.1l.3-.2c.3-.2.4-.6.3-.9l-.8-2.3 3-3 3.3 5.6c.2.4.7.5 1.1.3l.5-.3c.4-.2.6-.6.5-1.1z" />
                 </svg>
               </div>
             </div>
-            <div className="p-7 space-y-3">
+            <div className="p-6 space-y-2">
               <div className="flex justify-between items-center">
                 <div className="flex items-center gap-3">
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--color-gold-dark)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.4-.1.9.3 1.1l5.6 3.3-3 3-2.3-.8c-.3-.1-.7 0-.9.3l-.2.3c-.2.3-.1.7.1.9l3.3 2.5 2.5 3.3c.2.3.6.4.9.1l.3-.2c.3-.2.4-.6.3-.9l-.8-2.3 3-3 3.3 5.6c.2.4.7.5 1.1.3l.5-.3c.4-.2.6-.6.5-1.1z" />
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-gold-dark)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" />
+                    <circle cx="12" cy="10" r="3" />
                   </svg>
                   <h3
-                    className="text-2xl"
+                    className="text-xl"
                     style={{ fontFamily: 'var(--font-display)', color: 'var(--text-primary)' }}
                   >
                     Travel
                   </h3>
                 </div>
                 <span
-                  className="text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full"
+                  className="text-[9px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full"
                   style={{ background: 'var(--color-gold-faint)', color: 'var(--color-gold-dark)' }}
                 >
                   Friends Nearby
                 </span>
               </div>
-              <p className="text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-                Plans &amp; meetups — Share your travel plans, find friends nearby, or share a ride
-              </p>
-            </div>
-          </Link>
-
-          {/* FAQ */}
-          <Link
-            href={`/w/${slug}/faq`}
-            className="lg:col-span-2 group p-7 rounded-xl flex flex-col justify-between transition-all hover:shadow-md"
-            style={{
-              background: 'var(--bg-pure-white)',
-              border: '1px solid var(--border-light)',
-              textDecoration: 'none',
-            }}
-          >
-            <div className="space-y-3">
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--color-mediterranean-blue)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="10" />
-                <path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3" />
-                <line x1="12" y1="17" x2="12.01" y2="17" />
-              </svg>
-              <h3
-                className="text-2xl"
-                style={{ fontFamily: 'var(--font-display)', color: 'var(--text-primary)' }}
-              >
-                FAQ
-              </h3>
-              <p className="text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-                Ask the chatbot anything about the wedding
+              <p className="text-[13px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+                Share plans, find friends nearby, or coordinate a ride
               </p>
             </div>
           </Link>
