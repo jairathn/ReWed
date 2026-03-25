@@ -316,10 +316,11 @@ export default function SettingsPage({ params }: { params: Promise<{ weddingId: 
     if (importResult) {
       return (
         <div style={{ maxWidth: 600 }}>
-          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 500, color: 'var(--text-primary)', marginBottom: 24 }}>
+          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 500, color: 'var(--text-primary)', marginBottom: 4 }}>
             Import Complete
           </h1>
-          <div className="card" style={{ padding: 24, background: 'var(--bg-pure-white)' }}>
+          <p style={{ fontSize: 13, color: 'var(--text-secondary)', fontFamily: 'var(--font-body)', marginBottom: 24 }}>Your events have been processed.</p>
+          <div style={{ padding: 24, background: 'var(--bg-pure-white)', borderRadius: 16, border: '1px solid var(--border-light)' }}>
             <div style={{ textAlign: 'center', padding: 16, borderRadius: 12, background: 'rgba(122, 139, 92, 0.08)', marginBottom: 20 }}>
               <p style={{ fontSize: 28, fontWeight: 600, color: 'var(--color-olive)', margin: 0 }}>{importResult.imported}</p>
               <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: 0 }}>events imported</p>
@@ -332,7 +333,7 @@ export default function SettingsPage({ params }: { params: Promise<{ weddingId: 
                 ))}
               </div>
             )}
-            <button className="btn-primary" onClick={() => { setView('list'); setImportText(''); setImportParsed(null); setImportResult(null); }}>
+            <button style={{ background: 'linear-gradient(135deg, var(--color-gold-dark), var(--color-gold))', color: '#FDFBF7', borderRadius: 10, boxShadow: '0 2px 8px rgba(198,163,85,0.2)', fontWeight: 600, fontFamily: 'var(--font-body)', border: 'none', padding: '10px 20px', cursor: 'pointer', fontSize: 14 }} onClick={() => { setView('list'); setImportText(''); setImportParsed(null); setImportResult(null); }}>
               View Events
             </button>
           </div>
@@ -350,16 +351,16 @@ export default function SettingsPage({ params }: { params: Promise<{ weddingId: 
           >
             &larr; Back to text
           </button>
-          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 500, color: 'var(--text-primary)', marginBottom: 8 }}>
+          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 500, color: 'var(--text-primary)', marginBottom: 4 }}>
             Review Parsed Events
           </h1>
-          <p style={{ fontSize: 14, color: 'var(--text-secondary)', marginBottom: 24 }}>
+          <p style={{ fontSize: 13, color: 'var(--text-secondary)', fontFamily: 'var(--font-body)', marginBottom: 24 }}>
             {importParsed.length} event{importParsed.length !== 1 ? 's' : ''} detected. Review below, then import.
           </p>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 20 }}>
             {importParsed.map((ev, i) => (
-              <div key={i} className="card" style={{ padding: 20, background: 'var(--bg-pure-white)' }}>
+              <div key={i} style={{ padding: 20, background: 'var(--bg-pure-white)', borderRadius: 16, border: '1px solid var(--border-light)' }}>
                 <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 500, color: 'var(--text-primary)', margin: '0 0 8px' }}>
                   {ev.name}
                 </h3>
@@ -384,10 +385,10 @@ export default function SettingsPage({ params }: { params: Promise<{ weddingId: 
           {error && <p style={{ color: 'var(--color-terracotta)', fontSize: 13, marginBottom: 12 }}>{error}</p>}
 
           <div style={{ display: 'flex', gap: 12 }}>
-            <button className="btn-primary" onClick={handleImportConfirm} disabled={importLoading} style={{ opacity: importLoading ? 0.5 : 1 }}>
+            <button onClick={handleImportConfirm} disabled={importLoading} style={{ background: 'linear-gradient(135deg, var(--color-gold-dark), var(--color-gold))', color: '#FDFBF7', borderRadius: 10, boxShadow: '0 2px 8px rgba(198,163,85,0.2)', fontWeight: 600, fontFamily: 'var(--font-body)', border: 'none', padding: '10px 20px', cursor: 'pointer', fontSize: 14, opacity: importLoading ? 0.5 : 1 }}>
               {importLoading ? 'Importing...' : `Import ${importParsed.length} Events`}
             </button>
-            <button className="btn-ghost" onClick={() => setImportParsed(null)}>
+            <button onClick={() => setImportParsed(null)} style={{ border: '1px solid var(--border-light)', borderRadius: 10, color: 'var(--text-secondary)', background: 'transparent', padding: '10px 20px', cursor: 'pointer', fontSize: 14 }}>
               Back
             </button>
           </div>
@@ -404,14 +405,14 @@ export default function SettingsPage({ params }: { params: Promise<{ weddingId: 
         >
           &larr; Back to events
         </button>
-        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 500, color: 'var(--text-primary)', marginBottom: 8 }}>
+        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 500, color: 'var(--text-primary)', marginBottom: 4 }}>
           Import Events
         </h1>
-        <p style={{ fontSize: 14, color: 'var(--text-secondary)', marginBottom: 24 }}>
+        <p style={{ fontSize: 13, color: 'var(--text-secondary)', fontFamily: 'var(--font-body)', marginBottom: 24 }}>
           Paste your event details from Zola, The Knot, or any wedding website. We'll use AI to extract event names, times, venues, dress codes, and descriptions.
         </p>
 
-        <div className="card" style={{ padding: 24, background: 'var(--bg-pure-white)' }}>
+        <div style={{ padding: 24, background: 'var(--bg-pure-white)', borderRadius: 16, border: '1px solid var(--border-light)' }}>
           <textarea
             style={{ ...inputStyle, minHeight: 200, resize: 'vertical', fontFamily: 'monospace', fontSize: 12 }}
             value={importText}
@@ -422,10 +423,9 @@ export default function SettingsPage({ params }: { params: Promise<{ weddingId: 
           {error && <p style={{ color: 'var(--color-terracotta)', fontSize: 13, marginTop: 12 }}>{error}</p>}
 
           <button
-            className="btn-primary"
             onClick={handleImportPreview}
             disabled={!importText.trim() || importLoading}
-            style={{ marginTop: 16, opacity: !importText.trim() || importLoading ? 0.5 : 1 }}
+            style={{ marginTop: 16, opacity: !importText.trim() || importLoading ? 0.5 : 1, background: 'linear-gradient(135deg, var(--color-gold-dark), var(--color-gold))', color: '#FDFBF7', borderRadius: 10, boxShadow: '0 2px 8px rgba(198,163,85,0.2)', fontWeight: 600, fontFamily: 'var(--font-body)', border: 'none', padding: '10px 20px', cursor: 'pointer', fontSize: 14 }}
           >
             {importLoading ? 'Analyzing...' : 'Parse Events'}
           </button>
@@ -444,11 +444,14 @@ export default function SettingsPage({ params }: { params: Promise<{ weddingId: 
         >
           &larr; Back to events
         </button>
-        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 500, color: 'var(--text-primary)', marginBottom: 24 }}>
+        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 500, color: 'var(--text-primary)', marginBottom: 4 }}>
           {view === 'edit' ? 'Edit Event' : 'Add Event'}
         </h1>
+        <p style={{ fontSize: 13, color: 'var(--text-secondary)', fontFamily: 'var(--font-body)', marginBottom: 24 }}>
+          {view === 'edit' ? 'Update the details for this event.' : 'Fill in the details for your new event.'}
+        </p>
 
-        <form onSubmit={handleSubmit} className="card" style={{ padding: 24, background: 'var(--bg-pure-white)' }}>
+        <form onSubmit={handleSubmit} style={{ padding: 24, background: 'var(--bg-pure-white)', borderRadius: 16, border: '1px solid var(--border-light)' }}>
           <div style={{ marginBottom: 16 }}>
             <label style={labelStyle}>Event Name *</label>
             <input style={inputStyle} value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g., Ceremony, Reception, Mehndi" required />
@@ -508,10 +511,10 @@ export default function SettingsPage({ params }: { params: Promise<{ weddingId: 
           {error && <p style={{ color: 'var(--color-terracotta)', fontSize: 13, marginBottom: 12 }}>{error}</p>}
 
           <div style={{ display: 'flex', gap: 12 }}>
-            <button type="submit" className="btn-primary" disabled={formLoading} style={{ opacity: formLoading ? 0.7 : 1 }}>
+            <button type="submit" disabled={formLoading} style={{ background: 'linear-gradient(135deg, var(--color-gold-dark), var(--color-gold))', color: '#FDFBF7', borderRadius: 10, boxShadow: '0 2px 8px rgba(198,163,85,0.2)', fontWeight: 600, fontFamily: 'var(--font-body)', border: 'none', padding: '10px 20px', cursor: 'pointer', fontSize: 14, opacity: formLoading ? 0.7 : 1 }}>
               {formLoading ? 'Saving...' : view === 'edit' ? 'Update Event' : 'Add Event'}
             </button>
-            <button type="button" className="btn-ghost" onClick={() => { resetForm(); setView('list'); }}>Cancel</button>
+            <button type="button" onClick={() => { resetForm(); setView('list'); }} style={{ border: '1px solid var(--border-light)', borderRadius: 10, color: 'var(--text-secondary)', background: 'transparent', padding: '10px 20px', cursor: 'pointer', fontSize: 14 }}>Cancel</button>
           </div>
         </form>
       </div>
@@ -548,7 +551,7 @@ export default function SettingsPage({ params }: { params: Promise<{ weddingId: 
   return (
     <div>
       {/* Timezone Setting */}
-      <div className="card" style={{ padding: 20, background: 'var(--bg-pure-white)', marginBottom: 24 }}>
+      <div style={{ padding: 20, background: 'var(--bg-pure-white)', marginBottom: 24, borderRadius: 16, border: '1px solid var(--border-light)' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
           <div>
             <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 500, color: 'var(--text-primary)', margin: '0 0 4px' }}>
@@ -575,31 +578,31 @@ export default function SettingsPage({ params }: { params: Promise<{ weddingId: 
 
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
         <div>
-          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 500, color: 'var(--text-primary)', margin: 0 }}>
+          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 500, color: 'var(--text-primary)', margin: 0 }}>
             Events
           </h1>
-          <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 4 }}>
+          <p style={{ fontSize: 13, color: 'var(--text-secondary)', fontFamily: 'var(--font-body)', marginTop: 4 }}>
             Manage your wedding events — ceremony, reception, mehndi, etc.
           </p>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
-          <button className="btn-secondary" onClick={() => { setView('import'); setImportText(''); setImportParsed(null); setImportResult(null); setError(''); }} style={{ fontSize: 13, padding: '8px 16px' }}>
+          <button onClick={() => { setView('import'); setImportText(''); setImportParsed(null); setImportResult(null); setError(''); }} style={{ fontSize: 13, padding: '8px 16px', border: '1px solid var(--border-light)', borderRadius: 10, color: 'var(--text-secondary)', background: 'transparent', cursor: 'pointer' }}>
             Import Events
           </button>
-          <button className="btn-primary" onClick={() => { resetForm(); setView('add'); }} style={{ fontSize: 13, padding: '8px 16px' }}>
+          <button onClick={() => { resetForm(); setView('add'); }} style={{ fontSize: 13, padding: '8px 16px', background: 'linear-gradient(135deg, var(--color-gold-dark), var(--color-gold))', color: '#FDFBF7', borderRadius: 10, boxShadow: '0 2px 8px rgba(198,163,85,0.2)', fontWeight: 600, fontFamily: 'var(--font-body)', border: 'none', cursor: 'pointer' }}>
             + Add Event
           </button>
         </div>
       </div>
 
       {loading && (
-        <div className="card p-6">
+        <div style={{ padding: 24, borderRadius: 16, background: 'var(--bg-pure-white)', border: '1px solid var(--border-light)' }}>
           <div className="skeleton" style={{ width: '100%', height: 200 }} />
         </div>
       )}
 
       {!loading && events.length === 0 && (
-        <div className="card" style={{ padding: 48, textAlign: 'center', background: 'var(--bg-pure-white)' }}>
+        <div style={{ padding: 48, textAlign: 'center', background: 'var(--bg-pure-white)', borderRadius: 16, border: '1px solid var(--border-light)' }}>
           <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" style={{ margin: '0 auto 16px' }}>
             <path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
           </svg>
@@ -608,10 +611,10 @@ export default function SettingsPage({ params }: { params: Promise<{ weddingId: 
             Add your wedding events so guests know when and where to go.
           </p>
           <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
-            <button className="btn-secondary" onClick={() => { setView('import'); setImportText(''); setImportParsed(null); setImportResult(null); setError(''); }} style={{ fontSize: 13 }}>
+            <button onClick={() => { setView('import'); setImportText(''); setImportParsed(null); setImportResult(null); setError(''); }} style={{ fontSize: 13, border: '1px solid var(--border-light)', borderRadius: 10, color: 'var(--text-secondary)', background: 'transparent', padding: '10px 20px', cursor: 'pointer' }}>
               Import Events
             </button>
-            <button className="btn-primary" onClick={() => { resetForm(); setView('add'); }} style={{ fontSize: 13 }}>
+            <button onClick={() => { resetForm(); setView('add'); }} style={{ fontSize: 13, background: 'linear-gradient(135deg, var(--color-gold-dark), var(--color-gold))', color: '#FDFBF7', borderRadius: 10, boxShadow: '0 2px 8px rgba(198,163,85,0.2)', fontWeight: 600, fontFamily: 'var(--font-body)', border: 'none', padding: '10px 20px', cursor: 'pointer' }}>
               + Add Event
             </button>
           </div>
@@ -666,7 +669,7 @@ export default function SettingsPage({ params }: { params: Promise<{ weddingId: 
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {events.map((ev) => (
-            <div key={ev.id} className="card" style={{ padding: 20, background: 'var(--bg-pure-white)', border: selectedEventIds.has(ev.id) ? '1.5px solid rgba(196, 112, 75, 0.4)' : undefined }}>
+            <div key={ev.id} style={{ padding: 20, background: 'var(--bg-pure-white)', borderRadius: 16, border: selectedEventIds.has(ev.id) ? '1.5px solid rgba(196, 112, 75, 0.4)' : '1px solid var(--border-light)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, flex: 1 }}>
                   <input

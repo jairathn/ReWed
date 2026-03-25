@@ -102,7 +102,6 @@ export default function WeddingOverviewPage({
     setLocationSaving(true);
     setLocationSaved(false);
     try {
-      // Also auto-set timezone based on country code
       const autoTz = getTimezoneForCountry(city.country_code);
       const body: Record<string, unknown> = {
         venue_city: city.city,
@@ -121,7 +120,6 @@ export default function WeddingOverviewPage({
         setVenueCity(city.city);
         setVenueCountry(city.country);
         setLocationSaved(true);
-        // Update the data state to reflect new location in the header
         setData((prev) => prev ? {
           ...prev,
           wedding: { ...prev.wedding, venue_city: city.city, venue_country: city.country, venue_lat: city.latitude, venue_lng: city.longitude, timezone: autoTz || prev.wedding.timezone },
@@ -171,12 +169,12 @@ export default function WeddingOverviewPage({
   if (loading) {
     return (
       <div>
-        <div className="skeleton" style={{ width: 300, height: 32, marginBottom: 24 }} />
+        <div className="skeleton" style={{ width: 300, height: 32, marginBottom: 24, borderRadius: 8 }} />
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
-          {[1, 2, 3, 4, 5, 6].map((i) => (
-            <div key={i} className="card p-6">
-              <div className="skeleton" style={{ width: '60%', height: 16, marginBottom: 8 }} />
-              <div className="skeleton" style={{ width: '40%', height: 32 }} />
+          {[1, 2, 3, 4, 5].map((i) => (
+            <div key={i} style={{ padding: 24, borderRadius: 16, background: 'var(--bg-pure-white)', border: '1px solid var(--border-light)' }}>
+              <div className="skeleton" style={{ width: '60%', height: 16, marginBottom: 8, borderRadius: 6 }} />
+              <div className="skeleton" style={{ width: '40%', height: 32, borderRadius: 8 }} />
             </div>
           ))}
         </div>
@@ -186,9 +184,30 @@ export default function WeddingOverviewPage({
 
   if (!data) {
     return (
-      <div className="card p-8 text-center">
+      <div
+        style={{
+          padding: 32,
+          borderRadius: 16,
+          background: 'var(--bg-pure-white)',
+          border: '1px solid var(--border-light)',
+          textAlign: 'center',
+        }}
+      >
         <p style={{ color: 'var(--text-secondary)' }}>Failed to load wedding data.</p>
-        <Link href="/dashboard" className="btn-secondary" style={{ marginTop: 12, display: 'inline-block' }}>
+        <Link
+          href="/dashboard"
+          style={{
+            display: 'inline-block',
+            marginTop: 12,
+            padding: '8px 20px',
+            borderRadius: 10,
+            fontSize: 13,
+            fontWeight: 500,
+            color: 'var(--text-secondary)',
+            border: '1px solid var(--border-light)',
+            textDecoration: 'none',
+          }}
+        >
           Back to Dashboard
         </Link>
       </div>
@@ -198,15 +217,16 @@ export default function WeddingOverviewPage({
   const { wedding, stats } = data;
 
   const statCards = [
-    { label: 'Total Guests', value: stats.guests.total, sub: `${stats.guests.attending} attending`, link: `/dashboard/${weddingId}/guests`, color: 'var(--color-terracotta)' },
-    { label: 'Events', value: stats.events, sub: 'scheduled', link: `/dashboard/${weddingId}/settings`, color: 'var(--color-golden)' },
-    { label: 'Photos', value: stats.uploads.photos, sub: `${stats.uploads.videos} videos`, link: null, color: 'var(--color-olive)' },
-    { label: 'FAQ Entries', value: stats.faq_entries, sub: 'for chatbot', link: `/dashboard/${weddingId}/faq`, color: 'var(--color-mediterranean-blue)' },
-    { label: 'Feed Posts', value: stats.feed_posts, sub: 'from guests', link: `/dashboard/${weddingId}/feed`, color: 'var(--color-dusty-rose)' },
+    { label: 'Total Guests', value: stats.guests.total, sub: `${stats.guests.attending} attending`, link: `/dashboard/${weddingId}/guests`, color: 'var(--color-terracotta)', bg: 'rgba(196,112,75,0.06)' },
+    { label: 'Events', value: stats.events, sub: 'scheduled', link: `/dashboard/${weddingId}/settings`, color: 'var(--color-golden)', bg: 'rgba(198,163,85,0.06)' },
+    { label: 'Photos', value: stats.uploads.photos, sub: `${stats.uploads.videos} videos`, link: null, color: 'var(--color-olive)', bg: 'rgba(122,139,92,0.06)' },
+    { label: 'FAQ Entries', value: stats.faq_entries, sub: 'for chatbot', link: `/dashboard/${weddingId}/faq`, color: 'var(--color-mediterranean-blue)', bg: 'rgba(43,95,138,0.06)' },
+    { label: 'Feed Posts', value: stats.feed_posts, sub: 'from guests', link: `/dashboard/${weddingId}/feed`, color: 'var(--color-dusty-rose)', bg: 'rgba(196,112,75,0.04)' },
   ];
 
   return (
     <div>
+      {/* Page Header */}
       <div style={{ marginBottom: 32 }}>
         <h1
           style={{
@@ -219,51 +239,83 @@ export default function WeddingOverviewPage({
         >
           {wedding.display_name}
         </h1>
-        <p style={{ color: 'var(--text-secondary)', fontSize: 14, marginTop: 4 }}>
-          {wedding.wedding_date
-            ? new Date(wedding.wedding_date + 'T12:00:00').toLocaleDateString('en-US', {
-                month: 'long', day: 'numeric', year: 'numeric',
-                timeZone: wedding.timezone || 'America/New_York',
-              })
-            : 'Date not set'}
-          {venueCity && (
-            <> &middot; {venueCity}{venueCountry ? `, ${venueCountry}` : ''}</>
-          )}
-          {' · '}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6 }}>
+          <p style={{ color: 'var(--text-secondary)', fontSize: 14, margin: 0, fontFamily: 'var(--font-body)' }}>
+            {wedding.wedding_date
+              ? new Date(wedding.wedding_date + 'T12:00:00').toLocaleDateString('en-US', {
+                  month: 'long', day: 'numeric', year: 'numeric',
+                  timeZone: wedding.timezone || 'America/New_York',
+                })
+              : 'Date not set'}
+            {venueCity && (
+              <> &middot; {venueCity}{venueCountry ? `, ${venueCountry}` : ''}</>
+            )}
+          </p>
           <span
             style={{
               display: 'inline-block',
               padding: '2px 10px',
               borderRadius: 999,
-              fontSize: 12,
-              fontWeight: 500,
-              background: wedding.status === 'active' ? 'rgba(122, 139, 92, 0.12)' : 'rgba(196, 112, 75, 0.1)',
-              color: wedding.status === 'active' ? 'var(--color-olive)' : 'var(--color-terracotta)',
+              fontSize: 11,
+              fontWeight: 600,
+              background: wedding.status === 'active' ? 'rgba(122, 139, 92, 0.1)' : 'rgba(198, 163, 85, 0.1)',
+              color: wedding.status === 'active' ? 'var(--color-olive)' : 'var(--color-gold-dark)',
             }}
           >
             {wedding.status}
           </span>
-        </p>
+        </div>
       </div>
 
       {/* Quick action banner if no guests */}
       {stats.guests.total === 0 && (
         <div
-          className="card"
           style={{
             padding: '20px 24px',
             marginBottom: 24,
-            background: 'rgba(196, 112, 75, 0.04)',
-            border: '1px solid rgba(196, 112, 75, 0.15)',
+            borderRadius: 16,
+            background: 'linear-gradient(135deg, rgba(198,163,85,0.06), rgba(196,112,75,0.04))',
+            border: '1px solid rgba(198,163,85,0.15)',
           }}
         >
-          <p style={{ fontSize: 14, color: 'var(--text-primary)', fontWeight: 500, margin: '0 0 8px' }}>
-            Get started by adding your guest list
-          </p>
-          <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '0 0 12px' }}>
-            Import a CSV from Zola or The Knot, or add guests manually.
-          </p>
-          <Link href={`/dashboard/${weddingId}/guests`} className="btn-primary" style={{ fontSize: 13, padding: '8px 20px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+            <div
+              style={{
+                width: 36, height: 36, borderRadius: 10,
+                background: 'rgba(198,163,85,0.1)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-gold-dark)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
+                <circle cx="9" cy="7" r="4" />
+                <path d="M23 21v-2a4 4 0 00-3-3.87" />
+                <path d="M16 3.13a4 4 0 010 7.75" />
+              </svg>
+            </div>
+            <div>
+              <p style={{ fontSize: 14, color: 'var(--text-primary)', fontWeight: 500, margin: 0, fontFamily: 'var(--font-body)' }}>
+                Get started by adding your guest list
+              </p>
+              <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '2px 0 0', fontFamily: 'var(--font-body)' }}>
+                Import a CSV from Zola or The Knot, or add guests manually.
+              </p>
+            </div>
+          </div>
+          <Link
+            href={`/dashboard/${weddingId}/guests`}
+            style={{
+              display: 'inline-block',
+              fontSize: 13,
+              fontWeight: 600,
+              padding: '8px 20px',
+              borderRadius: 10,
+              background: 'linear-gradient(135deg, var(--color-gold-dark), var(--color-gold))',
+              color: '#FDFBF7',
+              textDecoration: 'none',
+              boxShadow: '0 2px 8px rgba(198,163,85,0.2)',
+            }}
+          >
             Add Guests
           </Link>
         </div>
@@ -273,14 +325,34 @@ export default function WeddingOverviewPage({
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 32 }}>
         {statCards.map((card) => {
           const inner = (
-            <div className="card" style={{ padding: '20px 24px', background: 'var(--bg-pure-white)' }}>
-              <p style={{ fontSize: 12, color: 'var(--text-tertiary)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                {card.label}
-              </p>
+            <div
+              style={{
+                padding: '20px 24px',
+                borderRadius: 16,
+                background: 'var(--bg-pure-white)',
+                border: '1px solid var(--border-light)',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
+                transition: 'box-shadow 0.15s',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                <div
+                  style={{
+                    width: 28, height: 28, borderRadius: 8,
+                    background: card.bg,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}
+                >
+                  <div style={{ width: 8, height: 8, borderRadius: '50%', background: card.color }} />
+                </div>
+                <p style={{ fontSize: 12, color: 'var(--text-tertiary)', margin: 0, textTransform: 'uppercase', letterSpacing: '0.5px', fontFamily: 'var(--font-body)' }}>
+                  {card.label}
+                </p>
+              </div>
               <p style={{ fontSize: 32, fontWeight: 600, color: card.color, margin: '0 0 4px', fontFamily: 'var(--font-display)' }}>
                 {card.value}
               </p>
-              <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: 0 }}>{card.sub}</p>
+              <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: 0, fontFamily: 'var(--font-body)' }}>{card.sub}</p>
             </div>
           );
 
@@ -296,15 +368,38 @@ export default function WeddingOverviewPage({
       </div>
 
       {/* Wedding Location */}
-      <div className="card" style={{ padding: 24, background: 'var(--bg-pure-white)', marginBottom: 24, overflow: 'visible' }}>
+      <div
+        style={{
+          padding: 24,
+          borderRadius: 16,
+          background: 'var(--bg-pure-white)',
+          border: '1px solid var(--border-light)',
+          marginBottom: 24,
+          overflow: 'visible',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
+        }}
+      >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, marginBottom: 16 }}>
-          <div>
-            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 500, color: 'var(--text-primary)', margin: '0 0 4px' }}>
-              Wedding Location
-            </h2>
-            <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: 0 }}>
-              Set your wedding city to auto-fill timezone and guest travel destinations.
-            </p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div
+              style={{
+                width: 36, height: 36, borderRadius: 10,
+                background: 'rgba(196,112,75,0.06)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-terracotta)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" />
+              </svg>
+            </div>
+            <div>
+              <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 500, color: 'var(--text-primary)', margin: 0 }}>
+                Wedding Location
+              </h2>
+              <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: '2px 0 0', fontFamily: 'var(--font-body)' }}>
+                Auto-fills timezone and guest travel destinations
+              </p>
+            </div>
           </div>
           {locationSaved && (
             <span style={{ fontSize: 12, color: 'var(--color-olive)', fontWeight: 500 }}>Saved!</span>
@@ -319,7 +414,7 @@ export default function WeddingOverviewPage({
               <div
                 style={{
                   width: 36, height: 36, borderRadius: '50%',
-                  background: 'rgba(196, 112, 75, 0.08)',
+                  background: 'linear-gradient(135deg, rgba(196,112,75,0.08), rgba(198,163,85,0.06))',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                 }}
               >
@@ -328,10 +423,10 @@ export default function WeddingOverviewPage({
                 </svg>
               </div>
               <div>
-                <p style={{ fontSize: 15, fontWeight: 500, color: 'var(--text-primary)', margin: 0 }}>
+                <p style={{ fontSize: 15, fontWeight: 500, color: 'var(--text-primary)', margin: 0, fontFamily: 'var(--font-body)' }}>
                   {venueCity}{venueCountry ? `, ${venueCountry}` : ''}
                 </p>
-                <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: 0 }}>
+                <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: 0, fontFamily: 'var(--font-body)' }}>
                   Timezone: {wedding.timezone || 'America/New_York'}
                 </p>
               </div>
@@ -353,13 +448,37 @@ export default function WeddingOverviewPage({
       </div>
 
       {/* QR Code / Share Section */}
-      <div className="card" style={{ padding: 24, background: 'var(--bg-pure-white)' }}>
-        <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 500, color: 'var(--text-primary)', margin: '0 0 4px' }}>
-          Share with Guests
-        </h2>
-        <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '0 0 20px' }}>
-          Share this QR code at your wedding so guests can access the app instantly.
-        </p>
+      <div
+        style={{
+          padding: 24,
+          borderRadius: 16,
+          background: 'var(--bg-pure-white)',
+          border: '1px solid var(--border-light)',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
+          <div
+            style={{
+              width: 36, height: 36, borderRadius: 10,
+              background: 'rgba(198,163,85,0.06)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-gold-dark)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" />
+              <rect x="14" y="14" width="3" height="3" /><rect x="18" y="18" width="3" height="3" />
+            </svg>
+          </div>
+          <div>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 500, color: 'var(--text-primary)', margin: 0 }}>
+              Share with Guests
+            </h2>
+            <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: '2px 0 0', fontFamily: 'var(--font-body)' }}>
+              Share this QR code so guests can access the app
+            </p>
+          </div>
+        </div>
 
         <div style={{ display: 'flex', gap: 24, alignItems: 'flex-start' }}>
           {/* QR Code image */}
@@ -368,7 +487,7 @@ export default function WeddingOverviewPage({
               width: 180,
               height: 180,
               borderRadius: 16,
-              background: 'var(--bg-soft-cream)',
+              background: 'var(--bg-warm-white)',
               border: '1px solid var(--border-light)',
               display: 'flex',
               alignItems: 'center',
@@ -394,15 +513,15 @@ export default function WeddingOverviewPage({
           <div style={{ flex: 1 }}>
             {guestUrl && (
               <div style={{ marginBottom: 16 }}>
-                <p style={{ fontSize: 12, color: 'var(--text-tertiary)', marginBottom: 4 }}>Guest URL</p>
+                <p style={{ fontSize: 12, color: 'var(--text-tertiary)', marginBottom: 4, fontFamily: 'var(--font-body)' }}>Guest URL</p>
                 <div
                   style={{
                     display: 'flex',
                     alignItems: 'center',
                     gap: 8,
-                    padding: '8px 12px',
-                    borderRadius: 10,
-                    background: 'var(--bg-soft-cream)',
+                    padding: '10px 14px',
+                    borderRadius: 12,
+                    background: 'var(--bg-warm-white)',
                     border: '1px solid var(--border-light)',
                   }}
                 >
@@ -416,9 +535,9 @@ export default function WeddingOverviewPage({
                       border: 'none',
                       cursor: 'pointer',
                       fontSize: 12,
-                      color: 'var(--color-terracotta)',
+                      color: 'var(--color-gold-dark)',
                       fontFamily: 'var(--font-body)',
-                      fontWeight: 500,
+                      fontWeight: 600,
                       flexShrink: 0,
                     }}
                   >
@@ -431,23 +550,43 @@ export default function WeddingOverviewPage({
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               <button
                 onClick={downloadQr}
-                className="btn-primary"
-                style={{ fontSize: 13, padding: '8px 20px' }}
+                style={{
+                  fontSize: 13,
+                  fontWeight: 600,
+                  padding: '8px 20px',
+                  borderRadius: 10,
+                  background: 'linear-gradient(135deg, var(--color-gold-dark), var(--color-gold))',
+                  color: '#FDFBF7',
+                  border: 'none',
+                  cursor: 'pointer',
+                  boxShadow: '0 2px 8px rgba(198,163,85,0.2)',
+                  fontFamily: 'var(--font-body)',
+                }}
               >
                 Download QR Code
               </button>
               <button
                 onClick={regenerateQr}
                 disabled={qrRegenerating}
-                className="btn-secondary"
-                style={{ fontSize: 13, padding: '8px 20px', opacity: qrRegenerating ? 0.6 : 1 }}
+                style={{
+                  fontSize: 13,
+                  fontWeight: 500,
+                  padding: '8px 20px',
+                  borderRadius: 10,
+                  background: 'transparent',
+                  color: 'var(--text-secondary)',
+                  border: '1px solid var(--border-light)',
+                  cursor: qrRegenerating ? 'not-allowed' : 'pointer',
+                  opacity: qrRegenerating ? 0.6 : 1,
+                  fontFamily: 'var(--font-body)',
+                }}
               >
                 {qrRegenerating ? 'Regenerating...' : 'Regenerate QR'}
               </button>
             </div>
 
-            <p style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 12 }}>
-              Regenerate the QR code if you changed your wedding URL, or if you need a fresh code.
+            <p style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 12, fontFamily: 'var(--font-body)' }}>
+              Regenerate if you changed your wedding URL, or if you need a fresh code.
             </p>
           </div>
         </div>

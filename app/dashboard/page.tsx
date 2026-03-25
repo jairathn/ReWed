@@ -181,17 +181,17 @@ export default function DashboardHomePage() {
       <div className="max-w-5xl mx-auto px-6 py-12">
         <div className="flex items-center justify-between mb-10">
           <div>
-            <div className="skeleton" style={{ width: 200, height: 32, marginBottom: 8 }} />
-            <div className="skeleton" style={{ width: 240, height: 16 }} />
+            <div className="skeleton" style={{ width: 200, height: 32, marginBottom: 8, borderRadius: 8 }} />
+            <div className="skeleton" style={{ width: 240, height: 16, borderRadius: 6 }} />
           </div>
           <div className="skeleton" style={{ width: 160, height: 48, borderRadius: 999 }} />
         </div>
         <div className="space-y-4">
           {[1, 2].map((i) => (
-            <div key={i} className="card p-6">
-              <div className="skeleton" style={{ width: '60%', height: 24, marginBottom: 12 }} />
-              <div className="skeleton" style={{ width: '40%', height: 16, marginBottom: 8 }} />
-              <div className="skeleton" style={{ width: '30%', height: 16 }} />
+            <div key={i} style={{ padding: 24, borderRadius: 16, background: 'var(--bg-pure-white)', border: '1px solid var(--border-light)' }}>
+              <div className="skeleton" style={{ width: '60%', height: 24, marginBottom: 12, borderRadius: 8 }} />
+              <div className="skeleton" style={{ width: '40%', height: 16, marginBottom: 8, borderRadius: 6 }} />
+              <div className="skeleton" style={{ width: '30%', height: 16, borderRadius: 6 }} />
             </div>
           ))}
         </div>
@@ -202,149 +202,186 @@ export default function DashboardHomePage() {
   // ─── Unauthenticated — Login/Register Form ───
   if (authState === 'unauthenticated') {
     return (
-      <div className="max-w-md mx-auto px-6 py-16">
-        <div className="text-center mb-8">
-          <h1
-            className="text-3xl font-medium mb-2"
+      <div className="min-h-screen flex items-center justify-center px-6" style={{ background: 'var(--bg-soft-cream)' }}>
+        <div className="w-full max-w-md">
+          {/* Brand */}
+          <div className="text-center mb-10">
+            <h1
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontStyle: 'italic',
+                fontSize: 36,
+                fontWeight: 400,
+                color: 'var(--color-gold-dark)',
+                margin: '0 0 16px',
+                letterSpacing: '0.02em',
+              }}
+            >
+              ReWed
+            </h1>
+            <h2
+              className="text-2xl mb-2"
+              style={{
+                fontFamily: 'var(--font-display)',
+                color: 'var(--text-primary)',
+                fontWeight: 500,
+              }}
+            >
+              {authMode === 'login' ? 'Welcome Back' : 'Create Your Account'}
+            </h2>
+            <p className="text-sm" style={{ color: 'var(--text-secondary)', fontFamily: 'var(--font-body)' }}>
+              {authMode === 'login'
+                ? 'Sign in to manage your weddings'
+                : 'Get started with ReWed'}
+            </p>
+          </div>
+
+          <div
             style={{
-              fontFamily: 'var(--font-display)',
-              color: 'var(--text-primary)',
+              padding: 32,
+              borderRadius: 20,
+              background: 'var(--bg-pure-white)',
+              border: '1px solid var(--border-light)',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.04)',
             }}
           >
-            {authMode === 'login' ? 'Welcome Back' : 'Create Your Account'}
-          </h1>
-          <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-            {authMode === 'login'
-              ? 'Sign in to manage your weddings'
-              : 'Get started with ReWed'}
-          </p>
-        </div>
+            <form onSubmit={handleAuthSubmit} className="space-y-5">
+              {authMode === 'register' && (
+                <div>
+                  <label
+                    className="block text-sm font-medium mb-1.5"
+                    style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-body)' }}
+                  >
+                    Your Name
+                  </label>
+                  <input
+                    type="text"
+                    value={displayName}
+                    onChange={(e) => setDisplayName(e.target.value)}
+                    placeholder="Sarah & James"
+                    required
+                    className="w-full px-4 py-3 rounded-xl text-sm"
+                    style={{
+                      background: 'var(--bg-warm-white)',
+                      border: '1.5px solid var(--border-light)',
+                      color: 'var(--text-primary)',
+                      fontFamily: 'var(--font-body)',
+                      outline: 'none',
+                    }}
+                  />
+                </div>
+              )}
 
-        <div className="card p-8" style={{ background: 'var(--bg-pure-white)' }}>
-          <form onSubmit={handleAuthSubmit} className="space-y-5">
-            {authMode === 'register' && (
               <div>
                 <label
                   className="block text-sm font-medium mb-1.5"
                   style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-body)' }}
                 >
-                  Your Name
+                  Email
                 </label>
                 <input
-                  type="text"
-                  value={displayName}
-                  onChange={(e) => setDisplayName(e.target.value)}
-                  placeholder="Sarah & James"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@example.com"
                   required
                   className="w-full px-4 py-3 rounded-xl text-sm"
                   style={{
-                    background: 'var(--bg-soft-cream)',
-                    border: '1.5px solid var(--border-medium)',
+                    background: 'var(--bg-warm-white)',
+                    border: '1.5px solid var(--border-light)',
                     color: 'var(--text-primary)',
                     fontFamily: 'var(--font-body)',
                     outline: 'none',
                   }}
                 />
               </div>
-            )}
 
-            <div>
-              <label
-                className="block text-sm font-medium mb-1.5"
-                style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-body)' }}
-              >
-                Email
-              </label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
-                required
-                className="w-full px-4 py-3 rounded-xl text-sm"
+              <div>
+                <label
+                  className="block text-sm font-medium mb-1.5"
+                  style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-body)' }}
+                >
+                  Password
+                </label>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder={authMode === 'register' ? 'At least 8 characters' : 'Enter your password'}
+                  required
+                  minLength={authMode === 'register' ? 8 : undefined}
+                  className="w-full px-4 py-3 rounded-xl text-sm"
+                  style={{
+                    background: 'var(--bg-warm-white)',
+                    border: '1.5px solid var(--border-light)',
+                    color: 'var(--text-primary)',
+                    fontFamily: 'var(--font-body)',
+                    outline: 'none',
+                  }}
+                />
+              </div>
+
+              {authError && (
+                <div
+                  style={{
+                    padding: '10px 14px',
+                    borderRadius: 12,
+                    fontSize: 13,
+                    background: 'rgba(196, 112, 75, 0.06)',
+                    border: '1px solid rgba(196, 112, 75, 0.15)',
+                    color: 'var(--color-terracotta)',
+                    fontFamily: 'var(--font-body)',
+                  }}
+                >
+                  {authError}
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={authLoading}
+                className="w-full py-3 rounded-xl text-sm font-semibold tracking-wide"
                 style={{
-                  background: 'var(--bg-soft-cream)',
-                  border: '1.5px solid var(--border-medium)',
-                  color: 'var(--text-primary)',
+                  background: 'linear-gradient(135deg, var(--color-gold-dark), var(--color-gold))',
+                  color: '#FDFBF7',
+                  border: 'none',
+                  cursor: authLoading ? 'not-allowed' : 'pointer',
+                  opacity: authLoading ? 0.7 : 1,
+                  boxShadow: '0 4px 16px rgba(198,163,85,0.25)',
                   fontFamily: 'var(--font-body)',
-                  outline: 'none',
+                  transition: 'all 0.15s',
                 }}
-              />
-            </div>
-
-            <div>
-              <label
-                className="block text-sm font-medium mb-1.5"
-                style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-body)' }}
               >
-                Password
-              </label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder={authMode === 'register' ? 'At least 8 characters' : 'Enter your password'}
-                required
-                minLength={authMode === 'register' ? 8 : undefined}
-                className="w-full px-4 py-3 rounded-xl text-sm"
-                style={{
-                  background: 'var(--bg-soft-cream)',
-                  border: '1.5px solid var(--border-medium)',
-                  color: 'var(--text-primary)',
-                  fontFamily: 'var(--font-body)',
-                  outline: 'none',
-                }}
-              />
-            </div>
+                {authLoading
+                  ? 'Please wait...'
+                  : authMode === 'login'
+                    ? 'Sign In'
+                    : 'Create Account'}
+              </button>
+            </form>
 
-            {authError && (
-              <div
-                className="p-3 rounded-xl text-sm"
+            <div className="mt-6 text-center">
+              <button
+                onClick={() => {
+                  setAuthMode(authMode === 'login' ? 'register' : 'login');
+                  setAuthError('');
+                }}
+                className="text-sm"
                 style={{
-                  background: 'rgba(196, 112, 75, 0.08)',
                   color: 'var(--color-terracotta)',
                   fontFamily: 'var(--font-body)',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  textDecoration: 'underline',
+                  textUnderlineOffset: '3px',
                 }}
               >
-                {authError}
-              </div>
-            )}
-
-            <button
-              type="submit"
-              className="btn-primary w-full"
-              disabled={authLoading}
-              style={{ opacity: authLoading ? 0.7 : 1 }}
-            >
-              {authLoading
-                ? 'Please wait...'
-                : authMode === 'login'
-                  ? 'Sign In'
-                  : 'Create Account'}
-            </button>
-          </form>
-
-          <div className="mt-6 text-center">
-            <button
-              onClick={() => {
-                setAuthMode(authMode === 'login' ? 'register' : 'login');
-                setAuthError('');
-              }}
-              className="text-sm"
-              style={{
-                color: 'var(--color-terracotta)',
-                fontFamily: 'var(--font-body)',
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                textDecoration: 'underline',
-                textUnderlineOffset: '3px',
-              }}
-            >
-              {authMode === 'login'
-                ? "Don't have an account? Sign up"
-                : 'Already have an account? Sign in'}
-            </button>
+                {authMode === 'login'
+                  ? "Don't have an account? Sign up"
+                  : 'Already have an account? Sign in'}
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -357,15 +394,33 @@ export default function DashboardHomePage() {
       {/* Success Message */}
       {successMessage && (
         <div
-          className="mb-6 p-4 rounded-xl flex items-center justify-between"
           style={{
-            background: 'rgba(122, 139, 92, 0.1)',
-            border: '1px solid rgba(122, 139, 92, 0.3)',
+            marginBottom: 24,
+            padding: '14px 20px',
+            borderRadius: 14,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            background: 'rgba(122, 139, 92, 0.06)',
+            border: '1px solid rgba(122, 139, 92, 0.2)',
           }}
         >
-          <p className="text-sm font-medium" style={{ color: 'var(--color-olive)' }}>
-            {successMessage}
-          </p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div
+              style={{
+                width: 24, height: 24, borderRadius: '50%',
+                background: 'var(--color-olive)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+            </div>
+            <p className="text-sm font-medium" style={{ color: 'var(--color-olive)' }}>
+              {successMessage}
+            </p>
+          </div>
           <button
             onClick={() => setSuccessMessage('')}
             style={{
@@ -386,38 +441,84 @@ export default function DashboardHomePage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-10">
         <div>
-          <h1
-            className="text-3xl font-medium"
-            style={{
-              fontFamily: 'var(--font-display)',
-              color: 'var(--text-primary)',
-            }}
-          >
-            Your Weddings
-          </h1>
-          <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
+          <div className="flex items-center gap-3 mb-1">
+            <h1
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontStyle: 'italic',
+                fontSize: 24,
+                fontWeight: 400,
+                color: 'var(--color-gold-dark)',
+                margin: 0,
+              }}
+            >
+              ReWed
+            </h1>
+            <span
+              style={{
+                height: 20,
+                width: 1,
+                background: 'var(--border-light)',
+              }}
+            />
+            <span
+              className="text-xl"
+              style={{
+                fontFamily: 'var(--font-display)',
+                color: 'var(--text-primary)',
+                fontWeight: 500,
+              }}
+            >
+              Dashboard
+            </span>
+          </div>
+          <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)', fontFamily: 'var(--font-body)' }}>
             Welcome back, {couple?.email}
           </p>
         </div>
         <div className="flex items-center gap-3">
           <button
             onClick={handleLogout}
-            className="btn-ghost"
-            style={{ padding: '10px 20px', fontSize: 14 }}
+            style={{
+              padding: '10px 20px',
+              fontSize: 13,
+              fontFamily: 'var(--font-body)',
+              fontWeight: 500,
+              background: 'none',
+              border: '1px solid var(--border-light)',
+              borderRadius: 10,
+              color: 'var(--text-secondary)',
+              cursor: 'pointer',
+              transition: 'all 0.15s',
+            }}
           >
             Log Out
           </button>
           <Link
             href="/dashboard/create"
-            className="btn-primary inline-flex items-center gap-2"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 8,
+              padding: '10px 22px',
+              borderRadius: 10,
+              fontSize: 13,
+              fontWeight: 600,
+              fontFamily: 'var(--font-body)',
+              background: 'linear-gradient(135deg, var(--color-gold-dark), var(--color-gold))',
+              color: '#FDFBF7',
+              textDecoration: 'none',
+              boxShadow: '0 4px 16px rgba(198,163,85,0.25)',
+              transition: 'all 0.15s',
+            }}
           >
             <svg
-              width="18"
-              height="18"
+              width="16"
+              height="16"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
-              strokeWidth="2"
+              strokeWidth="2.5"
               strokeLinecap="round"
               strokeLinejoin="round"
             >
@@ -433,14 +534,14 @@ export default function DashboardHomePage() {
       {weddingsLoading && (
         <div className="space-y-4">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="card p-6">
+            <div key={i} style={{ padding: 24, borderRadius: 16, background: 'var(--bg-pure-white)', border: '1px solid var(--border-light)' }}>
               <div className="flex items-start justify-between">
                 <div className="flex-1">
-                  <div className="skeleton" style={{ width: '50%', height: 24, marginBottom: 12 }} />
-                  <div className="skeleton" style={{ width: '35%', height: 16, marginBottom: 8 }} />
-                  <div className="skeleton" style={{ width: '25%', height: 16 }} />
+                  <div className="skeleton" style={{ width: '50%', height: 24, marginBottom: 12, borderRadius: 8 }} />
+                  <div className="skeleton" style={{ width: '35%', height: 16, marginBottom: 8, borderRadius: 6 }} />
+                  <div className="skeleton" style={{ width: '25%', height: 16, borderRadius: 6 }} />
                 </div>
-                <div className="skeleton" style={{ width: 100, height: 36, borderRadius: 999 }} />
+                <div className="skeleton" style={{ width: 100, height: 36, borderRadius: 10 }} />
               </div>
             </div>
           ))}
@@ -455,25 +556,40 @@ export default function DashboardHomePage() {
             return (
               <div
                 key={wedding.id}
-                className="card p-6"
-                style={{ background: 'var(--bg-pure-white)' }}
+                style={{
+                  padding: '24px 28px',
+                  borderRadius: 16,
+                  background: 'var(--bg-pure-white)',
+                  border: '1px solid var(--border-light)',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
+                  transition: 'box-shadow 0.15s',
+                }}
               >
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-3 mb-2">
                       <h2
-                        className="text-xl font-medium truncate"
+                        className="text-xl truncate"
                         style={{
                           fontFamily: 'var(--font-display)',
                           color: 'var(--text-primary)',
+                          fontWeight: 500,
+                          margin: 0,
                         }}
                       >
                         {wedding.display_name}
                       </h2>
                       <span
-                        className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium shrink-0"
+                        className="shrink-0"
                         style={{
-                          background: `${status.color}18`,
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          padding: '3px 10px',
+                          borderRadius: 999,
+                          fontSize: 11,
+                          fontWeight: 600,
+                          letterSpacing: '0.03em',
+                          background: `${status.color}12`,
                           color: status.color,
                         }}
                       >
@@ -481,11 +597,11 @@ export default function DashboardHomePage() {
                       </span>
                     </div>
                     <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-                      <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                      <p className="text-sm" style={{ color: 'var(--text-secondary)', margin: 0 }}>
                         <span style={{ color: 'var(--text-tertiary)' }}>URL:</span>{' '}
                         /w/{wedding.slug}
                       </p>
-                      <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                      <p className="text-sm" style={{ color: 'var(--text-secondary)', margin: 0 }}>
                         <span style={{ color: 'var(--text-tertiary)' }}>Date:</span>{' '}
                         {formatDate(wedding.wedding_date)}
                       </p>
@@ -494,15 +610,35 @@ export default function DashboardHomePage() {
                   <div className="flex items-center gap-2 shrink-0">
                     <Link
                       href={`/dashboard/${wedding.id}/guests`}
-                      className="btn-primary"
-                      style={{ padding: '8px 20px', fontSize: 14 }}
+                      style={{
+                        padding: '8px 20px',
+                        fontSize: 13,
+                        fontWeight: 600,
+                        fontFamily: 'var(--font-body)',
+                        borderRadius: 10,
+                        background: 'linear-gradient(135deg, var(--color-gold-dark), var(--color-gold))',
+                        color: '#FDFBF7',
+                        textDecoration: 'none',
+                        boxShadow: '0 2px 8px rgba(198,163,85,0.2)',
+                        transition: 'all 0.15s',
+                      }}
                     >
                       Manage
                     </Link>
                     <Link
                       href={`/w/${wedding.slug}`}
-                      className="btn-secondary"
-                      style={{ padding: '8px 20px', fontSize: 14 }}
+                      style={{
+                        padding: '8px 20px',
+                        fontSize: 13,
+                        fontWeight: 500,
+                        fontFamily: 'var(--font-body)',
+                        borderRadius: 10,
+                        background: 'transparent',
+                        color: 'var(--text-secondary)',
+                        border: '1px solid var(--border-light)',
+                        textDecoration: 'none',
+                        transition: 'all 0.15s',
+                      }}
                     >
                       Guest App
                     </Link>
@@ -517,19 +653,33 @@ export default function DashboardHomePage() {
       {/* Empty State */}
       {!weddingsLoading && weddings.length === 0 && (
         <div
-          className="card p-12 text-center"
-          style={{ background: 'var(--bg-pure-white)' }}
+          style={{
+            padding: '48px 32px',
+            borderRadius: 20,
+            background: 'var(--bg-pure-white)',
+            border: '1px solid var(--border-light)',
+            textAlign: 'center',
+            boxShadow: '0 4px 16px rgba(0,0,0,0.03)',
+          }}
         >
           <div
-            className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center"
-            style={{ background: 'var(--bg-soft-cream)' }}
+            style={{
+              width: 64,
+              height: 64,
+              margin: '0 auto 16px',
+              borderRadius: '50%',
+              background: 'linear-gradient(135deg, rgba(198,163,85,0.1), rgba(196,112,75,0.06))',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
           >
             <svg
               width="28"
               height="28"
               viewBox="0 0 24 24"
               fill="none"
-              stroke="var(--color-terracotta)"
+              stroke="var(--color-gold-dark)"
               strokeWidth="1.5"
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -538,23 +688,38 @@ export default function DashboardHomePage() {
             </svg>
           </div>
           <h2
-            className="text-xl font-medium mb-2"
+            className="text-xl mb-2"
             style={{
               fontFamily: 'var(--font-display)',
               color: 'var(--text-primary)',
+              fontWeight: 500,
             }}
           >
             No weddings yet
           </h2>
           <p
             className="text-sm mb-6 max-w-md mx-auto"
-            style={{ color: 'var(--text-secondary)' }}
+            style={{ color: 'var(--text-secondary)', fontFamily: 'var(--font-body)' }}
           >
             Create your first wedding to start building the guest experience.
             You&apos;ll be able to import guests, configure events, and customize
             everything.
           </p>
-          <Link href="/dashboard/create" className="btn-primary inline-block">
+          <Link
+            href="/dashboard/create"
+            style={{
+              display: 'inline-block',
+              padding: '12px 28px',
+              borderRadius: 12,
+              fontSize: 14,
+              fontWeight: 600,
+              fontFamily: 'var(--font-body)',
+              background: 'linear-gradient(135deg, var(--color-gold-dark), var(--color-gold))',
+              color: '#FDFBF7',
+              textDecoration: 'none',
+              boxShadow: '0 4px 16px rgba(198,163,85,0.25)',
+            }}
+          >
             Create Your First Wedding
           </Link>
         </div>

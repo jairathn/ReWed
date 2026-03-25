@@ -58,38 +58,64 @@ export default function WeddingManageLayout({
       {/* Sidebar */}
       <nav
         style={{
-          width: 240,
+          width: 260,
           background: 'var(--bg-pure-white)',
           borderRight: '1px solid var(--border-light)',
-          padding: '20px 0',
           display: 'flex',
           flexDirection: 'column',
           flexShrink: 0,
         }}
       >
-        {/* Back to dashboard */}
-        <Link
-          href="/dashboard"
+        {/* Brand header */}
+        <div
           style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            padding: '8px 20px',
-            marginBottom: 8,
-            fontSize: 13,
-            color: 'var(--text-tertiary)',
-            textDecoration: 'none',
-            fontFamily: 'var(--font-body)',
+            padding: '24px 24px 20px',
+            borderBottom: '1px solid var(--border-light)',
           }}
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="15 18 9 12 15 6" />
-          </svg>
-          All Weddings
-        </Link>
+          <Link
+            href="/dashboard"
+            style={{
+              textDecoration: 'none',
+              display: 'block',
+            }}
+          >
+            <h1
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontStyle: 'italic',
+                fontSize: 24,
+                fontWeight: 400,
+                color: 'var(--color-gold-dark)',
+                margin: 0,
+                letterSpacing: '0.02em',
+              }}
+            >
+              ReWed
+            </h1>
+          </Link>
+        </div>
 
-        {/* Wedding name */}
-        <div style={{ padding: '0 20px', marginBottom: 20 }}>
+        {/* Wedding info */}
+        <div style={{ padding: '20px 24px 16px' }}>
+          <Link
+            href="/dashboard"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              fontSize: 12,
+              color: 'var(--text-tertiary)',
+              textDecoration: 'none',
+              marginBottom: 12,
+              fontFamily: 'var(--font-body)',
+            }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="15 18 9 12 15 6" />
+            </svg>
+            All Weddings
+          </Link>
           <h2
             style={{
               fontFamily: 'var(--font-display)',
@@ -105,14 +131,14 @@ export default function WeddingManageLayout({
             {wedding?.display_name || 'Loading...'}
           </h2>
           {wedding?.slug && (
-            <p style={{ fontSize: 12, color: 'var(--text-tertiary)', margin: '4px 0 0' }}>
+            <p style={{ fontSize: 12, color: 'var(--text-tertiary)', margin: '4px 0 0', fontFamily: 'var(--font-body)' }}>
               /w/{wedding.slug}
             </p>
           )}
         </div>
 
         {/* Nav items */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 2, padding: '0 12px' }}>
           {navItems.map((item) => {
             const active = isActive(item.href);
             return (
@@ -123,13 +149,13 @@ export default function WeddingManageLayout({
                   display: 'flex',
                   alignItems: 'center',
                   gap: 10,
-                  padding: '10px 20px',
+                  padding: '10px 12px',
                   fontSize: 14,
                   fontFamily: 'var(--font-body)',
                   fontWeight: active ? 500 : 400,
-                  color: active ? 'var(--color-terracotta)' : 'var(--text-secondary)',
-                  background: active ? 'rgba(196, 112, 75, 0.06)' : 'transparent',
-                  borderRight: active ? '3px solid var(--color-terracotta)' : '3px solid transparent',
+                  color: active ? 'var(--color-gold-dark)' : 'var(--text-secondary)',
+                  background: active ? 'rgba(198, 163, 85, 0.08)' : 'transparent',
+                  borderRadius: 10,
                   textDecoration: 'none',
                   transition: 'all 0.15s',
                 }}
@@ -145,18 +171,32 @@ export default function WeddingManageLayout({
 
         {/* View Guest App link */}
         {wedding?.slug && (
-          <div style={{ marginTop: 'auto', padding: '20px' }}>
+          <div style={{ marginTop: 'auto', padding: '20px 16px', borderTop: '1px solid var(--border-light)' }}>
             <Link
               href={`/w/${wedding.slug}`}
               target="_blank"
-              className="btn-secondary"
               style={{
-                display: 'block',
-                textAlign: 'center',
-                fontSize: 13,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8,
                 padding: '10px 16px',
+                borderRadius: 12,
+                fontSize: 13,
+                fontWeight: 500,
+                fontFamily: 'var(--font-body)',
+                color: 'var(--color-gold-dark)',
+                background: 'rgba(198, 163, 85, 0.06)',
+                border: '1px solid rgba(198, 163, 85, 0.15)',
+                textDecoration: 'none',
+                transition: 'all 0.15s',
               }}
             >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6" />
+                <polyline points="15 3 21 3 21 9" />
+                <line x1="10" y1="14" x2="21" y2="3" />
+              </svg>
               View Guest App
             </Link>
           </div>
