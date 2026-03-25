@@ -512,7 +512,7 @@ export default function TravelListView({
                 fontWeight: 500,
               }}
             >
-              {stops.reduce((sum, s) => sum + s.guest_count, 0)} travelers
+              {new Set(stops.flatMap((s) => s.guests.map((g) => g.guest_id))).size} travelers
             </span>
           )}
         </div>
