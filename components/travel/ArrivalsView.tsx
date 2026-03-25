@@ -57,8 +57,8 @@ export default function ArrivalsView({ slug }: { slug: string }) {
     return (
       <div className="space-y-3">
         <div className="skeleton h-6 w-40" />
-        <div className="skeleton h-16 w-full rounded-xl" />
-        <div className="skeleton h-16 w-full rounded-xl" />
+        <div className="skeleton h-16 w-full rounded-2xl" />
+        <div className="skeleton h-16 w-full rounded-2xl" />
       </div>
     );
   }
@@ -79,115 +79,158 @@ export default function ArrivalsView({ slug }: { slug: string }) {
 
   if (arrivals.length === 0) {
     return (
-      <div className="card p-8 text-center">
-        <p className="text-3xl mb-3">&#9992;&#65039;</p>
-        <p style={{ color: 'var(--text-secondary)' }}>
+      <div
+        className="rounded-2xl p-8 text-center"
+        style={{
+          background: 'var(--bg-pure-white)',
+          border: '1px solid var(--border-light)',
+        }}
+      >
+        <div
+          className="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3"
+          style={{ background: 'rgba(196,112,75,0.06)' }}
+        >
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--color-terracotta)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 00-2.91-.09z" />
+            <path d="M12 15l-3-3a22 22 0 012-3.95A12.88 12.88 0 0122 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 01-4 2z" />
+          </svg>
+        </div>
+        <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
           No arrival info shared yet
         </p>
       </div>
     );
   }
 
-  return (
-    <div className="space-y-6">
-      {/* Arrivals */}
-      <div>
-        <h3
-          className="text-lg font-medium mb-3"
-          style={{ fontFamily: 'var(--font-display)', color: 'var(--text-primary)' }}
-        >
-          Arrivals
-        </h3>
-        {groupByDate(arrivingGuests, 'arrive_date').map(([date, guests]) => (
-          <div key={date} className="mb-4">
-            <p className="text-xs font-medium mb-2" style={{ color: 'var(--text-tertiary)' }}>
-              {date !== 'Unknown' ? formatDateLabel(date) : 'Date TBD'}
-            </p>
-            <div className="space-y-2">
-              {guests.map((guest) => (
-                <div
-                  key={guest.guest_id}
-                  className="card p-3 flex items-center gap-3"
-                >
-                  <div
-                    className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium flex-shrink-0"
-                    style={{ background: 'var(--color-terracotta)', color: 'white' }}
-                  >
-                    {guest.display_name.charAt(0)}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
-                      {guest.display_name}
-                    </p>
-                    <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-                      {guest.arrive_time ? formatTime(guest.arrive_time) : ''}{' '}
-                      {guest.transport_mode && transportIcon[guest.transport_mode]}{' '}
-                      {guest.transport_details || ''}
-                      {guest.origin_city ? ` from ${guest.origin_city}` : ''}
-                    </p>
-                  </div>
-                  {guest.share_transport && (
-                    <span
-                      className="text-xs px-2 py-0.5 rounded-full flex-shrink-0"
-                      style={{ background: 'var(--bg-muted, #f5f3f0)', color: 'var(--text-tertiary)' }}
-                    >
-                      Open to sharing
-                    </span>
-                  )}
-                </div>
-              ))}
-            </div>
+  function renderSection(
+    title: string,
+    icon: string,
+    iconColor: string,
+    bgTint: string,
+    guests: ArrivalInfo[],
+    dateField: 'arrive_date' | 'depart_date',
+    emptyText: string,
+    avatarBg: string,
+  ) {
+    return (
+      <section>
+        <div className="flex items-center gap-3 mb-4">
+          <div
+            className="w-8 h-8 rounded-lg flex items-center justify-center"
+            style={{ background: bgTint }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={iconColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d={icon} />
+            </svg>
           </div>
-        ))}
-        {arrivingGuests.length === 0 && (
-          <p className="text-sm" style={{ color: 'var(--text-tertiary)' }}>No arrivals shared yet</p>
-        )}
-      </div>
+          <h3
+            className="text-xl"
+            style={{ fontFamily: 'var(--font-display)', color: 'var(--text-primary)' }}
+          >
+            {title}
+          </h3>
+          {guests.length > 0 && (
+            <span
+              className="text-xs px-2.5 py-1 rounded-full ml-auto font-medium"
+              style={{ background: bgTint, color: iconColor }}
+            >
+              {guests.length}
+            </span>
+          )}
+        </div>
 
-      {/* Departures */}
-      <div>
-        <h3
-          className="text-lg font-medium mb-3"
-          style={{ fontFamily: 'var(--font-display)', color: 'var(--text-primary)' }}
-        >
-          Departures
-        </h3>
-        {groupByDate(departingGuests, 'depart_date').map(([date, guests]) => (
-          <div key={date} className="mb-4">
-            <p className="text-xs font-medium mb-2" style={{ color: 'var(--text-tertiary)' }}>
-              {date !== 'Unknown' ? formatDateLabel(date) : 'Date TBD'}
-            </p>
-            <div className="space-y-2">
-              {guests.map((guest) => (
-                <div
-                  key={guest.guest_id}
-                  className="card p-3 flex items-center gap-3"
+        {guests.length === 0 ? (
+          <p className="text-sm pl-11" style={{ color: 'var(--text-tertiary)', fontStyle: 'italic' }}>
+            {emptyText}
+          </p>
+        ) : (
+          <div className="space-y-4">
+            {groupByDate(guests, dateField).map(([date, dateGuests]) => (
+              <div key={date}>
+                <p
+                  className="text-xs font-semibold uppercase tracking-wider mb-2 pl-1"
+                  style={{ color: 'var(--text-tertiary)' }}
                 >
-                  <div
-                    className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium flex-shrink-0"
-                    style={{ background: 'var(--color-olive, #6b7280)', color: 'white' }}
-                  >
-                    {guest.display_name.charAt(0)}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
-                      {guest.display_name}
-                    </p>
-                    <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-                      {guest.depart_time ? formatTime(guest.depart_time) : ''}{' '}
-                      {guest.transport_mode && transportIcon[guest.transport_mode]}{' '}
-                      {guest.transport_details || ''}
-                    </p>
-                  </div>
+                  {date !== 'Unknown' ? formatDateLabel(date) : 'Date TBD'}
+                </p>
+                <div className="space-y-2">
+                  {dateGuests.map((guest) => (
+                    <div
+                      key={guest.guest_id}
+                      className="flex items-center gap-3 p-3.5 rounded-2xl"
+                      style={{
+                        background: 'var(--bg-pure-white)',
+                        border: '1px solid var(--border-light)',
+                        boxShadow: '0 1px 4px rgba(0,0,0,0.02)',
+                      }}
+                    >
+                      <div
+                        className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold flex-shrink-0"
+                        style={{
+                          background: avatarBg,
+                          color: '#FDFBF7',
+                          boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
+                        }}
+                      >
+                        {guest.display_name.charAt(0)}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+                          {guest.display_name}
+                        </p>
+                        <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>
+                          {dateField === 'arrive_date' && guest.arrive_time ? formatTime(guest.arrive_time) : ''}
+                          {dateField === 'depart_date' && guest.depart_time ? formatTime(guest.depart_time) : ''}
+                          {guest.transport_mode && ` ${transportIcon[guest.transport_mode]}`}
+                          {guest.transport_details && ` ${guest.transport_details}`}
+                          {guest.origin_city ? ` from ${guest.origin_city}` : ''}
+                        </p>
+                      </div>
+                      {guest.share_transport && (
+                        <span
+                          className="text-[11px] font-medium px-2.5 py-1 rounded-full flex-shrink-0"
+                          style={{
+                            background: 'rgba(198,163,85,0.1)',
+                            color: 'var(--color-gold-dark)',
+                          }}
+                        >
+                          Sharing
+                        </span>
+                      )}
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
           </div>
-        ))}
-        {departingGuests.length === 0 && (
-          <p className="text-sm" style={{ color: 'var(--text-tertiary)' }}>No departures shared yet</p>
         )}
-      </div>
+      </section>
+    );
+  }
+
+  return (
+    <div className="space-y-8">
+      {renderSection(
+        'Arrivals',
+        'M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 00-2.91-.09zM12 15l-3-3a22 22 0 012-3.95A12.88 12.88 0 0122 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 01-4 2z',
+        'var(--color-terracotta)',
+        'rgba(196,112,75,0.08)',
+        arrivingGuests,
+        'arrive_date',
+        'No arrivals shared yet',
+        'linear-gradient(145deg, var(--color-terracotta), #d4896a)',
+      )}
+
+      {renderSection(
+        'Departures',
+        'M22 12h-4l-3 9L9 3l-3 9H2',
+        'var(--color-olive)',
+        'rgba(122,139,92,0.08)',
+        departingGuests,
+        'depart_date',
+        'No departures shared yet',
+        'linear-gradient(145deg, var(--color-olive), #8fa069)',
+      )}
     </div>
   );
 }
