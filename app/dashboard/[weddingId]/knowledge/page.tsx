@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, use } from 'react';
+import ConfirmDialog from '@/components/ui/ConfirmDialog';
 
 interface HomeCardImageData {
   url: string;
@@ -66,6 +67,7 @@ export default function KnowledgePage({ params }: { params: Promise<{ weddingId:
   const [schedulePosition, setSchedulePosition] = useState('50% 50%');
   const [travelImage, setTravelImage] = useState('');
   const [travelPosition, setTravelPosition] = useState('50% 50%');
+  const [confirmResetOpen, setConfirmResetOpen] = useState(false);
 
   useEffect(() => {
     fetch(`/api/v1/dashboard/weddings/${weddingId}/knowledge`)
@@ -395,14 +397,8 @@ export default function KnowledgePage({ params }: { params: Promise<{ weddingId:
             <button
               type="button"
               onClick={() => {
-                if (
-                  knowledgeBase === ZOLA_SECTION_TEMPLATE ||
-                  window.confirm(
-                    'Replace the current text with the blank Zola template? Any unsaved content will be lost.'
-                  )
-                ) {
-                  setKnowledgeBase(ZOLA_SECTION_TEMPLATE);
-                }
+                if (knowledgeBase === ZOLA_SECTION_TEMPLATE) return;
+                setConfirmResetOpen(true);
               }}
               style={{
                 marginTop: 10,
@@ -517,6 +513,19 @@ export default function KnowledgePage({ params }: { params: Promise<{ weddingId:
           {saving ? 'Saving…' : 'Save'}
         </button>
       </div>
+
+      <ConfirmDialog
+        open={confirmResetOpen}
+        title="Reset to blank Zola template?"
+        description="This will replace the current text with the blank Zola section template. Any unsaved changes will be lost."
+        variant="danger"
+        confirmLabel="Reset template"
+        onConfirm={() => {
+          setKnowledgeBase(ZOLA_SECTION_TEMPLATE);
+          setConfirmResetOpen(false);
+        }}
+        onCancel={() => setConfirmResetOpen(false)}
+      />
     </div>
   );
 }

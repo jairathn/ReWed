@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import type { TravelStopInput } from '@/lib/validation';
 import CityAutocomplete, { type CityResult } from './CityAutocomplete';
+import ConfirmDialog from '@/components/ui/ConfirmDialog';
 
 interface TravelPlanFormProps {
   slug: string;
@@ -83,6 +84,7 @@ export default function TravelPlanForm({ slug, onSaved, venueCity, venueCountry 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [existingPlan, setExistingPlan] = useState(false);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
 
   // Wedding venue coordinates (looked up on mount)
   const [venueLat, setVenueLat] = useState(0);
@@ -391,8 +393,7 @@ export default function TravelPlanForm({ slug, onSaved, venueCity, venueCountry 
     }
   }
 
-  async function handleDelete() {
-    if (!confirm('Delete your travel plan?')) return;
+  async function performDelete() {
     setSaving(true);
     try {
       await fetch(`/api/v1/w/${slug}/travel/my-plan`, { method: 'DELETE' });
@@ -408,6 +409,7 @@ export default function TravelPlanForm({ slug, onSaved, venueCity, venueCountry 
       setError('Failed to delete');
     } finally {
       setSaving(false);
+      setConfirmDeleteOpen(false);
     }
   }
 
@@ -813,7 +815,7 @@ export default function TravelPlanForm({ slug, onSaved, venueCity, venueCountry 
 
       {existingPlan && (
         <button
-          onClick={handleDelete}
+          onClick={() => setConfirmDeleteOpen(true)}
           disabled={saving}
           className="w-full py-2 text-sm"
           style={{ color: 'var(--text-tertiary)' }}
@@ -821,6 +823,16 @@ export default function TravelPlanForm({ slug, onSaved, venueCity, venueCountry 
           Delete my travel plan
         </button>
       )}
+
+      <ConfirmDialog
+        open={confirmDeleteOpen}
+        title="Delete your travel plan?"
+        description="This will remove your travel itinerary from the wedding. Any details you shared with the couple (origin, transport, stops) will be deleted. You can always add a new plan later."
+        variant="danger"
+        confirmLabel="Delete plan"
+        onConfirm={performDelete}
+        onCancel={() => setConfirmDeleteOpen(false)}
+      />
     </div>
   );
 }

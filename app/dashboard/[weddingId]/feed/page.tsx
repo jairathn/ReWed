@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, use } from 'react';
+import PasswordConfirmDialog from '@/components/ui/PasswordConfirmDialog';
 
 interface FeedPost {
   id: string;
@@ -27,6 +28,7 @@ export default function FeedModerationPage({ params }: { params: Promise<{ weddi
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [loadingMore, setLoadingMore] = useState(false);
   const [filter, setFilter] = useState<'all' | 'visible' | 'hidden'>('all');
+  const [confirmDelete, setConfirmDelete] = useState<{ id: string; author: string } | null>(null);
 
   const fetchPosts = useCallback(async (cursor?: string | null) => {
     try {
@@ -285,11 +287,9 @@ export default function FeedModerationPage({ params }: { params: Promise<{ weddi
                         {post.is_hidden ? 'Unhide' : 'Hide'}
                       </button>
                       <button
-                        onClick={() => {
-                          if (confirm('Permanently delete this post?')) {
-                            handleAction(post.id, 'delete');
-                          }
-                        }}
+                        onClick={() =>
+                          setConfirmDelete({ id: post.id, author: post.guest.display_name })
+                        }
                         style={{
                           background: 'none',
                           border: 'none',
@@ -324,6 +324,30 @@ export default function FeedModerationPage({ params }: { params: Promise<{ weddi
           )}
         </div>
       )}
+
+      <PasswordConfirmDialog
+        open={confirmDelete !== null}
+        title="Permanently delete this post?"
+        description={
+          confirmDelete ? (
+            <>
+              This will permanently remove <strong>{confirmDelete.author}</strong>&rsquo;s post from
+              your social feed. If you only want to hide it, use Hide instead. This cannot be undone.
+              Enter your password to confirm.
+            </>
+          ) : (
+            ''
+          )
+        }
+        confirmLabel="Delete post"
+        onConfirm={async () => {
+          if (confirmDelete) {
+            await handleAction(confirmDelete.id, 'delete');
+            setConfirmDelete(null);
+          }
+        }}
+        onCancel={() => setConfirmDelete(null)}
+      />
     </div>
   );
 }

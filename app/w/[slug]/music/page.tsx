@@ -2,6 +2,7 @@
 
 import BottomNav from '@/components/guest/BottomNav';
 import BackButton from '@/components/guest/BackButton';
+import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import { useWedding } from '@/components/WeddingProvider';
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
@@ -23,6 +24,7 @@ export default function MusicPage() {
   const [artist, setArtist] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<{ id: string; title: string } | null>(null);
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -86,7 +88,7 @@ export default function MusicPage() {
     }
   };
 
-  const handleDelete = async (songId: string) => {
+  const performDelete = async (songId: string) => {
     setDeletingId(songId);
     try {
       await fetch(`/api/v1/w/${slug}/music/${songId}`, { method: 'DELETE' });
@@ -95,6 +97,7 @@ export default function MusicPage() {
       // silent
     } finally {
       setDeletingId(null);
+      setConfirmDelete(null);
     }
   };
 
@@ -363,7 +366,7 @@ export default function MusicPage() {
               </div>
 
               <button
-                onClick={() => handleDelete(song.id)}
+                onClick={() => setConfirmDelete({ id: song.id, title: song.song_title })}
                 disabled={deletingId === song.id}
                 aria-label="Delete song request"
                 style={{
@@ -399,6 +402,28 @@ export default function MusicPage() {
 
       </main>
       <BottomNav />
+
+      <ConfirmDialog
+        open={confirmDelete !== null}
+        title="Remove this song request?"
+        description={
+          confirmDelete ? (
+            <>
+              <strong>{confirmDelete.title}</strong> will be removed from your song requests. You
+              can always add it again later.
+            </>
+          ) : (
+            ''
+          )
+        }
+        confirmLabel="Remove song"
+        onConfirm={async () => {
+          if (confirmDelete) {
+            await performDelete(confirmDelete.id);
+          }
+        }}
+        onCancel={() => setConfirmDelete(null)}
+      />
     </div>
   );
 }
