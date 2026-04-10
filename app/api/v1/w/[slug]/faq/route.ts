@@ -12,6 +12,27 @@ const askSchema = z.object({
   question: z.string().min(2).max(500),
 });
 
+/**
+ * Appends a "still need help? email the planner" line to every chatbot
+ * response when the couple has configured a wedding planner contact. Done
+ * programmatically (rather than via the system prompt) so the line is
+ * deterministic and survives cache hits without getting stale.
+ */
+function appendPlannerLine(
+  answer: string,
+  plannerName: string | null,
+  plannerEmail: string | null
+): string {
+  if (!plannerEmail) return answer;
+  // Don't double-append if the answer already contains the planner email
+  // (e.g. the AI already wove it in naturally).
+  if (answer.includes(plannerEmail)) return answer;
+  const line = plannerName
+    ? `Still need help? Email ${plannerName} at ${plannerEmail}.`
+    : `Still need help? Email our wedding planner at ${plannerEmail}.`;
+  return `${answer.trimEnd()}\n\n${line}`;
+}
+
 // POST /api/v1/w/[slug]/faq — ask a question
 export async function POST(
   request: NextRequest,
@@ -60,6 +81,16 @@ export async function POST(
 
     const question = sanitizeText(parsed.data.question);
 
+    // Extract wedding config + planner early — we need the planner contact
+    // for both cache-hit and fresh responses (it's appended to every reply).
+    const wedding = weddingResult.rows[0];
+    const weddingName = wedding.display_name;
+    const weddingConfigObj = wedding.config || {};
+    const knowledgeBase: string =
+      typeof weddingConfigObj.knowledge_base === 'string' ? weddingConfigObj.knowledge_base.trim() : '';
+    const plannerEmail: string | null = weddingConfigObj.wedding_planner?.email || null;
+    const plannerName: string | null = weddingConfigObj.wedding_planner?.name || null;
+
     // Get FAQ entries and events for this wedding
     const [faqResult, eventsResult] = await Promise.all([
       pool.query(
@@ -94,7 +125,9 @@ export async function POST(
 
       return Response.json({
         data: {
-          answer: cachedAnswer,
+          // Append planner line on-read so updated planner contact is always
+          // fresh (cached answers store only the raw AI output).
+          answer: appendPlannerLine(cachedAnswer, plannerName, plannerEmail),
           cached: true,
           sources: [],
         },
@@ -109,13 +142,6 @@ export async function POST(
       );
     }
 
-    const wedding = weddingResult.rows[0];
-    const weddingName = wedding.display_name;
-    const weddingConfigObj = wedding.config || {};
-    const knowledgeBase: string =
-      typeof weddingConfigObj.knowledge_base === 'string' ? weddingConfigObj.knowledge_base.trim() : '';
-    const plannerEmail: string | null = weddingConfigObj.wedding_planner?.email || null;
-    const plannerName: string | null = weddingConfigObj.wedding_planner?.name || null;
     const hasContext =
       faqResult.rows.length > 0 ||
       eventsResult.rows.length > 0 ||
@@ -127,10 +153,9 @@ export async function POST(
       answer = `Here's what I know about "${question}" for ${weddingName}: This is a mock FAQ response. Please check with the couple for specific details.`;
       sources = faqResult.rows.slice(0, 2).map((r) => ({ question: r.question, answer: r.answer }));
     } else if (!hasContext) {
-      const fallback = plannerEmail
-        ? ` You can email ${plannerName || 'our wedding planner'} at ${plannerEmail} and they'll get back to you.`
-        : ' You might want to reach out to them directly!';
-      answer = `I don't have specific information about that yet. The couple hasn't added FAQ entries.${fallback}`;
+      // Raw fallback — the planner line is appended below via appendPlannerLine
+      // so guests always see a way to reach the planner when configured.
+      answer = "I don't have specific information about that yet. The couple hasn't added FAQ entries.";
     } else {
       // Build rich context from FAQ entries + events + wedding details + knowledge base
       const openai = getOpenAIClient();
@@ -190,16 +215,15 @@ export async function POST(
 
       const fullContext = contextParts.join('\n\n---\n\n');
 
-      const fallbackInstruction = plannerEmail
-        ? ` If the provided context does not contain enough information to answer the question, say so honestly in one sentence and tell the guest to email ${plannerName || 'our wedding planner'} at ${plannerEmail}. Do not include any other contact info.`
-        : " If you're not sure, say so honestly and suggest they ask the couple directly.";
-
+      // We programmatically append the planner contact to every response
+      // (see appendPlannerLine below), so the system prompt just tells the
+      // AI to be honest when it doesn't know and avoid making things up.
       const chatResponse = await openai.chat.completions.create({
         model: CHAT_MODEL_MINI,
         messages: [
           {
             role: 'system',
-            content: `You are a friendly, helpful assistant for ${weddingName}. Answer guest questions based on the provided wedding information, event schedule, FAQ entries, and additional wedding info. Be warm, concise, and conversational.${fallbackInstruction} Never make up specific details that aren't in the context.`,
+            content: `You are a friendly, helpful assistant for ${weddingName}. Answer guest questions based on the provided wedding information, event schedule, FAQ entries, and additional wedding info. Be warm, concise, and conversational. If the provided context does not contain enough information to answer the question, say so honestly in one sentence. Never make up specific details that aren't in the context. Do not include contact info in your answer — it is appended separately.`,
           },
           {
             role: 'user',
@@ -213,7 +237,9 @@ export async function POST(
       answer = chatResponse.choices[0]?.message?.content || "I'm not sure about that. You might want to ask the couple directly!";
     }
 
-    // Only cache AI-generated answers, not fallback messages
+    // Only cache AI-generated answers, not fallback messages. Cache the RAW
+    // answer (without the planner line) so planner contact stays fresh when
+    // the couple updates it in the Knowledge page.
     if (hasContext) {
       await pool.query(
         `INSERT INTO faq_cache (wedding_id, question_hash, answer)
@@ -225,7 +251,7 @@ export async function POST(
 
     return Response.json({
       data: {
-        answer,
+        answer: appendPlannerLine(answer, plannerName, plannerEmail),
         cached: false,
         sources,
       },
