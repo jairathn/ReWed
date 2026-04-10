@@ -7,13 +7,13 @@ import { env } from '@/lib/env';
  * Free tier: 3,000 emails/month, 100/day.
  *
  * IMPORTANT: Resend requires a verified sender domain. You cannot send directly
- * "from" a Gmail address. Two options:
- *   1. Verify a custom domain in the Resend dashboard, then set
- *      RESEND_FROM_EMAIL=no-reply@yourdomain.com and RESEND_REPLY_TO to the
- *      couple's Gmail so replies go back to them.
- *   2. For testing / ultra-low-volume use the sandbox address
- *      `onboarding@resend.dev` as RESEND_FROM_EMAIL (only works to verified
- *      test inboxes). Reply-To can still be the Gmail address.
+ * "from" a Gmail address. Verify your wedding domain (e.g.
+ * jaywalkingtojairath.wedding) in the Resend dashboard, then set
+ *   RESEND_FROM_EMAIL=no-reply@jaywalkingtojairath.wedding
+ *   RESEND_REPLY_TO=shriyaneilwedding@gmail.com
+ * so guests' replies still go back to the couple's Gmail inbox.
+ * For quick testing only, `onboarding@resend.dev` works but can only send to
+ * the Resend account's own verified addresses.
  */
 let _resend: Resend | null = null;
 

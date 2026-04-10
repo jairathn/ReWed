@@ -212,14 +212,14 @@ export default function EmailsPage({ params }: { params: Promise<{ weddingId: st
               }}
             >
 {`RESEND_API_KEY=re_xxxxxxxxxxxx
-RESEND_FROM_EMAIL=no-reply@yourdomain.com
+RESEND_FROM_EMAIL=no-reply@jaywalkingtojairath.wedding
 RESEND_FROM_NAME=Shriya & Neil
 RESEND_REPLY_TO=shriyaneilwedding@gmail.com`}
             </pre>
             <p style={{ margin: '10px 0 0', fontSize: 12, lineHeight: 1.6, color: 'var(--text-tertiary)', fontFamily: 'var(--font-body)' }}>
               Note: Resend requires a verified sender domain, so emails cannot be sent directly from
-              a Gmail address. A common approach is to verify a domain you own (e.g. shriyaneilwedding.com)
-              and set the reply-to field so guests&apos; replies land in your Gmail inbox.
+              a Gmail address. Verify <strong>jaywalkingtojairath.wedding</strong> in the Resend
+              dashboard and set the reply-to field so guests&apos; replies still land in your Gmail inbox.
               The free tier includes 3,000 emails per month (100/day).
             </p>
           </div>
