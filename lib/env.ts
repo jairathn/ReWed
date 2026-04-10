@@ -39,11 +39,17 @@ const envSchema = z.object({
   STRIPE_WEBHOOK_SECRET: optionalStr,
   NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: optionalStr,
 
-  // Email
+  // Email (legacy SES config, kept for spec compatibility)
   SES_REGION: z.string().default('us-east-1'),
   SES_ACCESS_KEY_ID: optionalStr,
   SES_SECRET_ACCESS_KEY: optionalStr,
   SES_FROM_EMAIL: optionalEmail,
+
+  // Email (Resend)
+  RESEND_API_KEY: optionalStr,
+  RESEND_FROM_EMAIL: optionalEmail,
+  RESEND_FROM_NAME: optionalStr,
+  RESEND_REPLY_TO: optionalEmail,
 
   // SMS
   TWILIO_ACCOUNT_SID: optionalStr,
@@ -101,6 +107,10 @@ function getEnv(): Env {
       SES_ACCESS_KEY_ID: process.env.SES_ACCESS_KEY_ID || undefined,
       SES_SECRET_ACCESS_KEY: process.env.SES_SECRET_ACCESS_KEY || undefined,
       SES_FROM_EMAIL: process.env.SES_FROM_EMAIL || undefined,
+      RESEND_API_KEY: process.env.RESEND_API_KEY || undefined,
+      RESEND_FROM_EMAIL: process.env.RESEND_FROM_EMAIL || undefined,
+      RESEND_FROM_NAME: process.env.RESEND_FROM_NAME || undefined,
+      RESEND_REPLY_TO: process.env.RESEND_REPLY_TO || undefined,
       TWILIO_ACCOUNT_SID: process.env.TWILIO_ACCOUNT_SID || undefined,
       TWILIO_AUTH_TOKEN: process.env.TWILIO_AUTH_TOKEN || undefined,
       TWILIO_PHONE_NUMBER: process.env.TWILIO_PHONE_NUMBER || undefined,

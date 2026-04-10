@@ -2,13 +2,14 @@
 
 import { useWedding } from '@/components/WeddingProvider';
 import BottomNav from '@/components/guest/BottomNav';
+import GuestAccountMenu from '@/components/guest/GuestAccountMenu';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useMemo } from 'react';
 import { usePreviewMode } from '@/lib/hooks/usePreviewMode';
 
 export default function GuestHomePage() {
-  const { config, guest, slug, isAuthenticated, isLoading, configError, retryConfig, logout } = useWedding();
+  const { config, guest, slug, isAuthenticated, isLoading, configError, retryConfig } = useWedding();
   const router = useRouter();
   const { unlocked, tryUnlock } = usePreviewMode();
   const [showPasswordPrompt, setShowPasswordPrompt] = useState(false);
@@ -107,22 +108,7 @@ export default function GuestHomePage() {
             ReWed
           </h1>
         </div>
-        <button
-          onClick={logout}
-          className="w-10 h-10 rounded-full overflow-hidden flex items-center justify-center"
-          style={{
-            background: 'var(--color-gold-faint)',
-            border: '1px solid var(--color-gold-rule)',
-          }}
-          title="Not you? Tap to switch"
-        >
-          <span
-            className="text-sm font-semibold"
-            style={{ color: 'var(--color-gold-dark)', fontFamily: 'var(--font-display)' }}
-          >
-            {guest.first_name?.[0] || '?'}
-          </span>
-        </button>
+        <GuestAccountMenu />
       </header>
 
       <main className="px-6 pt-20 space-y-10">
