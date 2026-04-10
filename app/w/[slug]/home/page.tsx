@@ -228,9 +228,10 @@ export default function GuestHomePage() {
               {config.home_card_images?.schedule ? (
                 /* eslint-disable-next-line @next/next/no-img-element */
                 <img
-                  src={config.home_card_images.schedule}
+                  src={config.home_card_images.schedule.url}
                   alt=""
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  style={{ objectPosition: config.home_card_images.schedule.position }}
                 />
               ) : (
                 <div
@@ -448,9 +449,10 @@ export default function GuestHomePage() {
               {config.home_card_images?.travel ? (
                 /* eslint-disable-next-line @next/next/no-img-element */
                 <img
-                  src={config.home_card_images.travel}
+                  src={config.home_card_images.travel.url}
                   alt=""
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  style={{ objectPosition: config.home_card_images.travel.position }}
                 />
               ) : (
                 <div

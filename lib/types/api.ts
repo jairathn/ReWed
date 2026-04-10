@@ -24,6 +24,14 @@ export type WeddingPlanner = {
   email: string | null;
 };
 
+export type HomeCardImage = {
+  /** Full URL or site-relative path for the image. */
+  url: string;
+  /** CSS object-position value, e.g. "50% 30%". Controls the focal point
+   *  when the image is cropped to fit the card's aspect ratio. */
+  position: string;
+};
+
 export type WeddingConfig = {
   wedding_id: string;
   slug: string;
@@ -40,8 +48,8 @@ export type WeddingConfig = {
   wedding_planner: WeddingPlanner | null;
   /** Optional couple-provided image URLs shown in the guest home bento cards. */
   home_card_images: {
-    schedule: string | null;
-    travel: string | null;
+    schedule: HomeCardImage | null;
+    travel: HomeCardImage | null;
   };
   theme: {
     preset: string;
