@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, use } from 'react';
+import PasswordConfirmDialog from '@/components/ui/PasswordConfirmDialog';
 
 interface FaqEntry {
   id: string;
@@ -34,6 +35,9 @@ export default function FaqPage({ params }: { params: Promise<{ weddingId: strin
   const [bulkText, setBulkText] = useState('');
   const [importParsed, setImportParsed] = useState<ParsedFaq[] | null>(null);
   const [importResult, setImportResult] = useState<{ count: number } | null>(null);
+
+  // Delete confirmation (password-gated)
+  const [confirmDelete, setConfirmDelete] = useState<{ id: string; question: string } | null>(null);
 
   const fetchEntries = useCallback(async () => {
     try {
@@ -226,8 +230,7 @@ export default function FaqPage({ params }: { params: Promise<{ weddingId: strin
     }
   };
 
-  const handleDelete = async (entryId: string) => {
-    if (!confirm('Delete this FAQ entry?')) return;
+  const performDelete = async (entryId: string) => {
     try {
       const res = await fetch(`/api/v1/dashboard/weddings/${weddingId}/faq/${entryId}`, { method: 'DELETE' });
       if (res.ok) {
@@ -235,6 +238,8 @@ export default function FaqPage({ params }: { params: Promise<{ weddingId: strin
       }
     } catch {
       // Silently fail
+    } finally {
+      setConfirmDelete(null);
     }
   };
 
@@ -479,7 +484,10 @@ export default function FaqPage({ params }: { params: Promise<{ weddingId: strin
                   <button onClick={() => startEdit(entry)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: 'var(--color-terracotta)' }}>
                     Edit
                   </button>
-                  <button onClick={() => handleDelete(entry.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: 'var(--text-tertiary)' }}>
+                  <button
+                    onClick={() => setConfirmDelete({ id: entry.id, question: entry.question })}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: 'var(--text-tertiary)' }}
+                  >
                     Delete
                   </button>
                 </div>
@@ -488,6 +496,26 @@ export default function FaqPage({ params }: { params: Promise<{ weddingId: strin
           ))}
         </div>
       )}
+
+      <PasswordConfirmDialog
+        open={confirmDelete !== null}
+        title="Delete FAQ entry?"
+        description={
+          confirmDelete ? (
+            <>
+              This will permanently remove <strong>&ldquo;{confirmDelete.question}&rdquo;</strong>{' '}
+              from your FAQ. This cannot be undone. Enter your password to confirm.
+            </>
+          ) : (
+            ''
+          )
+        }
+        confirmLabel="Delete entry"
+        onConfirm={async () => {
+          if (confirmDelete) await performDelete(confirmDelete.id);
+        }}
+        onCancel={() => setConfirmDelete(null)}
+      />
     </div>
   );
 }

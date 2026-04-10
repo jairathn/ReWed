@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, use } from 'react';
+import PasswordConfirmDialog from '@/components/ui/PasswordConfirmDialog';
 
 interface Guest {
   id: string;
@@ -71,6 +72,13 @@ export default function GuestsPage({ params }: { params: Promise<{ weddingId: st
   // Batch selection
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [batchDeleting, setBatchDeleting] = useState(false);
+
+  // Delete confirmation (password-gated)
+  const [confirmDelete, setConfirmDelete] = useState<
+    | { type: 'single'; id: string; name: string }
+    | { type: 'batch'; count: number }
+    | null
+  >(null);
 
   // CSV Import
   const [csvText, setCsvText] = useState('');
@@ -188,8 +196,7 @@ export default function GuestsPage({ params }: { params: Promise<{ weddingId: st
     }
   };
 
-  const handleDelete = async (guestId: string) => {
-    if (!confirm('Delete this guest? This cannot be undone.')) return;
+  const performDelete = async (guestId: string) => {
     try {
       const res = await fetch(`/api/v1/dashboard/weddings/${weddingId}/guests/${guestId}`, {
         method: 'DELETE',
@@ -199,6 +206,8 @@ export default function GuestsPage({ params }: { params: Promise<{ weddingId: st
       }
     } catch {
       // Silently fail
+    } finally {
+      setConfirmDelete(null);
     }
   };
 
@@ -219,9 +228,8 @@ export default function GuestsPage({ params }: { params: Promise<{ weddingId: st
     }
   };
 
-  const handleBatchDelete = async () => {
+  const performBatchDelete = async () => {
     if (selectedIds.size === 0) return;
-    if (!confirm(`Delete ${selectedIds.size} guest${selectedIds.size !== 1 ? 's' : ''}? This cannot be undone.`)) return;
     setBatchDeleting(true);
     try {
       const res = await fetch(`/api/v1/dashboard/weddings/${weddingId}/guests/batch-delete`, {
@@ -237,6 +245,7 @@ export default function GuestsPage({ params }: { params: Promise<{ weddingId: st
       // Silently fail
     } finally {
       setBatchDeleting(false);
+      setConfirmDelete(null);
     }
   };
 
@@ -767,7 +776,7 @@ export default function GuestsPage({ params }: { params: Promise<{ weddingId: st
             {selectedIds.size} selected
           </span>
           <button
-            onClick={handleBatchDelete}
+            onClick={() => setConfirmDelete({ type: 'batch', count: selectedIds.size })}
             disabled={batchDeleting}
             style={{
               background: 'var(--color-terracotta)',
@@ -859,7 +868,9 @@ export default function GuestsPage({ params }: { params: Promise<{ weddingId: st
                       Edit
                     </button>
                     <button
-                      onClick={() => handleDelete(guest.id)}
+                      onClick={() =>
+                        setConfirmDelete({ type: 'single', id: guest.id, name: guest.display_name })
+                      }
                       style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: 'var(--text-tertiary)' }}
                     >
                       Delete
@@ -871,6 +882,37 @@ export default function GuestsPage({ params }: { params: Promise<{ weddingId: st
           </table>
         </div>
       )}
+
+      <PasswordConfirmDialog
+        open={confirmDelete !== null}
+        title={
+          confirmDelete?.type === 'batch'
+            ? `Delete ${confirmDelete.count} guest${confirmDelete.count !== 1 ? 's' : ''}?`
+            : 'Delete this guest?'
+        }
+        description={
+          confirmDelete?.type === 'batch' ? (
+            <>
+              This will permanently remove <strong>{confirmDelete.count}</strong> guest
+              {confirmDelete.count !== 1 ? 's' : ''} from your list. This cannot be undone.
+              Enter your password to confirm.
+            </>
+          ) : confirmDelete?.type === 'single' ? (
+            <>
+              This will permanently remove <strong>{confirmDelete.name}</strong> from your guest
+              list. This cannot be undone. Enter your password to confirm.
+            </>
+          ) : (
+            ''
+          )
+        }
+        confirmLabel={confirmDelete?.type === 'batch' ? 'Delete guests' : 'Delete guest'}
+        onConfirm={async () => {
+          if (confirmDelete?.type === 'single') await performDelete(confirmDelete.id);
+          else if (confirmDelete?.type === 'batch') await performBatchDelete();
+        }}
+        onCancel={() => setConfirmDelete(null)}
+      />
     </div>
   );
 }

@@ -1,12 +1,22 @@
 'use client';
 
 import { useState, useEffect, use } from 'react';
+import ConfirmDialog from '@/components/ui/ConfirmDialog';
+
+interface HomeCardImageData {
+  url: string;
+  position: string;
+}
 
 interface KnowledgeData {
   knowledge_base: string;
   wedding_planner: {
     name: string;
     email: string;
+  };
+  home_card_images: {
+    schedule: HomeCardImageData;
+    travel: HomeCardImageData;
   };
 }
 
@@ -53,6 +63,11 @@ export default function KnowledgePage({ params }: { params: Promise<{ weddingId:
   const [knowledgeBase, setKnowledgeBase] = useState('');
   const [plannerName, setPlannerName] = useState('');
   const [plannerEmail, setPlannerEmail] = useState('');
+  const [scheduleImage, setScheduleImage] = useState('');
+  const [schedulePosition, setSchedulePosition] = useState('50% 50%');
+  const [travelImage, setTravelImage] = useState('');
+  const [travelPosition, setTravelPosition] = useState('50% 50%');
+  const [confirmResetOpen, setConfirmResetOpen] = useState(false);
 
   useEffect(() => {
     fetch(`/api/v1/dashboard/weddings/${weddingId}/knowledge`)
@@ -66,6 +81,10 @@ export default function KnowledgePage({ params }: { params: Promise<{ weddingId:
         setKnowledgeBase(d.knowledge_base || ZOLA_SECTION_TEMPLATE);
         setPlannerName(d.wedding_planner?.name || '');
         setPlannerEmail(d.wedding_planner?.email || '');
+        setScheduleImage(d.home_card_images?.schedule?.url || '');
+        setSchedulePosition(d.home_card_images?.schedule?.position || '50% 50%');
+        setTravelImage(d.home_card_images?.travel?.url || '');
+        setTravelPosition(d.home_card_images?.travel?.position || '50% 50%');
       })
       .catch(() => setError('Failed to load'))
       .finally(() => setLoading(false));
@@ -75,7 +94,11 @@ export default function KnowledgePage({ params }: { params: Promise<{ weddingId:
     !!data &&
     (knowledgeBase !== data.knowledge_base ||
       plannerName !== data.wedding_planner.name ||
-      plannerEmail !== data.wedding_planner.email);
+      plannerEmail !== data.wedding_planner.email ||
+      scheduleImage !== (data.home_card_images?.schedule?.url || '') ||
+      schedulePosition !== (data.home_card_images?.schedule?.position || '50% 50%') ||
+      travelImage !== (data.home_card_images?.travel?.url || '') ||
+      travelPosition !== (data.home_card_images?.travel?.position || '50% 50%'));
 
   const handleSave = async () => {
     setSaving(true);
@@ -88,6 +111,10 @@ export default function KnowledgePage({ params }: { params: Promise<{ weddingId:
           knowledge_base: knowledgeBase,
           wedding_planner_name: plannerName,
           wedding_planner_email: plannerEmail,
+          home_schedule_image: scheduleImage,
+          home_schedule_position: schedulePosition,
+          home_travel_image: travelImage,
+          home_travel_position: travelPosition,
         }),
       });
       if (!res.ok) {
@@ -99,12 +126,29 @@ export default function KnowledgePage({ params }: { params: Promise<{ weddingId:
       setKnowledgeBase(updated.knowledge_base || '');
       setPlannerName(updated.wedding_planner?.name || '');
       setPlannerEmail(updated.wedding_planner?.email || '');
+      setScheduleImage(updated.home_card_images?.schedule?.url || '');
+      setSchedulePosition(updated.home_card_images?.schedule?.position || '50% 50%');
+      setTravelImage(updated.home_card_images?.travel?.url || '');
+      setTravelPosition(updated.home_card_images?.travel?.position || '50% 50%');
       setSavedAt(new Date());
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save');
     } finally {
       setSaving(false);
     }
+  };
+
+  // Convert a click anywhere on the full-image preview into an
+  // object-position percentage string. The guest home page then uses that
+  // as the focal point when cropping to the card's aspect ratio.
+  const handleFocalClick = (
+    e: React.MouseEvent<HTMLImageElement>,
+    setter: (v: string) => void
+  ) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = Math.max(0, Math.min(100, Math.round(((e.clientX - rect.left) / rect.width) * 100)));
+    const y = Math.max(0, Math.min(100, Math.round(((e.clientY - rect.top) / rect.height) * 100)));
+    setter(`${x}% ${y}%`);
   };
 
   if (loading) {
@@ -199,6 +243,79 @@ export default function KnowledgePage({ params }: { params: Promise<{ weddingId:
         </div>
       </div>
 
+      {/* Home Card Images Card */}
+      <div
+        style={{
+          padding: 24,
+          borderRadius: 16,
+          background: 'var(--bg-pure-white)',
+          border: '1px solid var(--border-light)',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
+          marginBottom: 24,
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+          <div
+            style={{
+              width: 28,
+              height: 28,
+              borderRadius: 8,
+              background: 'rgba(196,112,75,0.08)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-terracotta)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2" />
+              <circle cx="8.5" cy="8.5" r="1.5" />
+              <polyline points="21 15 16 10 5 21" />
+            </svg>
+          </div>
+          <h3
+            style={{
+              fontSize: 12,
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px',
+              color: 'var(--text-tertiary)',
+              margin: 0,
+              fontFamily: 'var(--font-body)',
+            }}
+          >
+            Home Card Images
+          </h3>
+        </div>
+        <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '0 0 16px', fontFamily: 'var(--font-body)', lineHeight: 1.55 }}>
+          Replace the placeholder illustrations on the guest home page&apos;s Schedule and Travel cards with your own photos. Paste a hosted image URL (Unsplash, Imgur, your own CDN, etc.) — wide landscape orientation works best. Leave blank to keep the gold gradient placeholder.
+        </p>
+
+        <div style={{ display: 'grid', gap: 28 }}>
+          {/* Schedule card image */}
+          <ImageFocalEditor
+            label="Schedule card image"
+            helperText="Appears in the ~3:2 area on the right side of the Schedule card."
+            cardAspectRatio="3 / 2"
+            url={scheduleImage}
+            position={schedulePosition}
+            onUrlChange={setScheduleImage}
+            onPositionChange={setSchedulePosition}
+            handleFocalClick={handleFocalClick}
+          />
+
+          {/* Travel card image */}
+          <ImageFocalEditor
+            label="Travel card image"
+            helperText="Appears as a wide hero strip on top of the Travel card (128px tall, spans the whole card)."
+            cardAspectRatio="6 / 1"
+            url={travelImage}
+            position={travelPosition}
+            onUrlChange={setTravelImage}
+            onPositionChange={setTravelPosition}
+            handleFocalClick={handleFocalClick}
+          />
+        </div>
+      </div>
+
       {/* Knowledge Base Card */}
       <div
         style={{
@@ -280,14 +397,8 @@ export default function KnowledgePage({ params }: { params: Promise<{ weddingId:
             <button
               type="button"
               onClick={() => {
-                if (
-                  knowledgeBase === ZOLA_SECTION_TEMPLATE ||
-                  window.confirm(
-                    'Replace the current text with the blank Zola template? Any unsaved content will be lost.'
-                  )
-                ) {
-                  setKnowledgeBase(ZOLA_SECTION_TEMPLATE);
-                }
+                if (knowledgeBase === ZOLA_SECTION_TEMPLATE) return;
+                setConfirmResetOpen(true);
               }}
               style={{
                 marginTop: 10,
@@ -402,6 +513,19 @@ export default function KnowledgePage({ params }: { params: Promise<{ weddingId:
           {saving ? 'Saving…' : 'Save'}
         </button>
       </div>
+
+      <ConfirmDialog
+        open={confirmResetOpen}
+        title="Reset to blank Zola template?"
+        description="This will replace the current text with the blank Zola section template. Any unsaved changes will be lost."
+        variant="danger"
+        confirmLabel="Reset template"
+        onConfirm={() => {
+          setKnowledgeBase(ZOLA_SECTION_TEMPLATE);
+          setConfirmResetOpen(false);
+        }}
+        onCancel={() => setConfirmResetOpen(false)}
+      />
     </div>
   );
 }
@@ -439,3 +563,230 @@ const kbdStyle: React.CSSProperties = {
   fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
   color: 'var(--text-primary)',
 };
+
+interface ImageFocalEditorProps {
+  label: string;
+  helperText: string;
+  /** CSS aspect-ratio value for the live crop preview, e.g. "3 / 2" or "6 / 1". */
+  cardAspectRatio: string;
+  url: string;
+  position: string;
+  onUrlChange: (v: string) => void;
+  onPositionChange: (v: string) => void;
+  handleFocalClick: (
+    e: React.MouseEvent<HTMLImageElement>,
+    setter: (v: string) => void
+  ) => void;
+}
+
+/**
+ * URL input + click-to-set focal point editor. Shows:
+ *  1. A URL text input
+ *  2. The full uncropped image with a crosshair marker at the focal point —
+ *     click anywhere to move it.
+ *  3. A live crop preview at the actual card aspect ratio the guest sees.
+ */
+function ImageFocalEditor({
+  label,
+  helperText,
+  cardAspectRatio,
+  url,
+  position,
+  onUrlChange,
+  onPositionChange,
+  handleFocalClick,
+}: ImageFocalEditorProps) {
+  const [loadError, setLoadError] = useState(false);
+
+  // Parse "X% Y%" into numbers for the crosshair marker overlay.
+  const match = position.match(/^(\d+(?:\.\d+)?)%\s+(\d+(?:\.\d+)?)%$/);
+  const focalX = match ? parseFloat(match[1]) : 50;
+  const focalY = match ? parseFloat(match[2]) : 50;
+
+  return (
+    <div>
+      <label style={labelStyle}>{label}</label>
+      <input
+        type="text"
+        value={url}
+        onChange={(e) => {
+          onUrlChange(e.target.value);
+          setLoadError(false);
+        }}
+        placeholder="https://images.unsplash.com/photo-… (or /your-file.jpg from /public)"
+        style={inputStyle}
+      />
+      <p
+        style={{
+          fontSize: 11,
+          color: 'var(--text-tertiary)',
+          margin: '6px 0 0',
+          fontFamily: 'var(--font-body)',
+          lineHeight: 1.5,
+        }}
+      >
+        {helperText}
+      </p>
+
+      {url && !loadError && (
+        <div style={{ marginTop: 12, display: 'grid', gap: 12 }}>
+          {/* Full image with click-to-set focal point */}
+          <div>
+            <p
+              style={{
+                fontSize: 10,
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px',
+                color: 'var(--text-tertiary)',
+                margin: '0 0 6px',
+                fontFamily: 'var(--font-body)',
+                fontWeight: 500,
+              }}
+            >
+              Click to set focal point
+            </p>
+            <div
+              style={{
+                position: 'relative',
+                display: 'inline-block',
+                maxWidth: '100%',
+                borderRadius: 10,
+                overflow: 'hidden',
+                border: '1px solid var(--border-light)',
+                cursor: 'crosshair',
+                lineHeight: 0,
+              }}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={url}
+                alt={`${label} full preview`}
+                onClick={(e) => handleFocalClick(e, onPositionChange)}
+                onError={() => setLoadError(true)}
+                style={{
+                  display: 'block',
+                  maxWidth: 420,
+                  maxHeight: 240,
+                  width: 'auto',
+                  height: 'auto',
+                  userSelect: 'none',
+                }}
+                draggable={false}
+              />
+              {/* Crosshair marker at the focal point */}
+              <div
+                aria-hidden
+                style={{
+                  position: 'absolute',
+                  left: `${focalX}%`,
+                  top: `${focalY}%`,
+                  width: 22,
+                  height: 22,
+                  borderRadius: '50%',
+                  border: '2px solid #FDFBF7',
+                  background: 'rgba(196,112,75,0.85)',
+                  transform: 'translate(-50%, -50%)',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.35)',
+                  pointerEvents: 'none',
+                }}
+              />
+            </div>
+          </div>
+
+          {/* Live crop preview at the actual card aspect ratio */}
+          <div>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                marginBottom: 6,
+              }}
+            >
+              <p
+                style={{
+                  fontSize: 10,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px',
+                  color: 'var(--text-tertiary)',
+                  margin: 0,
+                  fontFamily: 'var(--font-body)',
+                  fontWeight: 500,
+                }}
+              >
+                How guests see it ({cardAspectRatio.replace(' / ', ':')})
+              </p>
+              <button
+                type="button"
+                onClick={() => onPositionChange('50% 50%')}
+                style={{
+                  padding: '4px 10px',
+                  borderRadius: 8,
+                  border: '1px solid var(--border-light)',
+                  background: 'var(--bg-pure-white)',
+                  fontSize: 10,
+                  fontWeight: 500,
+                  fontFamily: 'var(--font-body)',
+                  color: 'var(--text-secondary)',
+                  cursor: 'pointer',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px',
+                }}
+              >
+                Reset to center
+              </button>
+            </div>
+            <div
+              style={{
+                width: '100%',
+                maxWidth: 420,
+                aspectRatio: cardAspectRatio,
+                borderRadius: 10,
+                border: '1px solid var(--border-light)',
+                overflow: 'hidden',
+                background: 'var(--bg-soft-cream)',
+              }}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={url}
+                alt={`${label} cropped preview`}
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                  objectPosition: position,
+                  display: 'block',
+                }}
+              />
+            </div>
+            <p
+              style={{
+                fontSize: 10,
+                color: 'var(--text-tertiary)',
+                margin: '6px 0 0',
+                fontFamily: 'var(--font-body)',
+                fontVariantNumeric: 'tabular-nums',
+              }}
+            >
+              Focal point: <code>{position}</code>
+            </p>
+          </div>
+        </div>
+      )}
+
+      {url && loadError && (
+        <p
+          style={{
+            marginTop: 8,
+            fontSize: 12,
+            color: 'var(--color-terracotta)',
+            fontFamily: 'var(--font-body)',
+          }}
+        >
+          Couldn&apos;t load that image. Check the URL is public and direct-linkable.
+        </p>
+      )}
+    </div>
+  );
+}

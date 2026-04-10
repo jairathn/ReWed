@@ -225,22 +225,32 @@ export default function GuestHomePage() {
               </div>
             </div>
             <div className="w-full sm:w-2/5 h-40 sm:h-auto overflow-hidden relative">
-              <div
-                className="w-full h-full transition-transform duration-700 group-hover:scale-105"
-                style={{
-                  background: 'linear-gradient(135deg, var(--color-gold-faint) 0%, rgba(212,175,55,0.15) 100%)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="var(--color-gold-rule)" strokeWidth="0.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.6">
-                  <rect x="3" y="4" width="18" height="18" rx="2" />
-                  <line x1="16" y1="2" x2="16" y2="6" />
-                  <line x1="8" y1="2" x2="8" y2="6" />
-                  <line x1="3" y1="10" x2="21" y2="10" />
-                </svg>
-              </div>
+              {config.home_card_images?.schedule ? (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img
+                  src={config.home_card_images.schedule.url}
+                  alt=""
+                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  style={{ objectPosition: config.home_card_images.schedule.position }}
+                />
+              ) : (
+                <div
+                  className="w-full h-full transition-transform duration-700 group-hover:scale-105"
+                  style={{
+                    background: 'linear-gradient(135deg, var(--color-gold-faint) 0%, rgba(212,175,55,0.15) 100%)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="var(--color-gold-rule)" strokeWidth="0.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.6">
+                    <rect x="3" y="4" width="18" height="18" rx="2" />
+                    <line x1="16" y1="2" x2="16" y2="6" />
+                    <line x1="8" y1="2" x2="8" y2="6" />
+                    <line x1="3" y1="10" x2="21" y2="10" />
+                  </svg>
+                </div>
+              )}
             </div>
           </Link>
 
@@ -435,17 +445,29 @@ export default function GuestHomePage() {
               textDecoration: 'none',
             }}
           >
-            <div
-              className="h-32 overflow-hidden relative"
-              style={{
-                background: 'linear-gradient(135deg, var(--color-gold-faint) 0%, rgba(43, 95, 138, 0.08) 100%)',
-              }}
-            >
-              <div className="absolute inset-0 flex items-center justify-center">
-                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="var(--color-gold-rule)" strokeWidth="0.4" strokeLinecap="round" strokeLinejoin="round" opacity="0.5">
-                  <path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.4-.1.9.3 1.1l5.6 3.3-3 3-2.3-.8c-.3-.1-.7 0-.9.3l-.2.3c-.2.3-.1.7.1.9l3.3 2.5 2.5 3.3c.2.3.6.4.9.1l.3-.2c.3-.2.4-.6.3-.9l-.8-2.3 3-3 3.3 5.6c.2.4.7.5 1.1.3l.5-.3c.4-.2.6-.6.5-1.1z" />
-                </svg>
-              </div>
+            <div className="h-32 overflow-hidden relative">
+              {config.home_card_images?.travel ? (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img
+                  src={config.home_card_images.travel.url}
+                  alt=""
+                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  style={{ objectPosition: config.home_card_images.travel.position }}
+                />
+              ) : (
+                <div
+                  className="w-full h-full relative"
+                  style={{
+                    background: 'linear-gradient(135deg, var(--color-gold-faint) 0%, rgba(43, 95, 138, 0.08) 100%)',
+                  }}
+                >
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="var(--color-gold-rule)" strokeWidth="0.4" strokeLinecap="round" strokeLinejoin="round" opacity="0.5">
+                      <path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.4-.1.9.3 1.1l5.6 3.3-3 3-2.3-.8c-.3-.1-.7 0-.9.3l-.2.3c-.2.3-.1.7.1.9l3.3 2.5 2.5 3.3c.2.3.6.4.9.1l.3-.2c.3-.2.4-.6.3-.9l-.8-2.3 3-3 3.3 5.6c.2.4.7.5 1.1.3l.5-.3c.4-.2.6-.6.5-1.1z" />
+                    </svg>
+                  </div>
+                </div>
+              )}
             </div>
             <div className="p-6 space-y-2">
               <div className="flex justify-between items-center">

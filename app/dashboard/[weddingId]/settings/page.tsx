@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, use } from 'react';
+import PasswordConfirmDialog from '@/components/ui/PasswordConfirmDialog';
 
 interface WeddingEvent {
   id: string;
@@ -58,6 +59,13 @@ export default function SettingsPage({ params }: { params: Promise<{ weddingId: 
   // Batch selection
   const [selectedEventIds, setSelectedEventIds] = useState<Set<string>>(new Set());
   const [batchDeleting, setBatchDeleting] = useState(false);
+
+  // Delete confirmation (password-gated)
+  const [confirmDelete, setConfirmDelete] = useState<
+    | { type: 'single'; id: string; name: string }
+    | { type: 'batch'; count: number }
+    | null
+  >(null);
 
   // Bulk import state
   const [importText, setImportText] = useState('');
@@ -212,8 +220,7 @@ export default function SettingsPage({ params }: { params: Promise<{ weddingId: 
     }
   };
 
-  const handleDelete = async (eventId: string) => {
-    if (!confirm('Delete this event?')) return;
+  const performDelete = async (eventId: string) => {
     try {
       const res = await fetch(`/api/v1/dashboard/weddings/${weddingId}/events/${eventId}`, { method: 'DELETE' });
       if (res.ok) {
@@ -221,6 +228,8 @@ export default function SettingsPage({ params }: { params: Promise<{ weddingId: 
       }
     } catch {
       // Silently fail
+    } finally {
+      setConfirmDelete(null);
     }
   };
 
@@ -255,9 +264,8 @@ export default function SettingsPage({ params }: { params: Promise<{ weddingId: 
     }
   };
 
-  const handleBatchDeleteEvents = async () => {
+  const performBatchDeleteEvents = async () => {
     if (selectedEventIds.size === 0) return;
-    if (!confirm(`Delete ${selectedEventIds.size} event${selectedEventIds.size !== 1 ? 's' : ''}? This cannot be undone.`)) return;
     setBatchDeleting(true);
     try {
       const res = await fetch(`/api/v1/dashboard/weddings/${weddingId}/events/batch-delete`, {
@@ -273,6 +281,7 @@ export default function SettingsPage({ params }: { params: Promise<{ weddingId: 
       // Silently fail
     } finally {
       setBatchDeleting(false);
+      setConfirmDelete(null);
     }
   };
 
@@ -640,7 +649,7 @@ export default function SettingsPage({ params }: { params: Promise<{ weddingId: 
                 {selectedEventIds.size} selected
               </span>
               <button
-                onClick={handleBatchDeleteEvents}
+                onClick={() => setConfirmDelete({ type: 'batch', count: selectedEventIds.size })}
                 disabled={batchDeleting}
                 style={{
                   background: 'var(--color-terracotta)',
@@ -711,7 +720,9 @@ export default function SettingsPage({ params }: { params: Promise<{ weddingId: 
                     Edit
                   </button>
                   <button
-                    onClick={() => handleDelete(ev.id)}
+                    onClick={() =>
+                      setConfirmDelete({ type: 'single', id: ev.id, name: ev.name })
+                    }
                     style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: 'var(--text-tertiary)' }}
                   >
                     Delete
@@ -723,6 +734,37 @@ export default function SettingsPage({ params }: { params: Promise<{ weddingId: 
         </div>
         </>
       )}
+
+      <PasswordConfirmDialog
+        open={confirmDelete !== null}
+        title={
+          confirmDelete?.type === 'batch'
+            ? `Delete ${confirmDelete.count} event${confirmDelete.count !== 1 ? 's' : ''}?`
+            : 'Delete this event?'
+        }
+        description={
+          confirmDelete?.type === 'batch' ? (
+            <>
+              This will permanently remove <strong>{confirmDelete.count}</strong> event
+              {confirmDelete.count !== 1 ? 's' : ''} from your wedding. Guests will no longer see
+              them. This cannot be undone. Enter your password to confirm.
+            </>
+          ) : confirmDelete?.type === 'single' ? (
+            <>
+              This will permanently remove <strong>{confirmDelete.name}</strong> from your wedding.
+              Guests will no longer see it. This cannot be undone. Enter your password to confirm.
+            </>
+          ) : (
+            ''
+          )
+        }
+        confirmLabel={confirmDelete?.type === 'batch' ? 'Delete events' : 'Delete event'}
+        onConfirm={async () => {
+          if (confirmDelete?.type === 'single') await performDelete(confirmDelete.id);
+          else if (confirmDelete?.type === 'batch') await performBatchDeleteEvents();
+        }}
+        onCancel={() => setConfirmDelete(null)}
+      />
     </div>
   );
 }

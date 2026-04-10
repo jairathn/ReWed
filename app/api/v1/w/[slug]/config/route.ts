@@ -2,7 +2,29 @@ import { NextRequest } from 'next/server';
 import { getPool } from '@/lib/db/client';
 import { toDateString } from '@/lib/db/format';
 import { handleApiError, AppError } from '@/lib/errors';
-import type { WeddingConfig, EventConfig } from '@/lib/types/api';
+import type { WeddingConfig, EventConfig, HomeCardImage } from '@/lib/types/api';
+
+/**
+ * Coerce a stored home_card_images.* value into the HomeCardImage shape.
+ * Handles legacy rows that stored just the URL string (before focal point
+ * control shipped) so they don't need a DB migration.
+ */
+function normalizeHomeCardImage(raw: unknown): HomeCardImage | null {
+  if (!raw) return null;
+  if (typeof raw === 'string') {
+    return raw ? { url: raw, position: '50% 50%' } : null;
+  }
+  if (typeof raw === 'object' && raw !== null && 'url' in raw) {
+    const { url, position } = raw as { url?: unknown; position?: unknown };
+    if (typeof url === 'string' && url) {
+      return {
+        url,
+        position: typeof position === 'string' && position ? position : '50% 50%',
+      };
+    }
+  }
+  return null;
+}
 
 export async function GET(
   request: NextRequest,
@@ -74,6 +96,10 @@ export async function GET(
             email: config.wedding_planner.email || null,
           }
         : null,
+      home_card_images: {
+        schedule: normalizeHomeCardImage(config.home_card_images?.schedule),
+        travel: normalizeHomeCardImage(config.home_card_images?.travel),
+      },
       theme: config.theme || {
         preset: 'mediterranean',
         colors: { primary: '#C4704B', secondary: '#2B5F8A', bg: '#FEFCF9', text: '#2C2825' },
