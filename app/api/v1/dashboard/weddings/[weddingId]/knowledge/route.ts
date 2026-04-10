@@ -4,10 +4,23 @@ import { handleApiError } from '@/lib/errors';
 import { getPool } from '@/lib/db/client';
 import { getCoupleId, verifyWeddingOwnership } from '@/lib/dashboard-auth';
 
+// Accept either a full https URL or a site-relative path (e.g. /photo.jpg),
+// so couples can paste hosted URLs *or* drop a file in /public and reference
+// it directly.
+const imagePathOrUrl = z
+  .string()
+  .max(2000)
+  .refine(
+    (v) => v === '' || /^https?:\/\//.test(v) || v.startsWith('/'),
+    'Must be a full URL or a path starting with /'
+  );
+
 const updateSchema = z.object({
   knowledge_base: z.string().max(50000).optional(),
   wedding_planner_name: z.string().max(200).optional().or(z.literal('')),
   wedding_planner_email: z.string().email().optional().or(z.literal('')),
+  home_schedule_image: imagePathOrUrl.optional(),
+  home_travel_image: imagePathOrUrl.optional(),
 });
 
 /**
@@ -36,6 +49,10 @@ export async function GET(
       wedding_planner: {
         name: config.wedding_planner?.name || '',
         email: config.wedding_planner?.email || '',
+      },
+      home_card_images: {
+        schedule: config.home_card_images?.schedule || '',
+        travel: config.home_card_images?.travel || '',
       },
     });
   } catch (error) {
@@ -90,6 +107,24 @@ export async function PATCH(
       }
     }
 
+    if (
+      parsed.home_schedule_image !== undefined ||
+      parsed.home_travel_image !== undefined
+    ) {
+      const images = { ...(config.home_card_images || {}) };
+      if (parsed.home_schedule_image !== undefined) {
+        images.schedule = parsed.home_schedule_image.trim() || null;
+      }
+      if (parsed.home_travel_image !== undefined) {
+        images.travel = parsed.home_travel_image.trim() || null;
+      }
+      if (!images.schedule && !images.travel) {
+        delete config.home_card_images;
+      } else {
+        config.home_card_images = images;
+      }
+    }
+
     await pool.query(
       `UPDATE weddings SET config = $1 WHERE id = $2`,
       [JSON.stringify(config), weddingId]
@@ -100,6 +135,10 @@ export async function PATCH(
       wedding_planner: {
         name: config.wedding_planner?.name || '',
         email: config.wedding_planner?.email || '',
+      },
+      home_card_images: {
+        schedule: config.home_card_images?.schedule || '',
+        travel: config.home_card_images?.travel || '',
       },
     });
   } catch (error) {

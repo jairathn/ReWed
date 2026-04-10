@@ -38,6 +38,11 @@ export type WeddingConfig = {
   venue_lng: number | null;
   status: 'setup' | 'active' | 'post_wedding' | 'archived';
   wedding_planner: WeddingPlanner | null;
+  /** Optional couple-provided image URLs shown in the guest home bento cards. */
+  home_card_images: {
+    schedule: string | null;
+    travel: string | null;
+  };
   theme: {
     preset: string;
     colors: { primary: string; secondary: string; bg: string; text: string };

@@ -8,6 +8,10 @@ interface KnowledgeData {
     name: string;
     email: string;
   };
+  home_card_images: {
+    schedule: string;
+    travel: string;
+  };
 }
 
 // Standard Zola wedding website sections, in the order they appear in the
@@ -53,6 +57,8 @@ export default function KnowledgePage({ params }: { params: Promise<{ weddingId:
   const [knowledgeBase, setKnowledgeBase] = useState('');
   const [plannerName, setPlannerName] = useState('');
   const [plannerEmail, setPlannerEmail] = useState('');
+  const [scheduleImage, setScheduleImage] = useState('');
+  const [travelImage, setTravelImage] = useState('');
 
   useEffect(() => {
     fetch(`/api/v1/dashboard/weddings/${weddingId}/knowledge`)
@@ -66,6 +72,8 @@ export default function KnowledgePage({ params }: { params: Promise<{ weddingId:
         setKnowledgeBase(d.knowledge_base || ZOLA_SECTION_TEMPLATE);
         setPlannerName(d.wedding_planner?.name || '');
         setPlannerEmail(d.wedding_planner?.email || '');
+        setScheduleImage(d.home_card_images?.schedule || '');
+        setTravelImage(d.home_card_images?.travel || '');
       })
       .catch(() => setError('Failed to load'))
       .finally(() => setLoading(false));
@@ -75,7 +83,9 @@ export default function KnowledgePage({ params }: { params: Promise<{ weddingId:
     !!data &&
     (knowledgeBase !== data.knowledge_base ||
       plannerName !== data.wedding_planner.name ||
-      plannerEmail !== data.wedding_planner.email);
+      plannerEmail !== data.wedding_planner.email ||
+      scheduleImage !== (data.home_card_images?.schedule || '') ||
+      travelImage !== (data.home_card_images?.travel || ''));
 
   const handleSave = async () => {
     setSaving(true);
@@ -88,6 +98,8 @@ export default function KnowledgePage({ params }: { params: Promise<{ weddingId:
           knowledge_base: knowledgeBase,
           wedding_planner_name: plannerName,
           wedding_planner_email: plannerEmail,
+          home_schedule_image: scheduleImage,
+          home_travel_image: travelImage,
         }),
       });
       if (!res.ok) {
@@ -99,6 +111,8 @@ export default function KnowledgePage({ params }: { params: Promise<{ weddingId:
       setKnowledgeBase(updated.knowledge_base || '');
       setPlannerName(updated.wedding_planner?.name || '');
       setPlannerEmail(updated.wedding_planner?.email || '');
+      setScheduleImage(updated.home_card_images?.schedule || '');
+      setTravelImage(updated.home_card_images?.travel || '');
       setSavedAt(new Date());
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save');
@@ -195,6 +209,121 @@ export default function KnowledgePage({ params }: { params: Promise<{ weddingId:
               placeholder="evelina@eyaweddings.com"
               style={inputStyle}
             />
+          </div>
+        </div>
+      </div>
+
+      {/* Home Card Images Card */}
+      <div
+        style={{
+          padding: 24,
+          borderRadius: 16,
+          background: 'var(--bg-pure-white)',
+          border: '1px solid var(--border-light)',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
+          marginBottom: 24,
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+          <div
+            style={{
+              width: 28,
+              height: 28,
+              borderRadius: 8,
+              background: 'rgba(196,112,75,0.08)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-terracotta)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2" />
+              <circle cx="8.5" cy="8.5" r="1.5" />
+              <polyline points="21 15 16 10 5 21" />
+            </svg>
+          </div>
+          <h3
+            style={{
+              fontSize: 12,
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px',
+              color: 'var(--text-tertiary)',
+              margin: 0,
+              fontFamily: 'var(--font-body)',
+            }}
+          >
+            Home Card Images
+          </h3>
+        </div>
+        <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '0 0 16px', fontFamily: 'var(--font-body)', lineHeight: 1.55 }}>
+          Replace the placeholder illustrations on the guest home page&apos;s Schedule and Travel cards with your own photos. Paste a hosted image URL (Unsplash, Imgur, your own CDN, etc.) — wide landscape orientation works best. Leave blank to keep the gold gradient placeholder.
+        </p>
+
+        <div style={{ display: 'grid', gap: 18 }}>
+          {/* Schedule card image */}
+          <div>
+            <label style={labelStyle}>Schedule card image URL</label>
+            <input
+              type="text"
+              value={scheduleImage}
+              onChange={(e) => setScheduleImage(e.target.value)}
+              placeholder="https://images.unsplash.com/photo-… (or /your-file.jpg from /public)"
+              style={inputStyle}
+            />
+            {scheduleImage && (
+              <div style={{ marginTop: 10 }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={scheduleImage}
+                  alt="Schedule card preview"
+                  style={{
+                    width: '100%',
+                    maxWidth: 400,
+                    height: 120,
+                    objectFit: 'cover',
+                    borderRadius: 12,
+                    border: '1px solid var(--border-light)',
+                    display: 'block',
+                  }}
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                  }}
+                />
+              </div>
+            )}
+          </div>
+
+          {/* Travel card image */}
+          <div>
+            <label style={labelStyle}>Travel card image URL</label>
+            <input
+              type="text"
+              value={travelImage}
+              onChange={(e) => setTravelImage(e.target.value)}
+              placeholder="https://images.unsplash.com/photo-… (or /your-file.jpg from /public)"
+              style={inputStyle}
+            />
+            {travelImage && (
+              <div style={{ marginTop: 10 }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={travelImage}
+                  alt="Travel card preview"
+                  style={{
+                    width: '100%',
+                    maxWidth: 400,
+                    height: 120,
+                    objectFit: 'cover',
+                    borderRadius: 12,
+                    border: '1px solid var(--border-light)',
+                    display: 'block',
+                  }}
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                  }}
+                />
+              </div>
+            )}
           </div>
         </div>
       </div>

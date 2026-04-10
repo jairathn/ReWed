@@ -74,6 +74,10 @@ export async function GET(
             email: config.wedding_planner.email || null,
           }
         : null,
+      home_card_images: {
+        schedule: config.home_card_images?.schedule || null,
+        travel: config.home_card_images?.travel || null,
+      },
       theme: config.theme || {
         preset: 'mediterranean',
         colors: { primary: '#C4704B', secondary: '#2B5F8A', bg: '#FEFCF9', text: '#2C2825' },

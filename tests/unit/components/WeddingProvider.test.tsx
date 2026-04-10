@@ -76,6 +76,7 @@ describe('WeddingProvider', () => {
       venue_lat: null,
       venue_lng: null,
       wedding_planner: null,
+      home_card_images: { schedule: null, travel: null },
       features: {
         social_feed: false,
         faq_chatbot: false,
