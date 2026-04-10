@@ -46,22 +46,71 @@ export default function GuestAccountMenu() {
     <div ref={menuRef} style={{ position: 'relative' }}>
       <button
         onClick={() => setOpen((v) => !v)}
-        className="w-10 h-10 rounded-full overflow-hidden flex items-center justify-center"
         style={{
-          background: 'var(--color-gold-faint)',
-          border: '1px solid var(--color-gold-rule)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+          padding: '6px 12px 6px 6px',
+          borderRadius: 999,
+          background: 'var(--bg-pure-white)',
+          border: '1px solid var(--border-medium)',
+          boxShadow: '0 1px 3px rgba(27, 28, 26, 0.06)',
           cursor: 'pointer',
+          transition: 'all 0.15s',
         }}
         aria-label="Account menu"
         aria-expanded={open}
         aria-haspopup="menu"
       >
         <span
-          className="text-sm font-semibold"
-          style={{ color: 'var(--color-gold-dark)', fontFamily: 'var(--font-display)' }}
+          style={{
+            width: 28,
+            height: 28,
+            borderRadius: '50%',
+            background: 'linear-gradient(135deg, var(--color-gold-dark), var(--color-gold))',
+            color: '#FDFBF7',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: 13,
+            fontWeight: 600,
+            fontFamily: 'var(--font-display)',
+            flexShrink: 0,
+          }}
         >
           {initial}
         </span>
+        <span
+          style={{
+            fontSize: 13,
+            fontWeight: 500,
+            color: 'var(--text-primary)',
+            fontFamily: 'var(--font-body)',
+            maxWidth: 100,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {guest.first_name || 'Guest'}
+        </span>
+        <svg
+          width="12"
+          height="12"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="var(--text-tertiary)"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          style={{
+            transform: open ? 'rotate(180deg)' : 'rotate(0deg)',
+            transition: 'transform 0.15s',
+            flexShrink: 0,
+          }}
+        >
+          <polyline points="6 9 12 15 18 9" />
+        </svg>
       </button>
 
       {open && (
