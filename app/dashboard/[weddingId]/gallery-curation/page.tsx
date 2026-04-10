@@ -162,7 +162,7 @@ export default function GalleryCurationPage({
       >
         Curate Gallery
       </h1>
-      <p style={{ color: 'var(--text-secondary)', fontSize: 14, marginBottom: 24 }}>
+      <p style={{ fontSize: 13, color: 'var(--text-secondary)', fontFamily: 'var(--font-body)', marginBottom: 24 }}>
         Review guest photos and remove any you don&apos;t want showing in memoir page carousels.
         All photos are approved by default &mdash; click to reject specific ones.
       </p>
@@ -404,12 +404,13 @@ export default function GalleryCurationPage({
             disabled={loadingMore}
             style={{
               padding: '8px 24px',
-              borderRadius: 8,
+              borderRadius: 10,
               fontSize: 13,
-              fontWeight: 500,
-              background: 'var(--color-gold-faint)',
-              color: 'var(--color-gold)',
-              border: '0.5px solid var(--color-gold-rule)',
+              fontWeight: 600,
+              background: 'linear-gradient(135deg, var(--color-gold-dark), var(--color-gold))',
+              color: '#FDFBF7',
+              border: 'none',
+              boxShadow: '0 2px 8px rgba(198,163,85,0.2)',
               cursor: 'pointer',
               fontFamily: 'var(--font-body)',
             }}

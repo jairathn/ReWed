@@ -362,10 +362,13 @@ export default function GuestsPage({ params }: { params: Promise<{ weddingId: st
         >
           &larr; Back to guest list
         </button>
-        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 500, color: 'var(--text-primary)', marginBottom: 24 }}>
+        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 500, color: 'var(--text-primary)', marginBottom: 4 }}>
           {view === 'edit' ? 'Edit Guest' : 'Add Guest'}
         </h1>
-        <form onSubmit={view === 'edit' ? handleUpdate : handleAdd} className="card" style={{ padding: 24, background: 'var(--bg-pure-white)' }}>
+        <p style={{ fontSize: 13, color: 'var(--text-secondary)', fontFamily: 'var(--font-body)', marginBottom: 24 }}>
+          {view === 'edit' ? 'Update guest details below.' : 'Fill in the details to add a new guest.'}
+        </p>
+        <form onSubmit={view === 'edit' ? handleUpdate : handleAdd} style={{ padding: 24, background: 'var(--bg-pure-white)', borderRadius: 16, border: '1px solid var(--border-light)', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
             <div>
               <label style={labelStyle}>First Name *</label>
@@ -402,10 +405,10 @@ export default function GuestsPage({ params }: { params: Promise<{ weddingId: st
           </div>
           {error && <p style={{ color: 'var(--color-terracotta)', fontSize: 13, marginBottom: 12 }}>{error}</p>}
           <div style={{ display: 'flex', gap: 12 }}>
-            <button type="submit" className="btn-primary" disabled={formLoading} style={{ opacity: formLoading ? 0.7 : 1 }}>
+            <button type="submit" disabled={formLoading} style={{ opacity: formLoading ? 0.7 : 1, background: 'linear-gradient(135deg, var(--color-gold-dark), var(--color-gold))', color: '#FDFBF7', borderRadius: 10, boxShadow: '0 2px 8px rgba(198,163,85,0.2)', border: 'none', cursor: 'pointer', padding: '10px 20px', fontSize: 14, fontFamily: 'var(--font-body)', fontWeight: 500 }}>
               {formLoading ? 'Saving...' : view === 'edit' ? 'Update Guest' : 'Add Guest'}
             </button>
-            <button type="button" className="btn-ghost" onClick={() => { resetForm(); setView('list'); }}>
+            <button type="button" onClick={() => { resetForm(); setView('list'); }} style={{ border: '1px solid var(--border-light)', borderRadius: 10, color: 'var(--text-secondary)', background: 'transparent', cursor: 'pointer', padding: '10px 20px', fontSize: 14, fontFamily: 'var(--font-body)', fontWeight: 500 }}>
               Cancel
             </button>
           </div>
@@ -424,14 +427,14 @@ export default function GuestsPage({ params }: { params: Promise<{ weddingId: st
         >
           &larr; Back to guest list
         </button>
-        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 500, color: 'var(--text-primary)', marginBottom: 8 }}>
+        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 500, color: 'var(--text-primary)', marginBottom: 4 }}>
           Import Guests from CSV
         </h1>
-        <p style={{ fontSize: 14, color: 'var(--text-secondary)', marginBottom: 24 }}>
+        <p style={{ fontSize: 13, color: 'var(--text-secondary)', fontFamily: 'var(--font-body)', marginBottom: 24 }}>
           Upload a CSV exported from Zola, The Knot, or any spreadsheet. We'll automatically detect the columns.
         </p>
 
-        <div className="card" style={{ padding: 24, background: 'var(--bg-pure-white)' }}>
+        <div style={{ padding: 24, background: 'var(--bg-pure-white)', borderRadius: 16, border: '1px solid var(--border-light)', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
           <div
             style={{
               border: '2px dashed var(--border-medium)',
@@ -494,10 +497,9 @@ export default function GuestsPage({ params }: { params: Promise<{ weddingId: st
           {error && <p style={{ color: 'var(--color-terracotta)', fontSize: 13, marginTop: 12 }}>{error}</p>}
 
           <button
-            className="btn-primary"
             onClick={handlePreview}
             disabled={!csvText.trim() || importLoading}
-            style={{ marginTop: 16, opacity: !csvText.trim() || importLoading ? 0.5 : 1 }}
+            style={{ marginTop: 16, opacity: !csvText.trim() || importLoading ? 0.5 : 1, background: 'linear-gradient(135deg, var(--color-gold-dark), var(--color-gold))', color: '#FDFBF7', borderRadius: 10, boxShadow: '0 2px 8px rgba(198,163,85,0.2)', border: 'none', cursor: 'pointer', padding: '10px 20px', fontSize: 14, fontFamily: 'var(--font-body)', fontWeight: 500 }}
           >
             {importLoading ? 'Analyzing...' : 'Preview Import'}
           </button>
@@ -511,10 +513,13 @@ export default function GuestsPage({ params }: { params: Promise<{ weddingId: st
     if (importResult) {
       return (
         <div style={{ maxWidth: 600 }}>
-          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 500, color: 'var(--text-primary)', marginBottom: 24 }}>
+          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 500, color: 'var(--text-primary)', marginBottom: 4 }}>
             Import Complete
           </h1>
-          <div className="card" style={{ padding: 24, background: 'var(--bg-pure-white)' }}>
+          <p style={{ fontSize: 13, color: 'var(--text-secondary)', fontFamily: 'var(--font-body)', marginBottom: 24 }}>
+            Here&apos;s a summary of your import.
+          </p>
+          <div style={{ padding: 24, background: 'var(--bg-pure-white)', borderRadius: 16, border: '1px solid var(--border-light)', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 20 }}>
               <div style={{ textAlign: 'center', padding: 16, borderRadius: 12, background: 'rgba(122, 139, 92, 0.08)' }}>
                 <p style={{ fontSize: 28, fontWeight: 600, color: 'var(--color-olive)', margin: 0 }}>{importResult.imported}</p>
@@ -534,8 +539,8 @@ export default function GuestsPage({ params }: { params: Promise<{ weddingId: st
               </div>
             )}
             <button
-              className="btn-primary"
               onClick={() => { setView('list'); setCsvText(''); setImportResult(null); }}
+              style={{ background: 'linear-gradient(135deg, var(--color-gold-dark), var(--color-gold))', color: '#FDFBF7', borderRadius: 10, boxShadow: '0 2px 8px rgba(198,163,85,0.2)', border: 'none', cursor: 'pointer', padding: '10px 20px', fontSize: 14, fontFamily: 'var(--font-body)', fontWeight: 500 }}
             >
               View Guest List
             </button>
@@ -552,10 +557,10 @@ export default function GuestsPage({ params }: { params: Promise<{ weddingId: st
         >
           &larr; Back
         </button>
-        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 500, color: 'var(--text-primary)', marginBottom: 8 }}>
+        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 500, color: 'var(--text-primary)', marginBottom: 4 }}>
           Review Column Mapping
         </h1>
-        <p style={{ fontSize: 14, color: 'var(--text-secondary)', marginBottom: 24 }}>
+        <p style={{ fontSize: 13, color: 'var(--text-secondary)', fontFamily: 'var(--font-body)', marginBottom: 24 }}>
           {csvTotalRows} rows found &middot; ~{estimatedGuests} guests will be created (including partners &amp; children). Verify the column mapping below, then import.
         </p>
 
@@ -618,7 +623,7 @@ export default function GuestsPage({ params }: { params: Promise<{ weddingId: st
             if (!shouldShow) return null;
 
             return (
-              <div key={group.label} className="card" style={{ padding: 20, background: 'var(--bg-pure-white)', marginBottom: 12 }}>
+              <div key={group.label} style={{ padding: 20, background: 'var(--bg-pure-white)', marginBottom: 12, borderRadius: 16, border: '1px solid var(--border-light)', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
                 <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 14, marginBottom: 12, color: 'var(--text-primary)' }}>
                   {group.label}
                 </h3>
@@ -646,7 +651,7 @@ export default function GuestsPage({ params }: { params: Promise<{ weddingId: st
 
         {/* Preview table */}
         {csvPreview.length > 0 && (
-          <div className="card" style={{ padding: 20, background: 'var(--bg-pure-white)', marginBottom: 20, overflowX: 'auto' }}>
+          <div style={{ padding: 20, background: 'var(--bg-pure-white)', marginBottom: 20, overflowX: 'auto', borderRadius: 16, border: '1px solid var(--border-light)', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
             <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 16, marginBottom: 12, color: 'var(--text-primary)' }}>
               Preview (first {csvPreview.length} rows)
             </h3>
@@ -678,10 +683,10 @@ export default function GuestsPage({ params }: { params: Promise<{ weddingId: st
         {error && <p style={{ color: 'var(--color-terracotta)', fontSize: 13, marginBottom: 12 }}>{error}</p>}
 
         <div style={{ display: 'flex', gap: 12 }}>
-          <button className="btn-primary" onClick={handleImport} disabled={importLoading} style={{ opacity: importLoading ? 0.5 : 1 }}>
+          <button onClick={handleImport} disabled={importLoading} style={{ opacity: importLoading ? 0.5 : 1, background: 'linear-gradient(135deg, var(--color-gold-dark), var(--color-gold))', color: '#FDFBF7', borderRadius: 10, boxShadow: '0 2px 8px rgba(198,163,85,0.2)', border: 'none', cursor: 'pointer', padding: '10px 20px', fontSize: 14, fontFamily: 'var(--font-body)', fontWeight: 500 }}>
             {importLoading ? 'Importing...' : `Import ~${estimatedGuests} Guests`}
           </button>
-          <button className="btn-ghost" onClick={() => setView('import-upload')}>
+          <button onClick={() => setView('import-upload')} style={{ border: '1px solid var(--border-light)', borderRadius: 10, color: 'var(--text-secondary)', background: 'transparent', cursor: 'pointer', padding: '10px 20px', fontSize: 14, fontFamily: 'var(--font-body)', fontWeight: 500 }}>
             Back
           </button>
         </div>
@@ -694,18 +699,18 @@ export default function GuestsPage({ params }: { params: Promise<{ weddingId: st
     <div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
         <div>
-          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 500, color: 'var(--text-primary)', margin: 0 }}>
+          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 500, color: 'var(--text-primary)', margin: 0 }}>
             Guests
           </h1>
-          <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 4 }}>
+          <p style={{ fontSize: 13, color: 'var(--text-secondary)', fontFamily: 'var(--font-body)', marginTop: 4 }}>
             {guests.length} guest{guests.length !== 1 ? 's' : ''}
           </p>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
-          <button className="btn-secondary" onClick={() => { setView('import-upload'); setCsvText(''); setImportResult(null); setError(''); }} style={{ fontSize: 13, padding: '8px 16px' }}>
+          <button onClick={() => { setView('import-upload'); setCsvText(''); setImportResult(null); setError(''); }} style={{ fontSize: 13, padding: '8px 16px', border: '1px solid var(--border-light)', borderRadius: 10, color: 'var(--text-secondary)', background: 'transparent', cursor: 'pointer', fontFamily: 'var(--font-body)', fontWeight: 500 }}>
             Import CSV
           </button>
-          <button className="btn-primary" onClick={() => { resetForm(); setView('add'); }} style={{ fontSize: 13, padding: '8px 16px' }}>
+          <button onClick={() => { resetForm(); setView('add'); }} style={{ fontSize: 13, padding: '8px 16px', background: 'linear-gradient(135deg, var(--color-gold-dark), var(--color-gold))', color: '#FDFBF7', borderRadius: 10, boxShadow: '0 2px 8px rgba(198,163,85,0.2)', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', fontWeight: 500 }}>
             + Add Guest
           </button>
         </div>
@@ -722,13 +727,13 @@ export default function GuestsPage({ params }: { params: Promise<{ weddingId: st
       </div>
 
       {loading && (
-        <div className="card p-6">
+        <div style={{ padding: 24, borderRadius: 16, border: '1px solid var(--border-light)', boxShadow: '0 2px 8px rgba(0,0,0,0.02)', background: 'var(--bg-pure-white)' }}>
           <div className="skeleton" style={{ width: '100%', height: 200 }} />
         </div>
       )}
 
       {!loading && guests.length === 0 && (
-        <div className="card" style={{ padding: 48, textAlign: 'center', background: 'var(--bg-pure-white)' }}>
+        <div style={{ padding: 48, textAlign: 'center', background: 'var(--bg-pure-white)', borderRadius: 16, border: '1px solid var(--border-light)', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
           <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" style={{ margin: '0 auto 16px' }}>
             <path d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197" />
           </svg>
@@ -737,10 +742,10 @@ export default function GuestsPage({ params }: { params: Promise<{ weddingId: st
             Import a guest list from Zola or The Knot, or add guests manually.
           </p>
           <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
-            <button className="btn-secondary" onClick={() => { setView('import-upload'); setCsvText(''); setError(''); }} style={{ fontSize: 13 }}>
+            <button onClick={() => { setView('import-upload'); setCsvText(''); setError(''); }} style={{ fontSize: 13, border: '1px solid var(--border-light)', borderRadius: 10, color: 'var(--text-secondary)', background: 'transparent', cursor: 'pointer', padding: '8px 16px', fontFamily: 'var(--font-body)', fontWeight: 500 }}>
               Import CSV
             </button>
-            <button className="btn-primary" onClick={() => { resetForm(); setView('add'); }} style={{ fontSize: 13 }}>
+            <button onClick={() => { resetForm(); setView('add'); }} style={{ fontSize: 13, background: 'linear-gradient(135deg, var(--color-gold-dark), var(--color-gold))', color: '#FDFBF7', borderRadius: 10, boxShadow: '0 2px 8px rgba(198,163,85,0.2)', border: 'none', cursor: 'pointer', padding: '8px 16px', fontFamily: 'var(--font-body)', fontWeight: 500 }}>
               + Add Guest
             </button>
           </div>
@@ -789,7 +794,7 @@ export default function GuestsPage({ params }: { params: Promise<{ weddingId: st
       )}
 
       {!loading && guests.length > 0 && (
-        <div className="card" style={{ background: 'var(--bg-pure-white)', overflow: 'hidden' }}>
+        <div style={{ background: 'var(--bg-pure-white)', overflow: 'hidden', borderRadius: 16, border: '1px solid var(--border-light)', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr>

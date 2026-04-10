@@ -111,7 +111,15 @@ export async function POST(
 
     const wedding = weddingResult.rows[0];
     const weddingName = wedding.display_name;
-    const hasContext = faqResult.rows.length > 0 || eventsResult.rows.length > 0;
+    const weddingConfigObj = wedding.config || {};
+    const knowledgeBase: string =
+      typeof weddingConfigObj.knowledge_base === 'string' ? weddingConfigObj.knowledge_base.trim() : '';
+    const plannerEmail: string | null = weddingConfigObj.wedding_planner?.email || null;
+    const plannerName: string | null = weddingConfigObj.wedding_planner?.name || null;
+    const hasContext =
+      faqResult.rows.length > 0 ||
+      eventsResult.rows.length > 0 ||
+      knowledgeBase.length > 0;
     let answer: string;
     let sources: { question: string; answer: string }[] = [];
 
@@ -119,9 +127,12 @@ export async function POST(
       answer = `Here's what I know about "${question}" for ${weddingName}: This is a mock FAQ response. Please check with the couple for specific details.`;
       sources = faqResult.rows.slice(0, 2).map((r) => ({ question: r.question, answer: r.answer }));
     } else if (!hasContext) {
-      answer = `I don't have specific information about that yet. The couple hasn't added FAQ entries. You might want to reach out to them directly!`;
+      const fallback = plannerEmail
+        ? ` You can email ${plannerName || 'our wedding planner'} at ${plannerEmail} and they'll get back to you.`
+        : ' You might want to reach out to them directly!';
+      answer = `I don't have specific information about that yet. The couple hasn't added FAQ entries.${fallback}`;
     } else {
-      // Build rich context from FAQ entries + events + wedding details
+      // Build rich context from FAQ entries + events + wedding details + knowledge base
       const openai = getOpenAIClient();
 
       sources = faqResult.rows.slice(0, 3).map((r) => ({
@@ -132,8 +143,7 @@ export async function POST(
       const contextParts: string[] = [];
 
       // Wedding details
-      const weddingConfig = wedding.config || {};
-      const coupleNames = weddingConfig.couple_names;
+      const coupleNames = weddingConfigObj.couple_names;
       const weddingDetails: string[] = [];
       if (coupleNames?.name1 && coupleNames?.name2) {
         weddingDetails.push(`Couple: ${coupleNames.name1} & ${coupleNames.name2}`);
@@ -169,14 +179,27 @@ export async function POST(
         contextParts.push(`FAQ:\n${faqContext}`);
       }
 
+      // Wedding knowledge base (freeform couple-pasted context)
+      if (knowledgeBase.length > 0) {
+        // Cap to keep prompt size reasonable
+        const trimmedKb = knowledgeBase.length > 12000
+          ? knowledgeBase.slice(0, 12000) + '\n...[truncated]'
+          : knowledgeBase;
+        contextParts.push(`Additional Wedding Info:\n${trimmedKb}`);
+      }
+
       const fullContext = contextParts.join('\n\n---\n\n');
+
+      const fallbackInstruction = plannerEmail
+        ? ` If the provided context does not contain enough information to answer the question, say so honestly in one sentence and tell the guest to email ${plannerName || 'our wedding planner'} at ${plannerEmail}. Do not include any other contact info.`
+        : " If you're not sure, say so honestly and suggest they ask the couple directly.";
 
       const chatResponse = await openai.chat.completions.create({
         model: CHAT_MODEL_MINI,
         messages: [
           {
             role: 'system',
-            content: `You are a friendly, helpful assistant for ${weddingName}. Answer guest questions based on the provided wedding information, event schedule, and FAQ entries. Be warm, concise, and conversational. If you're not sure, say so honestly and suggest they ask the couple directly. Never make up specific details that aren't in the context.`,
+            content: `You are a friendly, helpful assistant for ${weddingName}. Answer guest questions based on the provided wedding information, event schedule, FAQ entries, and additional wedding info. Be warm, concise, and conversational.${fallbackInstruction} Never make up specific details that aren't in the context.`,
           },
           {
             role: 'user',

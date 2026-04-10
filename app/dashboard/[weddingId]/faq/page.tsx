@@ -272,15 +272,16 @@ export default function FaqPage({ params }: { params: Promise<{ weddingId: strin
     if (importResult) {
       return (
         <div style={{ maxWidth: 600 }}>
-          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 500, color: 'var(--text-primary)', marginBottom: 24 }}>
+          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 500, color: 'var(--text-primary)', marginBottom: 4 }}>
             Import Complete
           </h1>
-          <div className="card" style={{ padding: 24, background: 'var(--bg-pure-white)' }}>
+          <p style={{ fontSize: 13, color: 'var(--text-secondary)', fontFamily: 'var(--font-body)', marginBottom: 24 }}>Your FAQ entries have been imported successfully.</p>
+          <div style={{ padding: 24, background: 'var(--bg-pure-white)', borderRadius: 16, border: '1px solid var(--border-light)' }}>
             <div style={{ textAlign: 'center', padding: 16, borderRadius: 12, background: 'rgba(122, 139, 92, 0.08)', marginBottom: 20 }}>
               <p style={{ fontSize: 28, fontWeight: 600, color: 'var(--color-olive)', margin: 0 }}>{importResult.count}</p>
               <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: 0 }}>FAQ entries imported</p>
             </div>
-            <button className="btn-primary" onClick={() => { setView('list'); setBulkText(''); setImportParsed(null); setImportResult(null); }}>
+            <button onClick={() => { setView('list'); setBulkText(''); setImportParsed(null); setImportResult(null); }} style={{ background: 'linear-gradient(135deg, var(--color-gold-dark), var(--color-gold))', color: '#FDFBF7', borderRadius: 10, boxShadow: '0 2px 8px rgba(198,163,85,0.2)', fontWeight: 600, fontFamily: 'var(--font-body)', border: 'none', cursor: 'pointer', padding: '8px 16px' }}>
               View FAQ
             </button>
           </div>
@@ -298,7 +299,7 @@ export default function FaqPage({ params }: { params: Promise<{ weddingId: strin
           >
             &larr; Back to text
           </button>
-          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 500, color: 'var(--text-primary)', marginBottom: 8 }}>
+          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 500, color: 'var(--text-primary)', marginBottom: 8 }}>
             Review Parsed FAQ
           </h1>
           <p style={{ fontSize: 14, color: 'var(--text-secondary)', marginBottom: 24 }}>
@@ -307,7 +308,7 @@ export default function FaqPage({ params }: { params: Promise<{ weddingId: strin
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 20 }}>
             {importParsed.map((faq, i) => (
-              <div key={i} className="card" style={{ padding: 16, background: 'var(--bg-pure-white)' }}>
+              <div key={i} style={{ padding: 16, background: 'var(--bg-pure-white)', borderRadius: 16, border: '1px solid var(--border-light)' }}>
                 <p style={{ fontSize: 14, fontWeight: 500, color: 'var(--text-primary)', margin: '0 0 6px' }}>
                   {faq.question}
                 </p>
@@ -321,10 +322,10 @@ export default function FaqPage({ params }: { params: Promise<{ weddingId: strin
           {error && <p style={{ color: 'var(--color-terracotta)', fontSize: 13, marginBottom: 12 }}>{error}</p>}
 
           <div style={{ display: 'flex', gap: 12 }}>
-            <button className="btn-primary" onClick={handleImportConfirm} disabled={formLoading} style={{ opacity: formLoading ? 0.5 : 1 }}>
+            <button onClick={handleImportConfirm} disabled={formLoading} style={{ background: 'linear-gradient(135deg, var(--color-gold-dark), var(--color-gold))', color: '#FDFBF7', borderRadius: 10, boxShadow: '0 2px 8px rgba(198,163,85,0.2)', fontWeight: 600, fontFamily: 'var(--font-body)', border: 'none', cursor: 'pointer', padding: '8px 16px', opacity: formLoading ? 0.5 : 1 }}>
               {formLoading ? 'Importing...' : `Import ${importParsed.length} Entries`}
             </button>
-            <button className="btn-ghost" onClick={() => setImportParsed(null)}>
+            <button onClick={() => setImportParsed(null)} style={{ border: '1px solid var(--border-light)', borderRadius: 10, color: 'var(--text-secondary)', background: 'transparent', cursor: 'pointer', padding: '8px 16px' }}>
               Back
             </button>
           </div>
@@ -341,14 +342,14 @@ export default function FaqPage({ params }: { params: Promise<{ weddingId: strin
         >
           &larr; Back to FAQ
         </button>
-        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 500, color: 'var(--text-primary)', marginBottom: 8 }}>
+        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 500, color: 'var(--text-primary)', marginBottom: 8 }}>
           Import FAQ
         </h1>
         <p style={{ fontSize: 14, color: 'var(--text-secondary)', marginBottom: 24 }}>
           Paste your FAQ content below. Supports copy-paste from Zola, The Knot, Q:/A: format, or any free-form text with questions and answers — we'll use AI to extract them.
         </p>
 
-        <div className="card" style={{ padding: 24, background: 'var(--bg-pure-white)' }}>
+        <div style={{ padding: 24, background: 'var(--bg-pure-white)', borderRadius: 16, border: '1px solid var(--border-light)' }}>
           <textarea
             style={{ ...inputStyle, minHeight: 200, resize: 'vertical', fontFamily: 'monospace', fontSize: 12 }}
             value={bulkText}
@@ -359,10 +360,9 @@ export default function FaqPage({ params }: { params: Promise<{ weddingId: strin
           {error && <p style={{ color: 'var(--color-terracotta)', fontSize: 13, marginTop: 12 }}>{error}</p>}
 
           <button
-            className="btn-primary"
             onClick={handleImportPreview}
             disabled={!bulkText.trim() || formLoading}
-            style={{ marginTop: 16, opacity: !bulkText.trim() || formLoading ? 0.5 : 1 }}
+            style={{ marginTop: 16, opacity: !bulkText.trim() || formLoading ? 0.5 : 1, background: 'linear-gradient(135deg, var(--color-gold-dark), var(--color-gold))', color: '#FDFBF7', borderRadius: 10, boxShadow: '0 2px 8px rgba(198,163,85,0.2)', fontWeight: 600, fontFamily: 'var(--font-body)', border: 'none', cursor: 'pointer', padding: '8px 16px' }}
           >
             {formLoading ? 'Analyzing...' : 'Parse FAQ'}
           </button>
@@ -381,11 +381,14 @@ export default function FaqPage({ params }: { params: Promise<{ weddingId: strin
         >
           &larr; Back to FAQ
         </button>
-        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 500, color: 'var(--text-primary)', marginBottom: 24 }}>
+        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 500, color: 'var(--text-primary)', marginBottom: 4 }}>
           {view === 'edit' ? 'Edit FAQ Entry' : 'Add FAQ Entry'}
         </h1>
+        <p style={{ fontSize: 13, color: 'var(--text-secondary)', fontFamily: 'var(--font-body)', marginBottom: 24 }}>
+          {view === 'edit' ? 'Update the question and answer below.' : 'Add a new question and answer for your guests.'}
+        </p>
 
-        <form onSubmit={handleSubmit} className="card" style={{ padding: 24, background: 'var(--bg-pure-white)' }}>
+        <form onSubmit={handleSubmit} style={{ padding: 24, background: 'var(--bg-pure-white)', borderRadius: 16, border: '1px solid var(--border-light)' }}>
           <div style={{ marginBottom: 16 }}>
             <label style={labelStyle}>Question *</label>
             <input style={inputStyle} value={question} onChange={(e) => setQuestion(e.target.value)} placeholder="What should I wear?" required />
@@ -402,10 +405,10 @@ export default function FaqPage({ params }: { params: Promise<{ weddingId: strin
           </div>
           {error && <p style={{ color: 'var(--color-terracotta)', fontSize: 13, marginBottom: 12 }}>{error}</p>}
           <div style={{ display: 'flex', gap: 12 }}>
-            <button type="submit" className="btn-primary" disabled={formLoading} style={{ opacity: formLoading ? 0.7 : 1 }}>
+            <button type="submit" disabled={formLoading} style={{ background: 'linear-gradient(135deg, var(--color-gold-dark), var(--color-gold))', color: '#FDFBF7', borderRadius: 10, boxShadow: '0 2px 8px rgba(198,163,85,0.2)', fontWeight: 600, fontFamily: 'var(--font-body)', border: 'none', cursor: 'pointer', padding: '8px 16px', opacity: formLoading ? 0.7 : 1 }}>
               {formLoading ? 'Saving...' : view === 'edit' ? 'Update' : 'Add Entry'}
             </button>
-            <button type="button" className="btn-ghost" onClick={() => { resetForm(); setView('list'); }}>Cancel</button>
+            <button type="button" onClick={() => { resetForm(); setView('list'); }} style={{ border: '1px solid var(--border-light)', borderRadius: 10, color: 'var(--text-secondary)', background: 'transparent', cursor: 'pointer', padding: '8px 16px' }}>Cancel</button>
           </div>
         </form>
       </div>
@@ -417,31 +420,31 @@ export default function FaqPage({ params }: { params: Promise<{ weddingId: strin
     <div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
         <div>
-          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 500, color: 'var(--text-primary)', margin: 0 }}>
+          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 500, color: 'var(--text-primary)', margin: 0 }}>
             FAQ
           </h1>
-          <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 4 }}>
+          <p style={{ fontSize: 13, color: 'var(--text-secondary)', fontFamily: 'var(--font-body)', marginTop: 4 }}>
             {entries.length} entr{entries.length !== 1 ? 'ies' : 'y'} — Powers the guest FAQ chatbot
           </p>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
-          <button className="btn-secondary" onClick={() => { setView('import'); setBulkText(''); setImportParsed(null); setImportResult(null); setError(''); }} style={{ fontSize: 13, padding: '8px 16px' }}>
+          <button onClick={() => { setView('import'); setBulkText(''); setImportParsed(null); setImportResult(null); setError(''); }} style={{ fontSize: 13, padding: '8px 16px', border: '1px solid var(--border-light)', borderRadius: 10, color: 'var(--text-secondary)', background: 'transparent', cursor: 'pointer' }}>
             Import FAQ
           </button>
-          <button className="btn-primary" onClick={() => { resetForm(); setView('add'); }} style={{ fontSize: 13, padding: '8px 16px' }}>
+          <button onClick={() => { resetForm(); setView('add'); }} style={{ fontSize: 13, padding: '8px 16px', background: 'linear-gradient(135deg, var(--color-gold-dark), var(--color-gold))', color: '#FDFBF7', borderRadius: 10, boxShadow: '0 2px 8px rgba(198,163,85,0.2)', fontWeight: 600, fontFamily: 'var(--font-body)', border: 'none', cursor: 'pointer' }}>
             + Add Entry
           </button>
         </div>
       </div>
 
       {loading && (
-        <div className="card p-6">
+        <div style={{ borderRadius: 16, background: 'var(--bg-pure-white)', border: '1px solid var(--border-light)', padding: 24 }}>
           <div className="skeleton" style={{ width: '100%', height: 200 }} />
         </div>
       )}
 
       {!loading && entries.length === 0 && (
-        <div className="card" style={{ padding: 48, textAlign: 'center', background: 'var(--bg-pure-white)' }}>
+        <div style={{ padding: 48, textAlign: 'center', background: 'var(--bg-pure-white)', borderRadius: 16, border: '1px solid var(--border-light)' }}>
           <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" style={{ margin: '0 auto 16px' }}>
             <path d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
@@ -450,8 +453,8 @@ export default function FaqPage({ params }: { params: Promise<{ weddingId: strin
             Add common questions and answers so the AI chatbot can help your guests.
           </p>
           <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
-            <button className="btn-secondary" onClick={() => { setView('import'); setBulkText(''); setImportParsed(null); setImportResult(null); setError(''); }} style={{ fontSize: 13 }}>Import FAQ</button>
-            <button className="btn-primary" onClick={() => { resetForm(); setView('add'); }} style={{ fontSize: 13 }}>+ Add First Entry</button>
+            <button onClick={() => { setView('import'); setBulkText(''); setImportParsed(null); setImportResult(null); setError(''); }} style={{ fontSize: 13, border: '1px solid var(--border-light)', borderRadius: 10, color: 'var(--text-secondary)', background: 'transparent', cursor: 'pointer', padding: '8px 16px' }}>Import FAQ</button>
+            <button onClick={() => { resetForm(); setView('add'); }} style={{ fontSize: 13, background: 'linear-gradient(135deg, var(--color-gold-dark), var(--color-gold))', color: '#FDFBF7', borderRadius: 10, boxShadow: '0 2px 8px rgba(198,163,85,0.2)', fontWeight: 600, fontFamily: 'var(--font-body)', border: 'none', cursor: 'pointer', padding: '8px 16px' }}>+ Add First Entry</button>
           </div>
         </div>
       )}
@@ -459,7 +462,7 @@ export default function FaqPage({ params }: { params: Promise<{ weddingId: strin
       {!loading && entries.length > 0 && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {entries.map((entry) => (
-            <div key={entry.id} className="card" style={{ padding: 20, background: 'var(--bg-pure-white)' }}>
+            <div key={entry.id} style={{ padding: 20, background: 'var(--bg-pure-white)', borderRadius: 16, border: '1px solid var(--border-light)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div style={{ flex: 1 }}>
                   <p style={{ fontSize: 14, fontWeight: 500, color: 'var(--text-primary)', margin: '0 0 6px' }}>

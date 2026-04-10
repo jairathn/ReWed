@@ -123,6 +123,11 @@ export default function CreateWeddingPage() {
 
   return (
     <div className="max-w-2xl mx-auto px-6 py-12 pb-32">
+      {/* Branding */}
+      <h1 style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: 24, color: 'var(--color-gold-dark)', marginBottom: 16 }}>
+        ReWed
+      </h1>
+
       {/* Back link */}
       <Link
         href="/dashboard"
@@ -142,17 +147,17 @@ export default function CreateWeddingPage() {
             key={step.id}
             className="h-1 flex-1 rounded-full transition-colors"
             style={{
-              background: i <= currentStep ? 'var(--color-terracotta)' : 'var(--border-medium)',
+              background: i <= currentStep ? 'var(--color-gold-dark)' : 'var(--border-medium)',
             }}
           />
         ))}
       </div>
 
       {/* Step Content */}
-      <div className="card p-8 md:p-10" style={{ background: 'var(--bg-pure-white)' }}>
+      <div className="card p-8 md:p-10" style={{ borderRadius: 20, background: 'var(--bg-pure-white)', border: '1px solid var(--border-light)', boxShadow: '0 4px 16px rgba(0,0,0,0.04)' }}>
         <h2
           className="text-2xl font-medium mb-2"
-          style={{ fontFamily: 'var(--font-display)', color: 'var(--text-primary)' }}
+          style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 500, color: 'var(--text-primary)' }}
         >
           {steps[currentStep].title}
         </h2>
@@ -315,9 +320,9 @@ export default function CreateWeddingPage() {
                     onClick={() => setGuestCount(count)}
                     className="p-4 rounded-xl text-center font-medium transition-colors"
                     style={{
-                      background: guestCount === count ? 'rgba(196, 112, 75, 0.1)' : 'var(--bg-soft-cream)',
-                      color: guestCount === count ? 'var(--color-terracotta)' : 'var(--text-primary)',
-                      border: guestCount === count ? '2px solid var(--color-terracotta)' : '2px solid transparent',
+                      background: guestCount === count ? 'rgba(198, 163, 85, 0.06)' : 'var(--bg-soft-cream)',
+                      color: guestCount === count ? 'var(--color-gold-dark)' : 'var(--text-primary)',
+                      border: guestCount === count ? '2px solid var(--color-gold-dark)' : '2px solid transparent',
                     }}
                   >
                     {count}
@@ -339,9 +344,9 @@ export default function CreateWeddingPage() {
                     onClick={() => setEventCount(opt)}
                     className="p-4 rounded-xl text-center font-medium transition-colors"
                     style={{
-                      background: eventCount === opt ? 'rgba(196, 112, 75, 0.1)' : 'var(--bg-soft-cream)',
-                      color: eventCount === opt ? 'var(--color-terracotta)' : 'var(--text-primary)',
-                      border: eventCount === opt ? '2px solid var(--color-terracotta)' : '2px solid transparent',
+                      background: eventCount === opt ? 'rgba(198, 163, 85, 0.06)' : 'var(--bg-soft-cream)',
+                      color: eventCount === opt ? 'var(--color-gold-dark)' : 'var(--text-primary)',
+                      border: eventCount === opt ? '2px solid var(--color-gold-dark)' : '2px solid transparent',
                     }}
                   >
                     {opt}
@@ -368,22 +373,22 @@ export default function CreateWeddingPage() {
                 onClick={() => feat.setter(!feat.value)}
                 className="w-full p-5 rounded-xl text-left transition-colors flex items-start gap-4"
                 style={{
-                  background: feat.value ? 'rgba(196, 112, 75, 0.06)' : 'var(--bg-soft-cream)',
-                  border: feat.value ? '2px solid var(--color-terracotta)' : '2px solid transparent',
+                  background: feat.value ? 'rgba(198, 163, 85, 0.06)' : 'var(--bg-soft-cream)',
+                  border: feat.value ? '2px solid var(--color-gold-dark)' : '2px solid transparent',
                 }}
               >
                 <span className="text-2xl">{feat.emoji}</span>
                 <div className="flex-1">
                   <div className="flex items-center justify-between mb-1">
                     <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{feat.label}</span>
-                    <span className="text-sm font-medium" style={{ color: 'var(--color-terracotta)' }}>{feat.price}</span>
+                    <span className="text-sm font-medium" style={{ color: 'var(--color-gold-dark)' }}>{feat.price}</span>
                   </div>
                   <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>{feat.desc}</p>
                 </div>
                 <div
                   className="w-6 h-6 rounded-full shrink-0 mt-1 flex items-center justify-center"
                   style={{
-                    background: feat.value ? 'var(--color-terracotta)' : 'var(--border-medium)',
+                    background: feat.value ? 'var(--color-gold-dark)' : 'var(--border-medium)',
                     transition: 'background 0.15s ease',
                   }}
                 >
@@ -466,27 +471,24 @@ export default function CreateWeddingPage() {
         <div className="flex justify-between mt-10">
           <button
             onClick={() => setCurrentStep(Math.max(0, currentStep - 1))}
-            className="btn-ghost"
             disabled={currentStep === 0}
-            style={{ opacity: currentStep === 0 ? 0.4 : 1 }}
+            style={{ opacity: currentStep === 0 ? 0.4 : 1, border: '1px solid var(--border-light)', borderRadius: 10, color: 'var(--text-secondary)', background: 'transparent', cursor: 'pointer', padding: '10px 24px', fontSize: 14, fontFamily: 'var(--font-body)' }}
           >
             Back
           </button>
           {currentStep < steps.length - 1 ? (
             <button
               onClick={() => setCurrentStep(currentStep + 1)}
-              className="btn-primary"
               disabled={!canProceed()}
-              style={{ opacity: canProceed() ? 1 : 0.5 }}
+              style={{ opacity: canProceed() ? 1 : 0.5, background: 'linear-gradient(135deg, var(--color-gold-dark), var(--color-gold))', color: '#FDFBF7', borderRadius: 10, boxShadow: '0 2px 8px rgba(198,163,85,0.2)', fontWeight: 600, fontFamily: 'var(--font-body)', border: 'none', cursor: 'pointer', padding: '10px 24px', fontSize: 14 }}
             >
               Continue
             </button>
           ) : (
             <button
               onClick={handleCreate}
-              className="btn-primary"
               disabled={submitting}
-              style={{ opacity: submitting ? 0.7 : 1 }}
+              style={{ opacity: submitting ? 0.7 : 1, background: 'linear-gradient(135deg, var(--color-gold-dark), var(--color-gold))', color: '#FDFBF7', borderRadius: 10, boxShadow: '0 2px 8px rgba(198,163,85,0.2)', fontWeight: 600, fontFamily: 'var(--font-body)', border: 'none', cursor: 'pointer', padding: '10px 24px', fontSize: 14 }}
             >
               {submitting ? 'Creating...' : 'Create Wedding'}
             </button>
@@ -508,7 +510,7 @@ export default function CreateWeddingPage() {
             <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
               Estimated total
             </p>
-            <p className="text-xl font-semibold" style={{ color: 'var(--color-terracotta)' }}>
+            <p className="text-xl font-semibold" style={{ color: 'var(--color-gold-dark)' }}>
               ${price}
             </p>
           </div>

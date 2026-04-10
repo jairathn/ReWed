@@ -242,21 +242,22 @@ export default function HighlightsPage({
       >
         Highlight Reels & Memoir Messages
       </h1>
-      <p style={{ color: 'var(--text-secondary)', fontSize: 14, marginBottom: 32 }}>
+      <p style={{ fontSize: 13, color: 'var(--text-secondary)', fontFamily: 'var(--font-body)', marginBottom: 32 }}>
         Upload personalized highlight reels and write thank-you messages for each guest&apos;s memoir page.
       </p>
 
       {/* ── Gallery Approval Gate ── */}
       <div
-        className="card"
         style={{
+          borderRadius: 16,
+          background: 'var(--bg-pure-white)',
+          border: galleryPublished ? '1.5px solid var(--color-olive)' : '1px solid var(--border-light)',
           padding: 20,
           marginBottom: 24,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           gap: 16,
-          border: galleryPublished ? '1.5px solid var(--color-olive)' : '1.5px solid var(--border-medium)',
         }}
       >
         <div>
@@ -274,14 +275,15 @@ export default function HighlightsPage({
           disabled={togglingGallery}
           style={{
             padding: '10px 24px',
-            borderRadius: 8,
+            borderRadius: 10,
             fontSize: 14,
             fontWeight: 600,
             fontFamily: 'var(--font-body)',
             cursor: togglingGallery ? 'wait' : 'pointer',
             border: 'none',
-            background: galleryPublished ? 'var(--color-olive)' : 'var(--color-terracotta-gradient)',
-            color: '#FFFFFF',
+            background: galleryPublished ? 'var(--color-olive)' : 'linear-gradient(135deg, var(--color-gold-dark), var(--color-gold))',
+            color: '#FDFBF7',
+            boxShadow: '0 2px 8px rgba(198,163,85,0.2)',
             opacity: togglingGallery ? 0.5 : 1,
             flexShrink: 0,
             whiteSpace: 'nowrap',
@@ -293,8 +295,7 @@ export default function HighlightsPage({
 
       {/* ── Upload Section ── */}
       <div
-        className="card"
-        style={{ padding: 24, marginBottom: 24 }}
+        style={{ borderRadius: 16, background: 'var(--bg-pure-white)', border: '1px solid var(--border-light)', padding: 24, marginBottom: 24 }}
       >
         <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 18, marginBottom: 16, color: 'var(--text-primary)' }}>
           Upload Highlight Reel
@@ -355,10 +356,17 @@ export default function HighlightsPage({
           <button
             onClick={handleUpload}
             disabled={!selectedGuest || !uploadFile || uploading}
-            className="btn-primary"
             style={{
               padding: '10px 24px',
               fontSize: 14,
+              background: 'linear-gradient(135deg, var(--color-gold-dark), var(--color-gold))',
+              color: '#FDFBF7',
+              borderRadius: 10,
+              boxShadow: '0 2px 8px rgba(198,163,85,0.2)',
+              fontWeight: 600,
+              fontFamily: 'var(--font-body)',
+              border: 'none',
+              cursor: 'pointer',
               opacity: (!selectedGuest || !uploadFile || uploading) ? 0.5 : 1,
             }}
           >
@@ -373,7 +381,7 @@ export default function HighlightsPage({
       </div>
 
       {/* ── Memoir Message Section ── */}
-      <div className="card" style={{ padding: 24, marginBottom: 32 }}>
+      <div style={{ borderRadius: 16, background: 'var(--bg-pure-white)', border: '1px solid var(--border-light)', padding: 24, marginBottom: 32 }}>
         <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 18, marginBottom: 16, color: 'var(--text-primary)' }}>
           Write a Thank-You Message
         </h2>
@@ -427,10 +435,17 @@ export default function HighlightsPage({
             <button
               onClick={handleSaveMessage}
               disabled={!msgGuest || !msgText.trim() || savingMsg}
-              className="btn-primary"
               style={{
                 padding: '10px 24px',
                 fontSize: 14,
+                background: 'linear-gradient(135deg, var(--color-gold-dark), var(--color-gold))',
+                color: '#FDFBF7',
+                borderRadius: 10,
+                boxShadow: '0 2px 8px rgba(198,163,85,0.2)',
+                fontWeight: 600,
+                fontFamily: 'var(--font-body)',
+                border: 'none',
+                cursor: 'pointer',
                 opacity: (!msgGuest || !msgText.trim() || savingMsg) ? 0.5 : 1,
               }}
             >
@@ -463,8 +478,7 @@ export default function HighlightsPage({
             return (
               <div
                 key={guestId}
-                className="card"
-                style={{ padding: 16, display: 'flex', alignItems: 'center', gap: 16 }}
+                style={{ borderRadius: 16, background: 'var(--bg-pure-white)', border: '1px solid var(--border-light)', padding: 16, display: 'flex', alignItems: 'center', gap: 16 }}
               >
                 <div style={{ flex: 1 }}>
                   <p style={{ fontWeight: 500, fontSize: 15, color: 'var(--text-primary)' }}>
@@ -484,14 +498,14 @@ export default function HighlightsPage({
                   disabled={isPublishing}
                   style={{
                     padding: '8px 18px',
-                    borderRadius: 8,
+                    borderRadius: 10,
                     fontSize: 13,
                     fontWeight: 600,
                     fontFamily: 'var(--font-body)',
                     cursor: isPublishing ? 'wait' : 'pointer',
-                    border: isPublished ? '1.5px solid var(--color-terracotta)' : '1.5px solid var(--color-olive)',
-                    background: isPublished ? 'rgba(196, 112, 75, 0.06)' : 'rgba(122, 139, 92, 0.08)',
-                    color: isPublished ? 'var(--color-terracotta)' : 'var(--color-olive)',
+                    border: '1px solid var(--border-light)',
+                    background: 'transparent',
+                    color: 'var(--text-secondary)',
                     opacity: isPublishing ? 0.5 : 1,
                     flexShrink: 0,
                   }}

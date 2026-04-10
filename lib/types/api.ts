@@ -19,6 +19,11 @@ export type PaginatedResponse<T> = {
   has_more: boolean;
 };
 
+export type WeddingPlanner = {
+  name: string | null;
+  email: string | null;
+};
+
 export type WeddingConfig = {
   wedding_id: string;
   slug: string;
@@ -32,6 +37,7 @@ export type WeddingConfig = {
   venue_lat: number | null;
   venue_lng: number | null;
   status: 'setup' | 'active' | 'post_wedding' | 'archived';
+  wedding_planner: WeddingPlanner | null;
   theme: {
     preset: string;
     colors: { primary: string; secondary: string; bg: string; text: string };

@@ -26,10 +26,12 @@ export default function AnalyticsPage({ params }: { params: Promise<{ weddingId:
   if (loading) {
     return (
       <div>
-        <div className="skeleton" style={{ width: 200, height: 32, marginBottom: 24 }} />
+        <div className="skeleton" style={{ width: 200, height: 32, marginBottom: 24, borderRadius: 8 }} />
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16 }}>
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="card p-6"><div className="skeleton" style={{ width: '100%', height: 80 }} /></div>
+            <div key={i} style={{ padding: 24, borderRadius: 16, background: 'var(--bg-pure-white)', border: '1px solid var(--border-light)' }}>
+              <div className="skeleton" style={{ width: '100%', height: 80, borderRadius: 8 }} />
+            </div>
           ))}
         </div>
       </div>
@@ -42,75 +44,122 @@ export default function AnalyticsPage({ params }: { params: Promise<{ weddingId:
 
   return (
     <div>
-      <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 500, color: 'var(--text-primary)', marginBottom: 24 }}>
-        Analytics
-      </h1>
+      <div style={{ marginBottom: 28 }}>
+        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 500, color: 'var(--text-primary)', margin: 0 }}>
+          Analytics
+        </h1>
+        <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '4px 0 0', fontFamily: 'var(--font-body)' }}>
+          Overview of your wedding engagement
+        </p>
+      </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16, marginBottom: 32 }}>
         {/* Guest Summary */}
-        <div className="card" style={{ padding: 24, background: 'var(--bg-pure-white)' }}>
-          <h3 style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--text-tertiary)', marginBottom: 16 }}>
-            Guest List
-          </h3>
-          <p style={{ fontSize: 36, fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 4px' }}>{stats.guests.total}</p>
-          <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: 0 }}>total guests</p>
+        <div style={{ padding: 24, borderRadius: 16, background: 'var(--bg-pure-white)', border: '1px solid var(--border-light)', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+            <div style={{ width: 28, height: 28, borderRadius: 8, background: 'rgba(196,112,75,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-terracotta)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" /><circle cx="9" cy="7" r="4" />
+              </svg>
+            </div>
+            <h3 style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--text-tertiary)', margin: 0, fontFamily: 'var(--font-body)' }}>
+              Guest List
+            </h3>
+          </div>
+          <p style={{ fontSize: 36, fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 4px', fontFamily: 'var(--font-display)' }}>{stats.guests.total}</p>
+          <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: 0, fontFamily: 'var(--font-body)' }}>total guests</p>
+          <div style={{ display: 'flex', gap: 16, marginTop: 16, paddingTop: 16, borderTop: '1px solid var(--border-light)' }}>
+            <div>
+              <p style={{ fontSize: 20, fontWeight: 600, color: 'var(--color-olive)', margin: 0, fontFamily: 'var(--font-display)' }}>{stats.guests.attending}</p>
+              <p style={{ fontSize: 11, color: 'var(--text-tertiary)', fontFamily: 'var(--font-body)' }}>attending</p>
+            </div>
+            <div>
+              <p style={{ fontSize: 20, fontWeight: 600, color: 'var(--color-terracotta)', margin: 0, fontFamily: 'var(--font-display)' }}>{stats.guests.declined}</p>
+              <p style={{ fontSize: 11, color: 'var(--text-tertiary)', fontFamily: 'var(--font-body)' }}>declined</p>
+            </div>
+            <div>
+              <p style={{ fontSize: 20, fontWeight: 600, color: 'var(--text-tertiary)', margin: 0, fontFamily: 'var(--font-display)' }}>{stats.guests.pending}</p>
+              <p style={{ fontSize: 11, color: 'var(--text-tertiary)', fontFamily: 'var(--font-body)' }}>pending</p>
+            </div>
+          </div>
         </div>
 
         {/* Media Uploads */}
-        <div className="card" style={{ padding: 24, background: 'var(--bg-pure-white)' }}>
-          <h3 style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--text-tertiary)', marginBottom: 16 }}>
-            Media Uploads
-          </h3>
+        <div style={{ padding: 24, borderRadius: 16, background: 'var(--bg-pure-white)', border: '1px solid var(--border-light)', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+            <div style={{ width: 28, height: 28, borderRadius: 8, background: 'rgba(198,163,85,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-gold-dark)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><polyline points="21 15 16 10 5 21" />
+              </svg>
+            </div>
+            <h3 style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--text-tertiary)', margin: 0, fontFamily: 'var(--font-body)' }}>
+              Media Uploads
+            </h3>
+          </div>
           <div style={{ display: 'flex', justifyContent: 'space-around', textAlign: 'center' }}>
             <div>
-              <p style={{ fontSize: 28, fontWeight: 600, color: 'var(--color-golden)', margin: 0 }}>{stats.uploads.photos}</p>
-              <p style={{ fontSize: 11, color: 'var(--text-secondary)' }}>Photos</p>
+              <p style={{ fontSize: 28, fontWeight: 600, color: 'var(--color-golden)', margin: 0, fontFamily: 'var(--font-display)' }}>{stats.uploads.photos}</p>
+              <p style={{ fontSize: 11, color: 'var(--text-secondary)', fontFamily: 'var(--font-body)' }}>Photos</p>
             </div>
             <div>
-              <p style={{ fontSize: 28, fontWeight: 600, color: 'var(--color-mediterranean-blue)', margin: 0 }}>{stats.uploads.videos}</p>
-              <p style={{ fontSize: 11, color: 'var(--text-secondary)' }}>Videos</p>
+              <p style={{ fontSize: 28, fontWeight: 600, color: 'var(--color-mediterranean-blue)', margin: 0, fontFamily: 'var(--font-display)' }}>{stats.uploads.videos}</p>
+              <p style={{ fontSize: 11, color: 'var(--text-secondary)', fontFamily: 'var(--font-body)' }}>Videos</p>
             </div>
             <div>
-              <p style={{ fontSize: 28, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>{stats.uploads.total}</p>
-              <p style={{ fontSize: 11, color: 'var(--text-secondary)' }}>Total</p>
+              <p style={{ fontSize: 28, fontWeight: 600, color: 'var(--text-primary)', margin: 0, fontFamily: 'var(--font-display)' }}>{stats.uploads.total}</p>
+              <p style={{ fontSize: 11, color: 'var(--text-secondary)', fontFamily: 'var(--font-body)' }}>Total</p>
             </div>
           </div>
         </div>
 
         {/* Engagement */}
-        <div className="card" style={{ padding: 24, background: 'var(--bg-pure-white)' }}>
-          <h3 style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--text-tertiary)', marginBottom: 16 }}>
-            Engagement
-          </h3>
+        <div style={{ padding: 24, borderRadius: 16, background: 'var(--bg-pure-white)', border: '1px solid var(--border-light)', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+            <div style={{ width: 28, height: 28, borderRadius: 8, background: 'rgba(122,139,92,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-olive)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
+              </svg>
+            </div>
+            <h3 style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--text-tertiary)', margin: 0, fontFamily: 'var(--font-body)' }}>
+              Engagement
+            </h3>
+          </div>
           <div style={{ display: 'flex', justifyContent: 'space-around', textAlign: 'center' }}>
             <div>
-              <p style={{ fontSize: 28, fontWeight: 600, color: 'var(--color-dusty-rose)', margin: 0 }}>{stats.feed_posts}</p>
-              <p style={{ fontSize: 11, color: 'var(--text-secondary)' }}>Feed Posts</p>
+              <p style={{ fontSize: 28, fontWeight: 600, color: 'var(--color-dusty-rose)', margin: 0, fontFamily: 'var(--font-display)' }}>{stats.feed_posts}</p>
+              <p style={{ fontSize: 11, color: 'var(--text-secondary)', fontFamily: 'var(--font-body)' }}>Feed Posts</p>
             </div>
             <div>
-              <p style={{ fontSize: 28, fontWeight: 600, color: 'var(--color-mediterranean-blue)', margin: 0 }}>{stats.faq_entries}</p>
-              <p style={{ fontSize: 11, color: 'var(--text-secondary)' }}>FAQ Entries</p>
+              <p style={{ fontSize: 28, fontWeight: 600, color: 'var(--color-mediterranean-blue)', margin: 0, fontFamily: 'var(--font-display)' }}>{stats.faq_entries}</p>
+              <p style={{ fontSize: 11, color: 'var(--text-secondary)', fontFamily: 'var(--font-body)' }}>FAQ Entries</p>
             </div>
           </div>
         </div>
 
-        {/* Event Setup */}
-        <div className="card" style={{ padding: 24, background: 'var(--bg-pure-white)' }}>
-          <h3 style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--text-tertiary)', marginBottom: 16 }}>
-            Setup Progress
-          </h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {/* Setup Progress */}
+        <div style={{ padding: 24, borderRadius: 16, background: 'var(--bg-pure-white)', border: '1px solid var(--border-light)', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+            <div style={{ width: 28, height: 28, borderRadius: 8, background: 'rgba(43,95,138,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-mediterranean-blue, #2B5F8A)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="9 11 12 14 22 4" /><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" />
+              </svg>
+            </div>
+            <h3 style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--text-tertiary)', margin: 0, fontFamily: 'var(--font-body)' }}>
+              Setup Progress
+            </h3>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {[
               { label: 'Guests added', done: stats.guests.total > 0 },
               { label: 'Events configured', done: stats.events > 0 },
               { label: 'FAQ entries added', done: stats.faq_entries > 0 },
               { label: 'Media uploaded', done: stats.uploads.total > 0 },
             ].map((item) => (
-              <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <div style={{
-                  width: 18,
-                  height: 18,
-                  borderRadius: '50%',
+                  width: 20,
+                  height: 20,
+                  borderRadius: 6,
                   border: item.done ? 'none' : '1.5px solid var(--border-medium)',
                   background: item.done ? 'var(--color-olive)' : 'transparent',
                   display: 'flex',
@@ -124,7 +173,7 @@ export default function AnalyticsPage({ params }: { params: Promise<{ weddingId:
                     </svg>
                   )}
                 </div>
-                <span style={{ fontSize: 13, color: item.done ? 'var(--text-primary)' : 'var(--text-tertiary)' }}>{item.label}</span>
+                <span style={{ fontSize: 13, color: item.done ? 'var(--text-primary)' : 'var(--text-tertiary)', fontFamily: 'var(--font-body)' }}>{item.label}</span>
               </div>
             ))}
           </div>

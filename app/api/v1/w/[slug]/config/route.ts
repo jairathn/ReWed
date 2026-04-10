@@ -68,6 +68,12 @@ export async function GET(
       venue_lat: wedding.venue_lat ? Number(wedding.venue_lat) : null,
       venue_lng: wedding.venue_lng ? Number(wedding.venue_lng) : null,
       status: wedding.status,
+      wedding_planner: config.wedding_planner
+        ? {
+            name: config.wedding_planner.name || null,
+            email: config.wedding_planner.email || null,
+          }
+        : null,
       theme: config.theme || {
         preset: 'mediterranean',
         colors: { primary: '#C4704B', secondary: '#2B5F8A', bg: '#FEFCF9', text: '#2C2825' },

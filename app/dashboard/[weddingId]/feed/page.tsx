@@ -113,10 +113,10 @@ export default function FeedModerationPage({ params }: { params: Promise<{ weddi
     <div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
         <div>
-          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 500, color: 'var(--text-primary)', margin: 0 }}>
+          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 500, color: 'var(--text-primary)', margin: 0 }}>
             Social Feed
           </h1>
-          <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 4 }}>
+          <p style={{ fontSize: 13, color: 'var(--text-secondary)', fontFamily: 'var(--font-body)', marginTop: 4 }}>
             Monitor and moderate guest posts on the social feed.
           </p>
         </div>
@@ -147,11 +147,11 @@ export default function FeedModerationPage({ params }: { params: Promise<{ weddi
       </div>
 
       {loading ? (
-        <div className="card p-6">
+        <div style={{ borderRadius: 16, background: 'var(--bg-pure-white)', border: '1px solid var(--border-light)', padding: 24 }}>
           <div className="skeleton" style={{ width: '100%', height: 200 }} />
         </div>
       ) : posts.length === 0 ? (
-        <div className="card" style={{ padding: 48, textAlign: 'center', background: 'var(--bg-pure-white)' }}>
+        <div style={{ padding: 48, textAlign: 'center', background: 'var(--bg-pure-white)', borderRadius: 16, border: '1px solid var(--border-light)' }}>
           <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" style={{ margin: '0 auto 16px' }}>
             <path d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
           </svg>
@@ -165,12 +165,12 @@ export default function FeedModerationPage({ params }: { params: Promise<{ weddi
           {filtered.map((post) => (
             <div
               key={post.id}
-              className="card"
               style={{
                 padding: 20,
                 background: 'var(--bg-pure-white)',
+                borderRadius: 16,
+                border: post.is_pinned ? '1.5px solid var(--color-golden)' : '1px solid var(--border-light)',
                 opacity: post.is_hidden ? 0.55 : 1,
-                border: post.is_pinned ? '1.5px solid var(--color-golden)' : undefined,
               }}
             >
               <div style={{ display: 'flex', gap: 14 }}>
@@ -316,8 +316,7 @@ export default function FeedModerationPage({ params }: { params: Promise<{ weddi
               <button
                 onClick={handleLoadMore}
                 disabled={loadingMore}
-                className="btn-secondary"
-                style={{ fontSize: 13 }}
+                style={{ fontSize: 13, border: '1px solid var(--border-light)', borderRadius: 10, color: 'var(--text-secondary)', background: 'transparent', cursor: 'pointer', padding: '8px 16px' }}
               >
                 {loadingMore ? 'Loading...' : 'Load more posts'}
               </button>

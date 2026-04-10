@@ -117,6 +117,12 @@ export default function FaqPage() {
     ? `${config.couple_names.name1} & ${config.couple_names.name2}`
     : config?.display_name || 'the couple';
 
+  const plannerEmail = config?.wedding_planner?.email || null;
+  const plannerName = config?.wedding_planner?.name || null;
+  const plannerMailto = plannerEmail
+    ? `mailto:${plannerEmail}?subject=${encodeURIComponent(`Question about ${config?.display_name || 'the wedding'}`)}`
+    : null;
+
   return (
     <div className="min-h-screen flex flex-col" style={{ background: 'var(--bg-warm-white)' }}>
       <header
@@ -269,6 +275,35 @@ export default function FaqPage() {
                   </button>
                 ))}
             </div>
+          )}
+
+          {/* Wedding planner fallback link */}
+          {plannerMailto && (
+            <a
+              href={plannerMailto}
+              className="mt-3 flex items-center justify-center gap-2 rounded-xl px-4 py-3"
+              style={{
+                background: 'var(--bg-pure-white)',
+                border: '1px solid var(--border-light)',
+                textDecoration: 'none',
+                fontSize: 13,
+                fontFamily: 'var(--font-body)',
+                color: 'var(--text-secondary)',
+                lineHeight: 1.4,
+                boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
+              }}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-gold-dark)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                <polyline points="22,6 12,13 2,6" />
+              </svg>
+              <span>
+                Didn&apos;t get the answer you&apos;re looking for?{' '}
+                <strong style={{ color: 'var(--color-gold-dark)' }}>
+                  Email {plannerName ? `${plannerName}, ` : ''}our wedding planner
+                </strong>
+              </span>
+            </a>
           )}
         </div>
       </main>

@@ -66,15 +66,16 @@ export default function GuestFinder() {
 
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return '';
-    try {
-      return new Date(dateStr + 'T12:00:00').toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric',
-      });
-    } catch {
-      return '';
-    }
+    // Handle both "YYYY-MM-DD" and full ISO strings; strip any time portion
+    // so the date is interpreted in local time (no UTC shift).
+    const dateOnly = dateStr.split('T')[0];
+    const d = new Date(dateOnly + 'T12:00:00');
+    if (isNaN(d.getTime())) return '';
+    return d.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
   };
 
   return (
