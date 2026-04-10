@@ -10,6 +10,38 @@ interface KnowledgeData {
   };
 }
 
+// Standard Zola wedding website sections, in the order they appear in the
+// Zola dashboard sidebar. Used as a starter template so couples can paste
+// each Zola page's contents under the matching heading without having to
+// type their own headers.
+const ZOLA_SECTION_TEMPLATE = `## Home
+Paste the welcome / landing copy from your Zola Home page here.
+
+## Schedule
+Paste your Zola Schedule page (events, times, venues, dress code) here.
+
+## Travel
+Paste your Zola Travel page (airports, directions, accommodations, room blocks) here.
+
+## Registry
+Paste your Zola Registry notes here (or a note pointing guests to your registry).
+
+## Wedding Party
+Paste your Zola Wedding Party page (bridesmaids, groomsmen, bios) here.
+
+## Gallery
+Paste any captions or context from your Zola Gallery page here.
+
+## Things To Do
+Paste your Zola Things To Do page (restaurants, activities, sightseeing) here.
+
+## FAQs
+Paste your Zola FAQs page here — the chatbot will pull from this first.
+
+## RSVP
+Paste RSVP instructions, deadlines, plus-one policy, dietary restriction notes, etc.
+`;
+
 export default function KnowledgePage({ params }: { params: Promise<{ weddingId: string }> }) {
   const { weddingId } = use(params);
   const [data, setData] = useState<KnowledgeData | null>(null);
@@ -27,7 +59,11 @@ export default function KnowledgePage({ params }: { params: Promise<{ weddingId:
       .then((res) => res.json())
       .then((d: KnowledgeData) => {
         setData(d);
-        setKnowledgeBase(d.knowledge_base || '');
+        // When no knowledge base is saved yet, seed the textarea with the
+        // Zola section template so the couple can just paste content under
+        // each heading. Leaves `data.knowledge_base` as '' so the form is
+        // correctly marked dirty until they explicitly Save.
+        setKnowledgeBase(d.knowledge_base || ZOLA_SECTION_TEMPLATE);
         setPlannerName(d.wedding_planner?.name || '');
         setPlannerEmail(d.wedding_planner?.email || '');
       })
@@ -230,18 +266,51 @@ export default function KnowledgePage({ params }: { params: Promise<{ weddingId:
               <line x1="12" y1="8" x2="12.01" y2="8" />
             </svg>
           </div>
-          <div>
+          <div style={{ flex: 1 }}>
             <p style={{ margin: 0, fontSize: 13, fontWeight: 500, color: 'var(--text-primary)', fontFamily: 'var(--font-body)' }}>
               Importing from Zola (password-protected)
             </p>
             <p style={{ margin: '4px 0 0', fontSize: 12, lineHeight: 1.55, color: 'var(--text-secondary)', fontFamily: 'var(--font-body)' }}>
               Zola has no public API and doesn&apos;t allow third-party scraping of password-protected
-              pages. The easy workaround: while logged into Zola, open each section
-              (Travel, Schedule, FAQ, Things To Do, etc.), select the text with{' '}
+              pages. We&apos;ve pre-filled the textarea with headers matching every Zola page in your
+              sidebar — just open each Zola page while logged in, select all with{' '}
               <kbd style={kbdStyle}>⌘A</kbd>, copy with <kbd style={kbdStyle}>⌘C</kbd>, and paste
-              it below. The chatbot will handle messy formatting — just include section headers
-              so it knows what each block is about.
+              under the matching header below.
             </p>
+            <button
+              type="button"
+              onClick={() => {
+                if (
+                  knowledgeBase === ZOLA_SECTION_TEMPLATE ||
+                  window.confirm(
+                    'Replace the current text with the blank Zola template? Any unsaved content will be lost.'
+                  )
+                ) {
+                  setKnowledgeBase(ZOLA_SECTION_TEMPLATE);
+                }
+              }}
+              style={{
+                marginTop: 10,
+                padding: '6px 12px',
+                borderRadius: 8,
+                border: '1px solid var(--border-light)',
+                background: 'var(--bg-pure-white)',
+                fontSize: 11,
+                fontWeight: 500,
+                fontFamily: 'var(--font-body)',
+                color: 'var(--color-gold-dark)',
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+              }}
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="1 4 1 10 7 10" />
+                <path d="M3.51 15a9 9 0 102.13-9.36L1 10" />
+              </svg>
+              Reset to blank Zola template
+            </button>
           </div>
         </div>
 
@@ -250,19 +319,7 @@ export default function KnowledgePage({ params }: { params: Promise<{ weddingId:
           onChange={(e) => setKnowledgeBase(e.target.value)}
           rows={20}
           maxLength={charMax}
-          placeholder={`Example:
-
-## Accommodations
-We have room blocks at the Hotel Villa Cortine (use code JAYWALKING) and Grand Hotel Cadenabbia (code NEIL2026). Both are walking distance from the ceremony venue.
-
-## Travel
-The closest airport is Milan Malpensa (MXP). From there it's about a 90-minute drive or train to Lake Como...
-
-## Registry
-We've registered at Zola. A link is on our wedding website.
-
-## Dress Code
-Formal/black tie optional. Think garden party elegance.`}
+          placeholder="Paste your Zola content under each ## section header."
           style={{
             ...inputStyle,
             resize: 'vertical',
