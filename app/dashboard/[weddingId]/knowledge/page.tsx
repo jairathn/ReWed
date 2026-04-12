@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, use } from 'react';
+import { useState, useEffect, useRef, use } from 'react';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 
 interface HomeCardImageData {
@@ -286,7 +286,7 @@ export default function KnowledgePage({ params }: { params: Promise<{ weddingId:
           </h3>
         </div>
         <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '0 0 16px', fontFamily: 'var(--font-body)', lineHeight: 1.55 }}>
-          Replace the placeholder illustrations on the guest home page&apos;s Schedule and Travel cards with your own photos. Paste a hosted image URL (Unsplash, Imgur, your own CDN, etc.) — wide landscape orientation works best. Leave blank to keep the gold gradient placeholder.
+          Replace the placeholder illustrations on the guest home page&apos;s Schedule and Travel cards with your own photos. Upload an image directly or paste a hosted URL (Unsplash, Imgur, etc.) — wide landscape orientation works best. Leave blank to keep the gold gradient placeholder.
         </p>
 
         <div style={{ display: 'grid', gap: 28 }}>
@@ -300,6 +300,7 @@ export default function KnowledgePage({ params }: { params: Promise<{ weddingId:
             onUrlChange={setScheduleImage}
             onPositionChange={setSchedulePosition}
             handleFocalClick={handleFocalClick}
+            weddingId={weddingId}
           />
 
           {/* Travel card image */}
@@ -312,6 +313,7 @@ export default function KnowledgePage({ params }: { params: Promise<{ weddingId:
             onUrlChange={setTravelImage}
             onPositionChange={setTravelPosition}
             handleFocalClick={handleFocalClick}
+            weddingId={weddingId}
           />
         </div>
       </div>
@@ -577,6 +579,7 @@ interface ImageFocalEditorProps {
     e: React.MouseEvent<HTMLImageElement>,
     setter: (v: string) => void
   ) => void;
+  weddingId: string;
 }
 
 /**
@@ -595,8 +598,37 @@ function ImageFocalEditor({
   onUrlChange,
   onPositionChange,
   handleFocalClick,
+  weddingId,
 }: ImageFocalEditorProps) {
   const [loadError, setLoadError] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileUpload = async (file: File) => {
+    setUploading(true);
+    setUploadError(null);
+    try {
+      const form = new FormData();
+      form.append('file', file);
+      const res = await fetch(
+        `/api/v1/dashboard/weddings/${weddingId}/knowledge/image`,
+        { method: 'POST', body: form }
+      );
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data?.error?.message || 'Upload failed');
+      }
+      const data = await res.json();
+      onUrlChange(data.data.url);
+      setLoadError(false);
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : 'Upload failed');
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
 
   // Parse "X% Y%" into numbers for the crosshair marker overlay.
   const match = position.match(/^(\d+(?:\.\d+)?)%\s+(\d+(?:\.\d+)?)%$/);
@@ -606,16 +638,63 @@ function ImageFocalEditor({
   return (
     <div>
       <label style={labelStyle}>{label}</label>
-      <input
-        type="text"
-        value={url}
-        onChange={(e) => {
-          onUrlChange(e.target.value);
-          setLoadError(false);
-        }}
-        placeholder="https://images.unsplash.com/photo-… (or /your-file.jpg from /public)"
-        style={inputStyle}
-      />
+      <div style={{ display: 'flex', gap: 8, alignItems: 'stretch' }}>
+        <input
+          type="text"
+          value={url}
+          onChange={(e) => {
+            onUrlChange(e.target.value);
+            setLoadError(false);
+            setUploadError(null);
+          }}
+          placeholder="Paste a URL or upload an image"
+          style={{ ...inputStyle, flex: 1 }}
+          disabled={uploading}
+        />
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp,image/heic"
+          style={{ display: 'none' }}
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) handleFileUpload(file);
+          }}
+        />
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={uploading}
+          style={{
+            padding: '0 14px',
+            borderRadius: 10,
+            border: '1px solid var(--border-light)',
+            background: 'var(--bg-pure-white)',
+            fontSize: 12,
+            fontWeight: 500,
+            fontFamily: 'var(--font-body)',
+            color: 'var(--text-secondary)',
+            cursor: uploading ? 'default' : 'pointer',
+            opacity: uploading ? 0.6 : 1,
+            whiteSpace: 'nowrap',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+          }}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+            <polyline points="17 8 12 3 7 8" />
+            <line x1="12" y1="3" x2="12" y2="15" />
+          </svg>
+          {uploading ? 'Uploading...' : 'Upload'}
+        </button>
+      </div>
+      {uploadError && (
+        <p style={{ fontSize: 12, color: 'var(--color-terracotta)', margin: '6px 0 0', fontFamily: 'var(--font-body)' }}>
+          {uploadError}
+        </p>
+      )}
       <p
         style={{
           fontSize: 11,
