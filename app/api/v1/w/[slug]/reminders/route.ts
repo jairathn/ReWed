@@ -8,7 +8,7 @@ export async function GET(
   { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
-    const { slug } = await params;
+    await params;
     const pool = getPool();
 
     const sessionToken = request.cookies.get('wedding_session')?.value;
@@ -40,7 +40,6 @@ export async function GET(
     const reminders: { type: string; title: string; body: string; event_name?: string; when: string }[] = [];
 
     for (const event of eventsResult.rows) {
-      const eventDate = new Date(event.date + 'T12:00:00');
       const nowInTz = new Date(new Date().toLocaleString('en-US', { timeZone: tz }));
       const todayStr = `${nowInTz.getFullYear()}-${String(nowInTz.getMonth() + 1).padStart(2, '0')}-${String(nowInTz.getDate()).padStart(2, '0')}`;
       const isToday = event.date === todayStr || new Date(event.date).toISOString().slice(0, 10) === todayStr;

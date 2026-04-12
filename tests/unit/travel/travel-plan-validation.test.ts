@@ -157,7 +157,7 @@ describe('travelPlanSchema', () => {
   });
 
   it('defaults visibility to full', () => {
-    const { visibility, ...planNoVis } = validDirectPlan;
+    const { visibility: _, ...planNoVis } = validDirectPlan; void _;
     const result = travelPlanSchema.safeParse(planNoVis);
     expect(result.success).toBe(true);
     if (result.success) {

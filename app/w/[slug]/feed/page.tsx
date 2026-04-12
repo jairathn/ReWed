@@ -376,7 +376,7 @@ export default function FeedPage() {
         <div className="w-8" />
       </header>
       <main className="pt-24 pb-32 px-6 max-w-2xl mx-auto flex-1">
-      <section className="mb-6 text-center">
+      <section className="mb-8 text-center">
         <h2
           className="text-5xl mb-3 tracking-tight"
           style={{
@@ -400,20 +400,32 @@ export default function FeedPage() {
           </p>
           <span className="h-px w-8" style={{ background: 'var(--border-light)' }} />
         </div>
+        <p
+          className="text-xs mt-3 mx-auto max-w-[280px]"
+          style={{
+            color: 'var(--text-tertiary)',
+            lineHeight: 1.5,
+            fontFamily: 'var(--font-body)',
+          }}
+        >
+          Every photo and video you share here becomes part of your personalized highlight reel
+        </p>
       </section>
 
       {!feedBlocked && (
-        <div className="flex justify-center mb-6">
+        <div className="flex justify-center mb-8">
           <button
             onClick={() => setShowCompose(true)}
-            className="px-6 py-2.5 text-sm rounded-full font-semibold"
+            className="px-7 py-3 text-sm rounded-full font-semibold transition-all duration-200 hover:scale-[1.03] active:scale-[0.98]"
             style={{
-              background: 'var(--color-terracotta-gradient)',
+              background: 'linear-gradient(135deg, var(--color-terracotta), #D4A853)',
               color: 'white',
               border: 'none',
+              boxShadow: '0 4px 16px rgba(196, 112, 75, 0.25)',
+              letterSpacing: '0.02em',
             }}
           >
-            + Post
+            + Share a Moment
           </button>
         </div>
       )}
@@ -639,12 +651,24 @@ export default function FeedPage() {
         </div>
       ) : posts.length === 0 ? (
         <div className="text-center py-16">
-          <p className="text-5xl mb-4">&#128172;</p>
+          <div
+            className="w-16 h-16 mx-auto mb-4 rounded-2xl flex items-center justify-center"
+            style={{
+              background: 'linear-gradient(135deg, rgba(196, 112, 75, 0.08), rgba(212, 168, 83, 0.08))',
+            }}
+          >
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--color-terracotta)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+            </svg>
+          </div>
           <p className="text-lg font-medium mb-2" style={{ fontFamily: 'var(--font-display)', color: 'var(--text-primary)' }}>
             No posts yet
           </p>
-          <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+          <p className="text-sm mb-1" style={{ color: 'var(--text-secondary)' }}>
             Be the first to share a moment!
+          </p>
+          <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+            Your posts become part of the wedding highlight reel
           </p>
         </div>
       ) : (
@@ -652,11 +676,13 @@ export default function FeedPage() {
           {posts.map((post) => (
             <div
               key={post.id}
-              className="rounded-2xl p-4"
+              className="rounded-2xl p-4 transition-shadow duration-300 hover:shadow-md"
               style={{
                 background: 'var(--bg-pure-white)',
-                boxShadow: 'var(--shadow-soft)',
-                border: post.is_pinned ? '1px solid var(--color-golden)' : '1px solid var(--border-light)',
+                boxShadow: post.is_pinned
+                  ? '0 4px 20px rgba(212, 168, 83, 0.12)'
+                  : '0 2px 12px rgba(0,0,0,0.04)',
+                border: post.is_pinned ? '1px solid rgba(212, 168, 83, 0.3)' : '1px solid var(--border-light)',
               }}
             >
               <div className="flex items-center gap-3 mb-3">

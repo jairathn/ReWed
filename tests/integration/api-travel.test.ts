@@ -28,9 +28,11 @@ function makeParams(slug = 'neil-shriya') {
 }
 
 function makeRequest(url: string, options?: RequestInit) {
+  const { signal, ...rest } = options || {};
   return new NextRequest(url, {
     headers: { Cookie: 'wedding_session=valid-token' },
-    ...options,
+    ...rest,
+    ...(signal ? { signal } : {}),
   });
 }
 

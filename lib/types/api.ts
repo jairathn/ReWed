@@ -27,9 +27,19 @@ export type WeddingPlanner = {
 export type HomeCardImage = {
   /** Full URL or site-relative path for the image. */
   url: string;
-  /** CSS object-position value, e.g. "50% 30%". Controls the focal point
-   *  when the image is cropped to fit the card's aspect ratio. */
+  /** @deprecated Legacy focal-point field. Use `crop` instead. Kept for
+   *  backward compatibility with rows written before the crop editor shipped. */
   position: string;
+  /** Crop/zoom data set via the interactive editor. When present, the guest
+   *  page renders the image with `transform: scale(zoom)` centered on (x, y). */
+  crop?: {
+    /** Horizontal position 0-100 (0 = left edge, 50 = center, 100 = right). */
+    x: number;
+    /** Vertical position 0-100 (0 = top, 50 = center, 100 = bottom). */
+    y: number;
+    /** Zoom level. 1 = image just covers the frame (min), up to 3. */
+    zoom: number;
+  };
 };
 
 export type WeddingConfig = {
@@ -46,6 +56,11 @@ export type WeddingConfig = {
   venue_lng: number | null;
   status: 'setup' | 'active' | 'post_wedding' | 'archived';
   wedding_planner: WeddingPlanner | null;
+  /** Optional background image shown behind all guest pages. */
+  guest_background: {
+    url: string;
+    opacity: number;
+  } | null;
   /** Optional couple-provided image URLs shown in the guest home bento cards. */
   home_card_images: {
     schedule: HomeCardImage | null;

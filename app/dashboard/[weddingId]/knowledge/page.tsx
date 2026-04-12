@@ -1,11 +1,24 @@
 'use client';
 
-import { useState, useEffect, use } from 'react';
+import { useState, useEffect, useRef, use } from 'react';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
+import ImageCropEditor from '@/components/ui/ImageCropEditor';
+
+interface CropData {
+  x: number;
+  y: number;
+  zoom: number;
+}
 
 interface HomeCardImageData {
   url: string;
   position: string;
+  crop?: CropData;
+}
+
+interface GuestBackgroundData {
+  url: string;
+  opacity: number;
 }
 
 interface KnowledgeData {
@@ -18,6 +31,7 @@ interface KnowledgeData {
     schedule: HomeCardImageData;
     travel: HomeCardImageData;
   };
+  guest_background: GuestBackgroundData;
 }
 
 // Standard Zola wedding website sections, in the order they appear in the
@@ -64,9 +78,11 @@ export default function KnowledgePage({ params }: { params: Promise<{ weddingId:
   const [plannerName, setPlannerName] = useState('');
   const [plannerEmail, setPlannerEmail] = useState('');
   const [scheduleImage, setScheduleImage] = useState('');
-  const [schedulePosition, setSchedulePosition] = useState('50% 50%');
+  const [scheduleCrop, setScheduleCrop] = useState<CropData>({ x: 50, y: 50, zoom: 1 });
   const [travelImage, setTravelImage] = useState('');
-  const [travelPosition, setTravelPosition] = useState('50% 50%');
+  const [travelCrop, setTravelCrop] = useState<CropData>({ x: 50, y: 50, zoom: 1 });
+  const [bgImage, setBgImage] = useState('');
+  const [bgOpacity, setBgOpacity] = useState(0.08);
   const [confirmResetOpen, setConfirmResetOpen] = useState(false);
 
   useEffect(() => {
@@ -82,13 +98,20 @@ export default function KnowledgePage({ params }: { params: Promise<{ weddingId:
         setPlannerName(d.wedding_planner?.name || '');
         setPlannerEmail(d.wedding_planner?.email || '');
         setScheduleImage(d.home_card_images?.schedule?.url || '');
-        setSchedulePosition(d.home_card_images?.schedule?.position || '50% 50%');
+        setScheduleCrop(d.home_card_images?.schedule?.crop || { x: 50, y: 50, zoom: 1 });
         setTravelImage(d.home_card_images?.travel?.url || '');
-        setTravelPosition(d.home_card_images?.travel?.position || '50% 50%');
+        setTravelCrop(d.home_card_images?.travel?.crop || { x: 50, y: 50, zoom: 1 });
+        setBgImage(d.guest_background?.url || '');
+        setBgOpacity(typeof d.guest_background?.opacity === 'number' ? d.guest_background.opacity : 0.08);
       })
       .catch(() => setError('Failed to load'))
       .finally(() => setLoading(false));
   }, [weddingId]);
+
+  const cropEqual = (a: CropData, b?: CropData) => {
+    const d = b || { x: 50, y: 50, zoom: 1 };
+    return a.x === d.x && a.y === d.y && a.zoom === d.zoom;
+  };
 
   const dirty =
     !!data &&
@@ -96,9 +119,11 @@ export default function KnowledgePage({ params }: { params: Promise<{ weddingId:
       plannerName !== data.wedding_planner.name ||
       plannerEmail !== data.wedding_planner.email ||
       scheduleImage !== (data.home_card_images?.schedule?.url || '') ||
-      schedulePosition !== (data.home_card_images?.schedule?.position || '50% 50%') ||
+      !cropEqual(scheduleCrop, data.home_card_images?.schedule?.crop) ||
       travelImage !== (data.home_card_images?.travel?.url || '') ||
-      travelPosition !== (data.home_card_images?.travel?.position || '50% 50%'));
+      !cropEqual(travelCrop, data.home_card_images?.travel?.crop) ||
+      bgImage !== (data.guest_background?.url || '') ||
+      bgOpacity !== (typeof data.guest_background?.opacity === 'number' ? data.guest_background.opacity : 0.08));
 
   const handleSave = async () => {
     setSaving(true);
@@ -112,9 +137,13 @@ export default function KnowledgePage({ params }: { params: Promise<{ weddingId:
           wedding_planner_name: plannerName,
           wedding_planner_email: plannerEmail,
           home_schedule_image: scheduleImage,
-          home_schedule_position: schedulePosition,
+          home_schedule_position: `${scheduleCrop.x}% ${scheduleCrop.y}%`,
+          home_schedule_crop: scheduleCrop,
           home_travel_image: travelImage,
-          home_travel_position: travelPosition,
+          home_travel_position: `${travelCrop.x}% ${travelCrop.y}%`,
+          home_travel_crop: travelCrop,
+          guest_background_image: bgImage,
+          guest_background_opacity: bgOpacity,
         }),
       });
       if (!res.ok) {
@@ -127,9 +156,11 @@ export default function KnowledgePage({ params }: { params: Promise<{ weddingId:
       setPlannerName(updated.wedding_planner?.name || '');
       setPlannerEmail(updated.wedding_planner?.email || '');
       setScheduleImage(updated.home_card_images?.schedule?.url || '');
-      setSchedulePosition(updated.home_card_images?.schedule?.position || '50% 50%');
+      setScheduleCrop(updated.home_card_images?.schedule?.crop || { x: 50, y: 50, zoom: 1 });
       setTravelImage(updated.home_card_images?.travel?.url || '');
-      setTravelPosition(updated.home_card_images?.travel?.position || '50% 50%');
+      setTravelCrop(updated.home_card_images?.travel?.crop || { x: 50, y: 50, zoom: 1 });
+      setBgImage(updated.guest_background?.url || '');
+      setBgOpacity(typeof updated.guest_background?.opacity === 'number' ? updated.guest_background.opacity : 0.08);
       setSavedAt(new Date());
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save');
@@ -138,18 +169,6 @@ export default function KnowledgePage({ params }: { params: Promise<{ weddingId:
     }
   };
 
-  // Convert a click anywhere on the full-image preview into an
-  // object-position percentage string. The guest home page then uses that
-  // as the focal point when cropping to the card's aspect ratio.
-  const handleFocalClick = (
-    e: React.MouseEvent<HTMLImageElement>,
-    setter: (v: string) => void
-  ) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = Math.max(0, Math.min(100, Math.round(((e.clientX - rect.left) / rect.width) * 100)));
-    const y = Math.max(0, Math.min(100, Math.round(((e.clientY - rect.top) / rect.height) * 100)));
-    setter(`${x}% ${y}%`);
-  };
 
   if (loading) {
     return (
@@ -286,34 +305,89 @@ export default function KnowledgePage({ params }: { params: Promise<{ weddingId:
           </h3>
         </div>
         <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '0 0 16px', fontFamily: 'var(--font-body)', lineHeight: 1.55 }}>
-          Replace the placeholder illustrations on the guest home page&apos;s Schedule and Travel cards with your own photos. Paste a hosted image URL (Unsplash, Imgur, your own CDN, etc.) — wide landscape orientation works best. Leave blank to keep the gold gradient placeholder.
+          Replace the placeholder illustrations on the guest home page&apos;s Schedule and Travel cards with your own photos. Upload an image directly or paste a hosted URL (Unsplash, Imgur, etc.) — wide landscape orientation works best. Leave blank to keep the gold gradient placeholder.
         </p>
 
         <div style={{ display: 'grid', gap: 28 }}>
           {/* Schedule card image */}
-          <ImageFocalEditor
+          <ImageUploadField
             label="Schedule card image"
             helperText="Appears in the ~3:2 area on the right side of the Schedule card."
-            cardAspectRatio="3 / 2"
+            aspectRatio="3 / 2"
             url={scheduleImage}
-            position={schedulePosition}
+            crop={scheduleCrop}
             onUrlChange={setScheduleImage}
-            onPositionChange={setSchedulePosition}
-            handleFocalClick={handleFocalClick}
+            onCropChange={setScheduleCrop}
+            weddingId={weddingId}
           />
 
           {/* Travel card image */}
-          <ImageFocalEditor
+          <ImageUploadField
             label="Travel card image"
             helperText="Appears as a wide hero strip on top of the Travel card (128px tall, spans the whole card)."
-            cardAspectRatio="6 / 1"
+            aspectRatio="6 / 1"
             url={travelImage}
-            position={travelPosition}
+            crop={travelCrop}
             onUrlChange={setTravelImage}
-            onPositionChange={setTravelPosition}
-            handleFocalClick={handleFocalClick}
+            onCropChange={setTravelCrop}
+            weddingId={weddingId}
           />
         </div>
+      </div>
+
+      {/* Guest Background Card */}
+      <div
+        style={{
+          padding: 24,
+          borderRadius: 16,
+          background: 'var(--bg-pure-white)',
+          border: '1px solid var(--border-light)',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
+          marginBottom: 24,
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+          <div
+            style={{
+              width: 28,
+              height: 28,
+              borderRadius: 8,
+              background: 'rgba(43, 95, 138, 0.06)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-mediterranean-blue, #2B5F8A)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2" />
+              <path d="M3 9h18" />
+              <path d="M9 3v18" />
+            </svg>
+          </div>
+          <h3
+            style={{
+              fontSize: 12,
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px',
+              color: 'var(--text-tertiary)',
+              margin: 0,
+              fontFamily: 'var(--font-body)',
+            }}
+          >
+            Guest Page Background
+          </h3>
+        </div>
+        <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '0 0 16px', fontFamily: 'var(--font-body)', lineHeight: 1.55 }}>
+          Upload an image that appears as a subtle background behind all guest pages. Works best with patterns, textures, or venue photos. The opacity slider lets you control how visible it is.
+        </p>
+
+        <BackgroundUploadField
+          url={bgImage}
+          opacity={bgOpacity}
+          onUrlChange={(v) => { setBgImage(v); }}
+          onOpacityChange={setBgOpacity}
+          weddingId={weddingId}
+        />
       </div>
 
       {/* Knowledge Base Card */}
@@ -564,58 +638,123 @@ const kbdStyle: React.CSSProperties = {
   color: 'var(--text-primary)',
 };
 
-interface ImageFocalEditorProps {
+interface ImageUploadFieldProps {
   label: string;
   helperText: string;
-  /** CSS aspect-ratio value for the live crop preview, e.g. "3 / 2" or "6 / 1". */
-  cardAspectRatio: string;
+  aspectRatio: string;
   url: string;
-  position: string;
+  crop: CropData;
   onUrlChange: (v: string) => void;
-  onPositionChange: (v: string) => void;
-  handleFocalClick: (
-    e: React.MouseEvent<HTMLImageElement>,
-    setter: (v: string) => void
-  ) => void;
+  onCropChange: (crop: CropData) => void;
+  weddingId: string;
 }
 
 /**
- * URL input + click-to-set focal point editor. Shows:
- *  1. A URL text input
- *  2. The full uncropped image with a crosshair marker at the focal point —
- *     click anywhere to move it.
- *  3. A live crop preview at the actual card aspect ratio the guest sees.
+ * URL/upload input paired with an interactive crop editor. The user can
+ * paste a URL or upload a file, then drag and zoom to frame the image.
  */
-function ImageFocalEditor({
+function ImageUploadField({
   label,
   helperText,
-  cardAspectRatio,
+  aspectRatio,
   url,
-  position,
+  crop,
   onUrlChange,
-  onPositionChange,
-  handleFocalClick,
-}: ImageFocalEditorProps) {
+  onCropChange,
+  weddingId,
+}: ImageUploadFieldProps) {
   const [loadError, setLoadError] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Parse "X% Y%" into numbers for the crosshair marker overlay.
-  const match = position.match(/^(\d+(?:\.\d+)?)%\s+(\d+(?:\.\d+)?)%$/);
-  const focalX = match ? parseFloat(match[1]) : 50;
-  const focalY = match ? parseFloat(match[2]) : 50;
+  const handleFileUpload = async (file: File) => {
+    setUploading(true);
+    setUploadError(null);
+    try {
+      const form = new FormData();
+      form.append('file', file);
+      const res = await fetch(
+        `/api/v1/dashboard/weddings/${weddingId}/knowledge/image`,
+        { method: 'POST', body: form }
+      );
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data?.error?.message || 'Upload failed');
+      }
+      const data = await res.json();
+      onUrlChange(data.data.url);
+      onCropChange({ x: 50, y: 50, zoom: 1 });
+      setLoadError(false);
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : 'Upload failed');
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
 
   return (
     <div>
       <label style={labelStyle}>{label}</label>
-      <input
-        type="text"
-        value={url}
-        onChange={(e) => {
-          onUrlChange(e.target.value);
-          setLoadError(false);
-        }}
-        placeholder="https://images.unsplash.com/photo-… (or /your-file.jpg from /public)"
-        style={inputStyle}
-      />
+      <div style={{ display: 'flex', gap: 8, alignItems: 'stretch' }}>
+        <input
+          type="text"
+          value={url}
+          onChange={(e) => {
+            onUrlChange(e.target.value);
+            onCropChange({ x: 50, y: 50, zoom: 1 });
+            setLoadError(false);
+            setUploadError(null);
+          }}
+          placeholder="Paste a URL or upload an image"
+          style={{ ...inputStyle, flex: 1 }}
+          disabled={uploading}
+        />
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp,image/heic"
+          style={{ display: 'none' }}
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) handleFileUpload(file);
+          }}
+        />
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={uploading}
+          style={{
+            padding: '0 14px',
+            borderRadius: 10,
+            border: '1px solid var(--border-light)',
+            background: 'var(--bg-pure-white)',
+            fontSize: 12,
+            fontWeight: 500,
+            fontFamily: 'var(--font-body)',
+            color: 'var(--text-secondary)',
+            cursor: uploading ? 'default' : 'pointer',
+            opacity: uploading ? 0.6 : 1,
+            whiteSpace: 'nowrap',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+          }}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+            <polyline points="17 8 12 3 7 8" />
+            <line x1="12" y1="3" x2="12" y2="15" />
+          </svg>
+          {uploading ? 'Uploading...' : 'Upload'}
+        </button>
+      </div>
+      {uploadError && (
+        <p style={{ fontSize: 12, color: 'var(--color-terracotta)', margin: '6px 0 0', fontFamily: 'var(--font-body)' }}>
+          {uploadError}
+        </p>
+      )}
       <p
         style={{
           fontSize: 11,
@@ -629,149 +768,15 @@ function ImageFocalEditor({
       </p>
 
       {url && !loadError && (
-        <div style={{ marginTop: 12, display: 'grid', gap: 12 }}>
-          {/* Full image with click-to-set focal point */}
-          <div>
-            <p
-              style={{
-                fontSize: 10,
-                textTransform: 'uppercase',
-                letterSpacing: '0.5px',
-                color: 'var(--text-tertiary)',
-                margin: '0 0 6px',
-                fontFamily: 'var(--font-body)',
-                fontWeight: 500,
-              }}
-            >
-              Click to set focal point
-            </p>
-            <div
-              style={{
-                position: 'relative',
-                display: 'inline-block',
-                maxWidth: '100%',
-                borderRadius: 10,
-                overflow: 'hidden',
-                border: '1px solid var(--border-light)',
-                cursor: 'crosshair',
-                lineHeight: 0,
-              }}
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={url}
-                alt={`${label} full preview`}
-                onClick={(e) => handleFocalClick(e, onPositionChange)}
-                onError={() => setLoadError(true)}
-                style={{
-                  display: 'block',
-                  maxWidth: 420,
-                  maxHeight: 240,
-                  width: 'auto',
-                  height: 'auto',
-                  userSelect: 'none',
-                }}
-                draggable={false}
-              />
-              {/* Crosshair marker at the focal point */}
-              <div
-                aria-hidden
-                style={{
-                  position: 'absolute',
-                  left: `${focalX}%`,
-                  top: `${focalY}%`,
-                  width: 22,
-                  height: 22,
-                  borderRadius: '50%',
-                  border: '2px solid #FDFBF7',
-                  background: 'rgba(196,112,75,0.85)',
-                  transform: 'translate(-50%, -50%)',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.35)',
-                  pointerEvents: 'none',
-                }}
-              />
-            </div>
-          </div>
-
-          {/* Live crop preview at the actual card aspect ratio */}
-          <div>
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                marginBottom: 6,
-              }}
-            >
-              <p
-                style={{
-                  fontSize: 10,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.5px',
-                  color: 'var(--text-tertiary)',
-                  margin: 0,
-                  fontFamily: 'var(--font-body)',
-                  fontWeight: 500,
-                }}
-              >
-                How guests see it ({cardAspectRatio.replace(' / ', ':')})
-              </p>
-              <button
-                type="button"
-                onClick={() => onPositionChange('50% 50%')}
-                style={{
-                  padding: '4px 10px',
-                  borderRadius: 8,
-                  border: '1px solid var(--border-light)',
-                  background: 'var(--bg-pure-white)',
-                  fontSize: 10,
-                  fontWeight: 500,
-                  fontFamily: 'var(--font-body)',
-                  color: 'var(--text-secondary)',
-                  cursor: 'pointer',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.5px',
-                }}
-              >
-                Reset to center
-              </button>
-            </div>
-            <div
-              style={{
-                width: '100%',
-                maxWidth: 420,
-                aspectRatio: cardAspectRatio,
-                borderRadius: 10,
-                border: '1px solid var(--border-light)',
-                overflow: 'hidden',
-                background: 'var(--bg-soft-cream)',
-              }}
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={url}
-                alt={`${label} cropped preview`}
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'cover',
-                  objectPosition: position,
-                  display: 'block',
-                }}
-              />
-            </div>
-            <p
-              style={{
-                fontSize: 10,
-                color: 'var(--text-tertiary)',
-                margin: '6px 0 0',
-                fontFamily: 'var(--font-body)',
-                fontVariantNumeric: 'tabular-nums',
-              }}
-            >
-              Focal point: <code>{position}</code>
-            </p>
-          </div>
+        <div style={{ marginTop: 12 }}>
+          <ImageCropEditor
+            url={url}
+            cropX={crop.x}
+            cropY={crop.y}
+            cropZoom={crop.zoom}
+            aspectRatio={aspectRatio}
+            onCropChange={(x, y, zoom) => onCropChange({ x, y, zoom })}
+          />
         </div>
       )}
 
@@ -786,6 +791,219 @@ function ImageFocalEditor({
         >
           Couldn&apos;t load that image. Check the URL is public and direct-linkable.
         </p>
+      )}
+    </div>
+  );
+}
+
+interface BackgroundUploadFieldProps {
+  url: string;
+  opacity: number;
+  onUrlChange: (v: string) => void;
+  onOpacityChange: (v: number) => void;
+  weddingId: string;
+}
+
+function BackgroundUploadField({
+  url,
+  opacity,
+  onUrlChange,
+  onOpacityChange,
+  weddingId,
+}: BackgroundUploadFieldProps) {
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileUpload = async (file: File) => {
+    setUploading(true);
+    setUploadError(null);
+    try {
+      const form = new FormData();
+      form.append('file', file);
+      const res = await fetch(
+        `/api/v1/dashboard/weddings/${weddingId}/knowledge/image`,
+        { method: 'POST', body: form }
+      );
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data?.error?.message || 'Upload failed');
+      }
+      const data = await res.json();
+      onUrlChange(data.data.url);
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : 'Upload failed');
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const opacityPercent = Math.round(opacity * 100);
+
+  return (
+    <div>
+      <label style={labelStyle}>Background image</label>
+      <div style={{ display: 'flex', gap: 8, alignItems: 'stretch' }}>
+        <input
+          type="text"
+          value={url}
+          onChange={(e) => {
+            onUrlChange(e.target.value);
+            setUploadError(null);
+          }}
+          placeholder="Paste a URL or upload an image"
+          style={{ ...inputStyle, flex: 1 }}
+          disabled={uploading}
+        />
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp,image/heic"
+          style={{ display: 'none' }}
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) handleFileUpload(file);
+          }}
+        />
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={uploading}
+          style={{
+            padding: '0 14px',
+            borderRadius: 10,
+            border: '1px solid var(--border-light)',
+            background: 'var(--bg-pure-white)',
+            fontSize: 12,
+            fontWeight: 500,
+            fontFamily: 'var(--font-body)',
+            color: 'var(--text-secondary)',
+            cursor: uploading ? 'default' : 'pointer',
+            opacity: uploading ? 0.6 : 1,
+            whiteSpace: 'nowrap',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+          }}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+            <polyline points="17 8 12 3 7 8" />
+            <line x1="12" y1="3" x2="12" y2="15" />
+          </svg>
+          {uploading ? 'Uploading...' : 'Upload'}
+        </button>
+      </div>
+      {uploadError && (
+        <p style={{ fontSize: 12, color: 'var(--color-terracotta)', margin: '6px 0 0', fontFamily: 'var(--font-body)' }}>
+          {uploadError}
+        </p>
+      )}
+
+      {/* Opacity slider */}
+      <div style={{ marginTop: 16 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+          <label style={{ ...labelStyle, marginBottom: 0 }}>Opacity</label>
+          <span
+            style={{
+              fontSize: 12,
+              fontFamily: 'var(--font-body)',
+              color: 'var(--text-secondary)',
+              fontVariantNumeric: 'tabular-nums',
+            }}
+          >
+            {opacityPercent}%
+          </span>
+        </div>
+        <input
+          type="range"
+          min={0}
+          max={30}
+          step={1}
+          value={opacityPercent}
+          onChange={(e) => onOpacityChange(Number(e.target.value) / 100)}
+          style={{ width: '100%', accentColor: 'var(--color-gold-dark)' }}
+        />
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
+          <span style={{ fontSize: 10, color: 'var(--text-tertiary)', fontFamily: 'var(--font-body)' }}>Subtle</span>
+          <span style={{ fontSize: 10, color: 'var(--text-tertiary)', fontFamily: 'var(--font-body)' }}>Bold</span>
+        </div>
+      </div>
+
+      {/* Preview */}
+      {url && (
+        <div
+          style={{
+            marginTop: 16,
+            borderRadius: 12,
+            overflow: 'hidden',
+            border: '1px solid var(--border-light)',
+            position: 'relative',
+            height: 160,
+            background: 'var(--bg-warm-white)',
+          }}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={url}
+            alt=""
+            style={{
+              position: 'absolute',
+              inset: 0,
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              opacity: opacity,
+              pointerEvents: 'none',
+            }}
+          />
+          <div
+            style={{
+              position: 'relative',
+              zIndex: 1,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              height: '100%',
+              padding: 20,
+            }}
+          >
+            <p
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontSize: 18,
+                fontStyle: 'italic',
+                color: 'var(--text-primary)',
+                textAlign: 'center',
+                margin: 0,
+              }}
+            >
+              Preview — this is how content looks over the background
+            </p>
+          </div>
+        </div>
+      )}
+
+      {url && (
+        <button
+          type="button"
+          onClick={() => onUrlChange('')}
+          style={{
+            marginTop: 10,
+            padding: '6px 12px',
+            borderRadius: 8,
+            border: '1px solid var(--border-light)',
+            background: 'var(--bg-pure-white)',
+            fontSize: 11,
+            fontWeight: 500,
+            fontFamily: 'var(--font-body)',
+            color: 'var(--color-terracotta)',
+            cursor: 'pointer',
+          }}
+        >
+          Remove background
+        </button>
       )}
     </div>
   );

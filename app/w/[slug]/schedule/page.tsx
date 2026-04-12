@@ -237,7 +237,7 @@ export default async function SchedulePage({
             }}
           />
 
-          {dayGroups.map((group, gi) => {
+          {dayGroups.map((group) => {
             const past = isDatePast(group.date);
 
             return (

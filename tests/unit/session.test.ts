@@ -21,7 +21,7 @@ describe('Guest Session Management', () => {
     it('creates a session and returns a token', async () => {
       mockQuery.mockResolvedValueOnce({ rows: [{ id: 's-001' }] });
 
-      const result = await createGuestSession(mockPool as any, {
+      const result = await createGuestSession(mockPool as unknown as import('pg').Pool, {
         weddingId: 'w-001',
         guestId: 'g-001',
         userAgent: 'Mozilla/5.0',
@@ -46,11 +46,11 @@ describe('Guest Session Management', () => {
     it('generates unique tokens for different calls', async () => {
       mockQuery.mockResolvedValue({ rows: [{ id: 's-001' }] });
 
-      const session1 = await createGuestSession(mockPool as any, {
+      const session1 = await createGuestSession(mockPool as unknown as import('pg').Pool, {
         weddingId: 'w-001',
         guestId: 'g-001',
       });
-      const session2 = await createGuestSession(mockPool as any, {
+      const session2 = await createGuestSession(mockPool as unknown as import('pg').Pool, {
         weddingId: 'w-001',
         guestId: 'g-001',
       });
@@ -67,7 +67,7 @@ describe('Guest Session Management', () => {
         })
         .mockResolvedValueOnce({ rows: [] }); // UPDATE last_active
 
-      const result = await validateSession(mockPool as any, 'some-token');
+      const result = await validateSession(mockPool as unknown as import('pg').Pool, 'some-token');
 
       expect(result).not.toBeNull();
       expect(result!.sessionId).toBe('s-001');
@@ -83,7 +83,7 @@ describe('Guest Session Management', () => {
     it('returns null for an invalid token', async () => {
       mockQuery.mockResolvedValueOnce({ rows: [] });
 
-      const result = await validateSession(mockPool as any, 'invalid-token');
+      const result = await validateSession(mockPool as unknown as import('pg').Pool, 'invalid-token');
 
       expect(result).toBeNull();
     });
@@ -95,7 +95,7 @@ describe('Guest Session Management', () => {
         })
         .mockResolvedValueOnce({ rows: [] });
 
-      await validateSession(mockPool as any, 'some-token');
+      await validateSession(mockPool as unknown as import('pg').Pool, 'some-token');
 
       expect(mockQuery).toHaveBeenCalledTimes(2);
       const [updateSql] = mockQuery.mock.calls[1];

@@ -131,7 +131,7 @@ describe('POST /api/v1/w/[slug]/auth/register', () => {
       makeRequest('test-wedding', {}),
       makeParams('test-wedding'),
     );
-    const body = await response.json();
+    await response.json();
 
     expect(response.status).toBe(400);
   });

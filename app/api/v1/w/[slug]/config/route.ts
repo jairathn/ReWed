@@ -15,13 +15,28 @@ function normalizeHomeCardImage(raw: unknown): HomeCardImage | null {
     return raw ? { url: raw, position: '50% 50%' } : null;
   }
   if (typeof raw === 'object' && raw !== null && 'url' in raw) {
-    const { url, position } = raw as { url?: unknown; position?: unknown };
-    if (typeof url === 'string' && url) {
-      return {
-        url,
-        position: typeof position === 'string' && position ? position : '50% 50%',
-      };
+    const obj = raw as Record<string, unknown>;
+    const url = typeof obj.url === 'string' ? obj.url : '';
+    if (!url) return null;
+    const position =
+      typeof obj.position === 'string' && obj.position ? obj.position : '50% 50%';
+    const result: HomeCardImage = { url, position };
+    // Pass through crop data when present (set by the interactive editor).
+    if (
+      obj.crop &&
+      typeof obj.crop === 'object' &&
+      'x' in (obj.crop as object)
+    ) {
+      const c = obj.crop as Record<string, unknown>;
+      if (
+        typeof c.x === 'number' &&
+        typeof c.y === 'number' &&
+        typeof c.zoom === 'number'
+      ) {
+        result.crop = { x: c.x, y: c.y, zoom: c.zoom };
+      }
     }
+    return result;
   }
   return null;
 }
@@ -94,6 +109,14 @@ export async function GET(
         ? {
             name: config.wedding_planner.name || null,
             email: config.wedding_planner.email || null,
+          }
+        : null,
+      guest_background: config.guest_background?.url
+        ? {
+            url: config.guest_background.url,
+            opacity: typeof config.guest_background.opacity === 'number'
+              ? config.guest_background.opacity
+              : 0.08,
           }
         : null,
       home_card_images: {

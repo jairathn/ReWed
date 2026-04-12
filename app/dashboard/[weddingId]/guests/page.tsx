@@ -440,7 +440,7 @@ export default function GuestsPage({ params }: { params: Promise<{ weddingId: st
           Import Guests from CSV
         </h1>
         <p style={{ fontSize: 13, color: 'var(--text-secondary)', fontFamily: 'var(--font-body)', marginBottom: 24 }}>
-          Upload a CSV exported from Zola, The Knot, or any spreadsheet. We'll automatically detect the columns.
+          Upload a CSV exported from Zola, The Knot, or any spreadsheet. We&apos;ll automatically detect the columns.
         </p>
 
         <div style={{ padding: 24, background: 'var(--bg-pure-white)', borderRadius: 16, border: '1px solid var(--border-light)', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>

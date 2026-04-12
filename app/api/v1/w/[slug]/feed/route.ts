@@ -37,9 +37,7 @@ export async function GET(
       throw new AppError('AUTH_NOT_REGISTERED');
     }
 
-    // Check if feed is blocked during events
     const url = new URL(request.url);
-    const checkBlocked = url.searchParams.get('check_blocked');
 
     // Get wedding timezone
     const tzResult = await pool.query(

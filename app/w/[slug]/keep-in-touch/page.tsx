@@ -53,7 +53,7 @@ function getInitials(firstName: string, lastName: string) {
 }
 
 export default function KeepInTouchPage() {
-  const { config, slug, isAuthenticated, isLoading } = useWedding();
+  const { slug, isAuthenticated, isLoading } = useWedding();
   const router = useRouter();
 
   const [contacts, setContacts] = useState<ContactShare[]>([]);
@@ -191,7 +191,6 @@ export default function KeepInTouchPage() {
     );
   }
 
-  const weddingName = config?.display_name || 'the wedding';
   const showForm = !myShare || editing;
 
   return (

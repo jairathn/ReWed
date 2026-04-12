@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 
 describe('R2 Client', () => {
   it('generates presigned URL with correct key structure', async () => {

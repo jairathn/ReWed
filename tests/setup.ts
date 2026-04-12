@@ -1,4 +1,4 @@
-import { beforeAll, afterAll, afterEach, vi } from 'vitest';
+import { vi } from 'vitest';
 
 // Set test environment
 process.env.TEST_MODE = 'true';
@@ -9,7 +9,7 @@ process.env.JWT_SECRET = 'test-jwt-secret-that-is-at-least-32-characters-long';
 
 // Mock R2 storage
 vi.mock('@/lib/storage/r2', () => ({
-  generatePresignedPutUrl: vi.fn().mockImplementation(async (params: any) => {
+  generatePresignedPutUrl: vi.fn().mockImplementation(async (params: { weddingId: string; uploadId: string; contentType: string; contentLength: number }) => {
     if (params.contentLength > 500_000_000) {
       throw new Error('File too large (max 500MB)');
     }

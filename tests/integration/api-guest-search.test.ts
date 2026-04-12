@@ -83,7 +83,7 @@ describe('GET /api/v1/w/[slug]/guests/search', () => {
       });
 
     const response = await GET(makeRequest('test-wedding', 'Pri', 1), makeParams('test-wedding'));
-    const body = await response.json();
+    await response.json();
 
     expect(response.status).toBe(200);
     // Verify limit was passed to query

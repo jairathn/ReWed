@@ -442,25 +442,31 @@ export default function GalleryPage() {
       )}
 
       {/* Stats Row — shimmer gold numbers */}
-      <div className="flex gap-6 mb-6">
+      <div
+        className="flex gap-4 mb-6 p-4 rounded-xl"
+        style={{
+          background: 'linear-gradient(135deg, rgba(212, 168, 83, 0.04), rgba(196, 112, 75, 0.04))',
+          border: '1px solid rgba(212, 168, 83, 0.1)',
+        }}
+      >
         {[
           { n: counts.photos, l: 'Photos' },
           { n: counts.videos, l: 'Videos' },
           { n: counts.portraits, l: 'Portraits' },
-        ].map((s) => (
-          <div key={s.l}>
+        ].map((s, i) => (
+          <div key={s.l} className="flex items-baseline gap-1.5" style={{ flex: 1, ...(i > 0 ? { borderLeft: '1px solid rgba(212, 168, 83, 0.12)', paddingLeft: 16 } : {}) }}>
             <span
               className="shimmer-text"
               style={{
                 fontFamily: 'var(--font-display)',
-                fontSize: 26,
+                fontSize: 28,
                 fontWeight: 400,
                 display: 'inline-block',
               }}
             >
               {s.n}
             </span>
-            <span className="text-[11px] ml-1.5" style={{ color: 'var(--text-secondary)' }}>
+            <span className="text-[11px]" style={{ color: 'var(--text-secondary)' }}>
               {s.l}
             </span>
           </div>
@@ -505,6 +511,18 @@ export default function GalleryPage() {
         </div>
       ) : items.length === 0 ? (
         <div className="text-center py-16">
+          <div
+            className="w-16 h-16 mx-auto mb-4 rounded-2xl flex items-center justify-center"
+            style={{
+              background: 'linear-gradient(135deg, rgba(212, 168, 83, 0.08), rgba(196, 112, 75, 0.08))',
+            }}
+          >
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--color-gold-dark)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2" />
+              <circle cx="8.5" cy="8.5" r="1.5" />
+              <polyline points="21 15 16 10 5 21" />
+            </svg>
+          </div>
           <p
             className="text-lg font-normal mb-2"
             style={{
@@ -515,20 +533,24 @@ export default function GalleryPage() {
           >
             {activeTab === 'favorite' ? 'No favorites yet' : 'Capture more moments'}
           </p>
+          <p className="text-xs mb-5 max-w-[240px] mx-auto" style={{ color: 'var(--text-tertiary)', lineHeight: 1.5 }}>
+            Every photo you take becomes part of your personalized highlight reel
+          </p>
           <button
             onClick={() => router.push(`/w/${slug}/capture`)}
-            className="inline-flex items-center gap-2 text-xs font-medium uppercase tracking-wide mt-4"
+            className="inline-flex items-center gap-2 text-xs font-medium uppercase tracking-wide transition-all duration-200 hover:scale-[1.03] active:scale-[0.97]"
             style={{
               padding: '12px 28px',
-              background: 'transparent',
-              border: '0.5px solid var(--color-gold-rule)',
-              color: 'var(--color-gold)',
+              background: 'linear-gradient(135deg, var(--color-gold-dark), var(--color-gold))',
+              border: 'none',
+              color: 'var(--bg-warm-white)',
               borderRadius: 50,
               cursor: 'pointer',
               letterSpacing: '0.04em',
+              boxShadow: '0 4px 12px rgba(198, 163, 85, 0.2)',
             }}
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-gold)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" />
               <circle cx="12" cy="13" r="3" />
             </svg>

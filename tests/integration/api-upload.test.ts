@@ -4,8 +4,6 @@ import { NextRequest } from 'next/server';
 // Mock database
 const mockQuery = vi.fn();
 const mockConnect = vi.fn();
-const mockRelease = vi.fn();
-const mockClientQuery = vi.fn();
 
 vi.mock('@/lib/db/client', () => ({
   getPool: () => ({

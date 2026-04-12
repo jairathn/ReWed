@@ -7,7 +7,7 @@ describe('AI Portrait Quota', () => {
       query: vi.fn().mockResolvedValueOnce({ rows: [{ count: '2' }] }),
     };
 
-    const result = await checkPortraitQuota(mockClient as any, {
+    const result = await checkPortraitQuota(mockClient as unknown as import('pg').PoolClient, {
       weddingId: 'w-001',
       guestId: 'g-001',
       perGuestLimit: 5,
@@ -23,7 +23,7 @@ describe('AI Portrait Quota', () => {
       query: vi.fn().mockResolvedValueOnce({ rows: [{ count: '5' }] }),
     };
 
-    const result = await checkPortraitQuota(mockClient as any, {
+    const result = await checkPortraitQuota(mockClient as unknown as import('pg').PoolClient, {
       weddingId: 'w-001',
       guestId: 'g-001',
       perGuestLimit: 5,
@@ -40,7 +40,7 @@ describe('AI Portrait Quota', () => {
       query: vi.fn().mockResolvedValueOnce({ rows: [{ count: '7' }] }),
     };
 
-    const result = await checkPortraitQuota(mockClient as any, {
+    const result = await checkPortraitQuota(mockClient as unknown as import('pg').PoolClient, {
       weddingId: 'w-001',
       guestId: 'g-001',
       perGuestLimit: 5,
@@ -55,7 +55,7 @@ describe('AI Portrait Quota', () => {
       query: vi.fn().mockResolvedValueOnce({ rows: [{ count: '0' }] }),
     };
 
-    const result = await checkPortraitQuota(mockClient as any, {
+    const result = await checkPortraitQuota(mockClient as unknown as import('pg').PoolClient, {
       weddingId: 'w-001',
       guestId: 'g-001',
       perGuestLimit: 3,
@@ -71,7 +71,7 @@ describe('AI Portrait Quota', () => {
       query: vi.fn().mockResolvedValueOnce({ rows: [{ count: '0' }] }),
     };
 
-    await checkPortraitQuota(mockClient as any, {
+    await checkPortraitQuota(mockClient as unknown as import('pg').PoolClient, {
       weddingId: 'w-001',
       guestId: 'g-001',
       perGuestLimit: 5,

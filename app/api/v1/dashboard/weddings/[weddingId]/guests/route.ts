@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import { z } from 'zod';
-import { handleApiError, AppError } from '@/lib/errors';
+import { handleApiError } from '@/lib/errors';
 import { getPool } from '@/lib/db/client';
 import { getCoupleId, verifyWeddingOwnership } from '@/lib/dashboard-auth';
 

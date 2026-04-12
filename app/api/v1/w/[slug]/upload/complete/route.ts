@@ -21,7 +21,7 @@ export async function POST(
   { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
-    const { slug } = await params;
+    await params;
     const pool = getPool();
 
     // Validate guest session
