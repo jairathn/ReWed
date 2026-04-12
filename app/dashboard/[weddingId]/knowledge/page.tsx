@@ -16,6 +16,11 @@ interface HomeCardImageData {
   crop?: CropData;
 }
 
+interface GuestBackgroundData {
+  url: string;
+  opacity: number;
+}
+
 interface KnowledgeData {
   knowledge_base: string;
   wedding_planner: {
@@ -26,6 +31,7 @@ interface KnowledgeData {
     schedule: HomeCardImageData;
     travel: HomeCardImageData;
   };
+  guest_background: GuestBackgroundData;
 }
 
 // Standard Zola wedding website sections, in the order they appear in the
@@ -75,6 +81,8 @@ export default function KnowledgePage({ params }: { params: Promise<{ weddingId:
   const [scheduleCrop, setScheduleCrop] = useState<CropData>({ x: 50, y: 50, zoom: 1 });
   const [travelImage, setTravelImage] = useState('');
   const [travelCrop, setTravelCrop] = useState<CropData>({ x: 50, y: 50, zoom: 1 });
+  const [bgImage, setBgImage] = useState('');
+  const [bgOpacity, setBgOpacity] = useState(0.08);
   const [confirmResetOpen, setConfirmResetOpen] = useState(false);
 
   useEffect(() => {
@@ -93,6 +101,8 @@ export default function KnowledgePage({ params }: { params: Promise<{ weddingId:
         setScheduleCrop(d.home_card_images?.schedule?.crop || { x: 50, y: 50, zoom: 1 });
         setTravelImage(d.home_card_images?.travel?.url || '');
         setTravelCrop(d.home_card_images?.travel?.crop || { x: 50, y: 50, zoom: 1 });
+        setBgImage(d.guest_background?.url || '');
+        setBgOpacity(typeof d.guest_background?.opacity === 'number' ? d.guest_background.opacity : 0.08);
       })
       .catch(() => setError('Failed to load'))
       .finally(() => setLoading(false));
@@ -111,7 +121,9 @@ export default function KnowledgePage({ params }: { params: Promise<{ weddingId:
       scheduleImage !== (data.home_card_images?.schedule?.url || '') ||
       !cropEqual(scheduleCrop, data.home_card_images?.schedule?.crop) ||
       travelImage !== (data.home_card_images?.travel?.url || '') ||
-      !cropEqual(travelCrop, data.home_card_images?.travel?.crop));
+      !cropEqual(travelCrop, data.home_card_images?.travel?.crop) ||
+      bgImage !== (data.guest_background?.url || '') ||
+      bgOpacity !== (typeof data.guest_background?.opacity === 'number' ? data.guest_background.opacity : 0.08));
 
   const handleSave = async () => {
     setSaving(true);
@@ -130,6 +142,8 @@ export default function KnowledgePage({ params }: { params: Promise<{ weddingId:
           home_travel_image: travelImage,
           home_travel_position: `${travelCrop.x}% ${travelCrop.y}%`,
           home_travel_crop: travelCrop,
+          guest_background_image: bgImage,
+          guest_background_opacity: bgOpacity,
         }),
       });
       if (!res.ok) {
@@ -145,6 +159,8 @@ export default function KnowledgePage({ params }: { params: Promise<{ weddingId:
       setScheduleCrop(updated.home_card_images?.schedule?.crop || { x: 50, y: 50, zoom: 1 });
       setTravelImage(updated.home_card_images?.travel?.url || '');
       setTravelCrop(updated.home_card_images?.travel?.crop || { x: 50, y: 50, zoom: 1 });
+      setBgImage(updated.guest_background?.url || '');
+      setBgOpacity(typeof updated.guest_background?.opacity === 'number' ? updated.guest_background.opacity : 0.08);
       setSavedAt(new Date());
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save');
@@ -317,6 +333,61 @@ export default function KnowledgePage({ params }: { params: Promise<{ weddingId:
             weddingId={weddingId}
           />
         </div>
+      </div>
+
+      {/* Guest Background Card */}
+      <div
+        style={{
+          padding: 24,
+          borderRadius: 16,
+          background: 'var(--bg-pure-white)',
+          border: '1px solid var(--border-light)',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
+          marginBottom: 24,
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+          <div
+            style={{
+              width: 28,
+              height: 28,
+              borderRadius: 8,
+              background: 'rgba(43, 95, 138, 0.06)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-mediterranean-blue, #2B5F8A)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2" />
+              <path d="M3 9h18" />
+              <path d="M9 3v18" />
+            </svg>
+          </div>
+          <h3
+            style={{
+              fontSize: 12,
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px',
+              color: 'var(--text-tertiary)',
+              margin: 0,
+              fontFamily: 'var(--font-body)',
+            }}
+          >
+            Guest Page Background
+          </h3>
+        </div>
+        <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '0 0 16px', fontFamily: 'var(--font-body)', lineHeight: 1.55 }}>
+          Upload an image that appears as a subtle background behind all guest pages. Works best with patterns, textures, or venue photos. The opacity slider lets you control how visible it is.
+        </p>
+
+        <BackgroundUploadField
+          url={bgImage}
+          opacity={bgOpacity}
+          onUrlChange={(v) => { setBgImage(v); }}
+          onOpacityChange={setBgOpacity}
+          weddingId={weddingId}
+        />
       </div>
 
       {/* Knowledge Base Card */}
@@ -720,6 +791,219 @@ function ImageUploadField({
         >
           Couldn&apos;t load that image. Check the URL is public and direct-linkable.
         </p>
+      )}
+    </div>
+  );
+}
+
+interface BackgroundUploadFieldProps {
+  url: string;
+  opacity: number;
+  onUrlChange: (v: string) => void;
+  onOpacityChange: (v: number) => void;
+  weddingId: string;
+}
+
+function BackgroundUploadField({
+  url,
+  opacity,
+  onUrlChange,
+  onOpacityChange,
+  weddingId,
+}: BackgroundUploadFieldProps) {
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileUpload = async (file: File) => {
+    setUploading(true);
+    setUploadError(null);
+    try {
+      const form = new FormData();
+      form.append('file', file);
+      const res = await fetch(
+        `/api/v1/dashboard/weddings/${weddingId}/knowledge/image`,
+        { method: 'POST', body: form }
+      );
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data?.error?.message || 'Upload failed');
+      }
+      const data = await res.json();
+      onUrlChange(data.data.url);
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : 'Upload failed');
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const opacityPercent = Math.round(opacity * 100);
+
+  return (
+    <div>
+      <label style={labelStyle}>Background image</label>
+      <div style={{ display: 'flex', gap: 8, alignItems: 'stretch' }}>
+        <input
+          type="text"
+          value={url}
+          onChange={(e) => {
+            onUrlChange(e.target.value);
+            setUploadError(null);
+          }}
+          placeholder="Paste a URL or upload an image"
+          style={{ ...inputStyle, flex: 1 }}
+          disabled={uploading}
+        />
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp,image/heic"
+          style={{ display: 'none' }}
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) handleFileUpload(file);
+          }}
+        />
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={uploading}
+          style={{
+            padding: '0 14px',
+            borderRadius: 10,
+            border: '1px solid var(--border-light)',
+            background: 'var(--bg-pure-white)',
+            fontSize: 12,
+            fontWeight: 500,
+            fontFamily: 'var(--font-body)',
+            color: 'var(--text-secondary)',
+            cursor: uploading ? 'default' : 'pointer',
+            opacity: uploading ? 0.6 : 1,
+            whiteSpace: 'nowrap',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+          }}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+            <polyline points="17 8 12 3 7 8" />
+            <line x1="12" y1="3" x2="12" y2="15" />
+          </svg>
+          {uploading ? 'Uploading...' : 'Upload'}
+        </button>
+      </div>
+      {uploadError && (
+        <p style={{ fontSize: 12, color: 'var(--color-terracotta)', margin: '6px 0 0', fontFamily: 'var(--font-body)' }}>
+          {uploadError}
+        </p>
+      )}
+
+      {/* Opacity slider */}
+      <div style={{ marginTop: 16 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+          <label style={{ ...labelStyle, marginBottom: 0 }}>Opacity</label>
+          <span
+            style={{
+              fontSize: 12,
+              fontFamily: 'var(--font-body)',
+              color: 'var(--text-secondary)',
+              fontVariantNumeric: 'tabular-nums',
+            }}
+          >
+            {opacityPercent}%
+          </span>
+        </div>
+        <input
+          type="range"
+          min={0}
+          max={30}
+          step={1}
+          value={opacityPercent}
+          onChange={(e) => onOpacityChange(Number(e.target.value) / 100)}
+          style={{ width: '100%', accentColor: 'var(--color-gold-dark)' }}
+        />
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
+          <span style={{ fontSize: 10, color: 'var(--text-tertiary)', fontFamily: 'var(--font-body)' }}>Subtle</span>
+          <span style={{ fontSize: 10, color: 'var(--text-tertiary)', fontFamily: 'var(--font-body)' }}>Bold</span>
+        </div>
+      </div>
+
+      {/* Preview */}
+      {url && (
+        <div
+          style={{
+            marginTop: 16,
+            borderRadius: 12,
+            overflow: 'hidden',
+            border: '1px solid var(--border-light)',
+            position: 'relative',
+            height: 160,
+            background: 'var(--bg-warm-white)',
+          }}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={url}
+            alt=""
+            style={{
+              position: 'absolute',
+              inset: 0,
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              opacity: opacity,
+              pointerEvents: 'none',
+            }}
+          />
+          <div
+            style={{
+              position: 'relative',
+              zIndex: 1,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              height: '100%',
+              padding: 20,
+            }}
+          >
+            <p
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontSize: 18,
+                fontStyle: 'italic',
+                color: 'var(--text-primary)',
+                textAlign: 'center',
+                margin: 0,
+              }}
+            >
+              Preview — this is how content looks over the background
+            </p>
+          </div>
+        </div>
+      )}
+
+      {url && (
+        <button
+          type="button"
+          onClick={() => onUrlChange('')}
+          style={{
+            marginTop: 10,
+            padding: '6px 12px',
+            borderRadius: 8,
+            border: '1px solid var(--border-light)',
+            background: 'var(--bg-pure-white)',
+            fontSize: 11,
+            fontWeight: 500,
+            fontFamily: 'var(--font-body)',
+            color: 'var(--color-terracotta)',
+            cursor: 'pointer',
+          }}
+        >
+          Remove background
+        </button>
       )}
     </div>
   );

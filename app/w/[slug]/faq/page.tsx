@@ -181,17 +181,36 @@ export default function FaqPage() {
         <div className="flex-1 overflow-y-auto space-y-3">
         {messages.length === 0 && (
           <div className="text-center py-8">
-            <p className="text-4xl mb-3">&#128173;</p>
-            <p className="text-base font-medium mb-4" style={{ fontFamily: 'var(--font-display)', color: 'var(--text-primary)' }}>
+            <div
+              className="w-14 h-14 mx-auto mb-4 rounded-2xl flex items-center justify-center"
+              style={{
+                background: 'linear-gradient(135deg, rgba(43, 95, 138, 0.08), rgba(212, 168, 83, 0.08))',
+              }}
+            >
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--color-mediterranean-blue, #2B5F8A)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3" />
+                <line x1="12" y1="17" x2="12.01" y2="17" />
+              </svg>
+            </div>
+            <p className="text-lg font-medium mb-1" style={{ fontFamily: 'var(--font-display)', color: 'var(--text-primary)' }}>
               How can I help?
+            </p>
+            <p className="text-xs mb-5" style={{ color: 'var(--text-tertiary)' }}>
+              I know all the details about this wedding
             </p>
             <div className="flex flex-wrap gap-2 justify-center">
               {QUICK_QUESTIONS.map((q) => (
                 <button
                   key={q}
                   onClick={() => askQuestion(q)}
-                  className="px-4 py-2 rounded-full text-sm"
-                  style={{ background: 'rgba(196, 112, 75, 0.08)', color: 'var(--color-terracotta)' }}
+                  className="px-4 py-2.5 rounded-full text-sm transition-all duration-200 hover:scale-[1.03] active:scale-[0.97]"
+                  style={{
+                    background: 'var(--bg-pure-white)',
+                    color: 'var(--color-terracotta)',
+                    border: '1px solid rgba(196, 112, 75, 0.15)',
+                    boxShadow: '0 2px 8px rgba(196, 112, 75, 0.06)',
+                  }}
                 >
                   {q}
                 </button>
@@ -205,13 +224,17 @@ export default function FaqPage() {
             <div
               className="max-w-[85%] rounded-2xl px-4 py-3"
               style={{
-                background: msg.role === 'user' ? 'var(--color-terracotta)' : 'var(--bg-pure-white)',
+                background: msg.role === 'user'
+                  ? 'linear-gradient(135deg, var(--color-terracotta), #D4A853)'
+                  : 'var(--bg-pure-white)',
                 color: msg.role === 'user' ? 'white' : 'var(--text-primary)',
-                boxShadow: msg.role === 'assistant' ? 'var(--shadow-soft)' : 'none',
+                boxShadow: msg.role === 'user'
+                  ? '0 4px 12px rgba(196, 112, 75, 0.2)'
+                  : '0 2px 12px rgba(0,0,0,0.04)',
                 border: msg.role === 'assistant' ? '1px solid var(--border-light)' : 'none',
               }}
             >
-              <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+              <p className="text-sm whitespace-pre-wrap leading-relaxed">{msg.content}</p>
             </div>
           </div>
         ))}
@@ -238,18 +261,27 @@ export default function FaqPage() {
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
               placeholder="Ask a question..."
-              className="flex-1 rounded-full px-4 py-3 text-sm"
-              style={{ background: 'var(--bg-pure-white)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }}
+              className="flex-1 rounded-full px-5 py-3 text-sm"
+              style={{
+                background: 'var(--bg-pure-white)',
+                border: '1px solid var(--border-light)',
+                color: 'var(--text-primary)',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
+                outline: 'none',
+              }}
               disabled={sending}
             />
             <button
               type="submit"
               disabled={!inputText.trim() || sending}
-              className="w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0"
+              className="w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-200 hover:scale-105 active:scale-95"
               style={{
-                background: inputText.trim() ? 'var(--color-terracotta-gradient)' : 'var(--border-light)',
+                background: inputText.trim()
+                  ? 'linear-gradient(135deg, var(--color-terracotta), #D4A853)'
+                  : 'var(--border-light)',
                 color: inputText.trim() ? 'white' : 'var(--text-tertiary)',
                 border: 'none',
+                boxShadow: inputText.trim() ? '0 4px 12px rgba(196, 112, 75, 0.2)' : 'none',
               }}
             >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -281,16 +313,16 @@ export default function FaqPage() {
           {plannerMailto && (
             <a
               href={plannerMailto}
-              className="mt-3 flex items-center justify-center gap-2 rounded-xl px-4 py-3"
+              className="mt-3 flex items-center justify-center gap-2 rounded-xl px-4 py-3 transition-all duration-200 hover:shadow-md"
               style={{
-                background: 'var(--bg-pure-white)',
-                border: '1px solid var(--border-light)',
+                background: 'linear-gradient(135deg, rgba(212, 168, 83, 0.04), rgba(196, 112, 75, 0.04))',
+                border: '1px solid rgba(212, 168, 83, 0.15)',
                 textDecoration: 'none',
                 fontSize: 13,
                 fontFamily: 'var(--font-body)',
                 color: 'var(--text-secondary)',
                 lineHeight: 1.4,
-                boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
+                boxShadow: '0 2px 8px rgba(212, 168, 83, 0.06)',
               }}
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-gold-dark)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>

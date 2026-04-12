@@ -38,6 +38,8 @@ const updateSchema = z.object({
   home_travel_image: imagePathOrUrl.optional(),
   home_travel_position: objectPosition.optional(),
   home_travel_crop: cropSchema.optional(),
+  guest_background_image: imagePathOrUrl.optional(),
+  guest_background_opacity: z.number().min(0).max(1).optional(),
 });
 
 interface NormalizedImage {
@@ -107,6 +109,10 @@ export async function GET(
       home_card_images: {
         schedule: normalizeImage(config.home_card_images?.schedule),
         travel: normalizeImage(config.home_card_images?.travel),
+      },
+      guest_background: {
+        url: config.guest_background?.url || '',
+        opacity: typeof config.guest_background?.opacity === 'number' ? config.guest_background.opacity : 0.08,
       },
     });
   } catch (error) {
@@ -214,6 +220,29 @@ export async function PATCH(
       }
     }
 
+    if (
+      parsed.guest_background_image !== undefined ||
+      parsed.guest_background_opacity !== undefined
+    ) {
+      const existing = config.guest_background || {};
+      const bgUrl =
+        parsed.guest_background_image !== undefined
+          ? parsed.guest_background_image.trim()
+          : existing.url || '';
+      const bgOpacity =
+        parsed.guest_background_opacity !== undefined
+          ? parsed.guest_background_opacity
+          : typeof existing.opacity === 'number'
+            ? existing.opacity
+            : 0.08;
+
+      if (bgUrl) {
+        config.guest_background = { url: bgUrl, opacity: bgOpacity };
+      } else {
+        delete config.guest_background;
+      }
+    }
+
     await pool.query(
       `UPDATE weddings SET config = $1 WHERE id = $2`,
       [JSON.stringify(config), weddingId]
@@ -228,6 +257,10 @@ export async function PATCH(
       home_card_images: {
         schedule: normalizeImage(config.home_card_images?.schedule),
         travel: normalizeImage(config.home_card_images?.travel),
+      },
+      guest_background: {
+        url: config.guest_background?.url || '',
+        opacity: typeof config.guest_background?.opacity === 'number' ? config.guest_background.opacity : 0.08,
       },
     });
   } catch (error) {

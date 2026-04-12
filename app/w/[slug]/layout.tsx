@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { WeddingProvider } from '@/components/WeddingProvider';
+import GuestBackground from '@/components/guest/GuestBackground';
 
 type Params = { slug: string };
 
@@ -37,10 +38,13 @@ export default async function WeddingLayout({
   return (
     <WeddingProvider slug={slug}>
       <div
-        className="min-h-screen"
+        className="min-h-screen relative"
         style={{ background: 'var(--bg-warm-white)' }}
       >
-        {children}
+        <GuestBackground />
+        <div style={{ position: 'relative', zIndex: 1 }}>
+          {children}
+        </div>
       </div>
     </WeddingProvider>
   );

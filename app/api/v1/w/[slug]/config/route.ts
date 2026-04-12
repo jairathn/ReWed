@@ -111,6 +111,14 @@ export async function GET(
             email: config.wedding_planner.email || null,
           }
         : null,
+      guest_background: config.guest_background?.url
+        ? {
+            url: config.guest_background.url,
+            opacity: typeof config.guest_background.opacity === 'number'
+              ? config.guest_background.opacity
+              : 0.08,
+          }
+        : null,
       home_card_images: {
         schedule: normalizeHomeCardImage(config.home_card_images?.schedule),
         travel: normalizeHomeCardImage(config.home_card_images?.travel),

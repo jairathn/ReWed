@@ -56,6 +56,11 @@ export type WeddingConfig = {
   venue_lng: number | null;
   status: 'setup' | 'active' | 'post_wedding' | 'archived';
   wedding_planner: WeddingPlanner | null;
+  /** Optional background image shown behind all guest pages. */
+  guest_background: {
+    url: string;
+    opacity: number;
+  } | null;
   /** Optional couple-provided image URLs shown in the guest home bento cards. */
   home_card_images: {
     schedule: HomeCardImage | null;

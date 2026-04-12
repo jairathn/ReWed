@@ -187,6 +187,55 @@ export default function GuestHomePage() {
           )}
         </section>
 
+        {/* Highlight Reel Banner */}
+        <section>
+          <div
+            className="rounded-2xl overflow-hidden relative"
+            style={{
+              background: 'linear-gradient(135deg, rgba(196, 112, 75, 0.06) 0%, rgba(212, 168, 83, 0.08) 100%)',
+              border: '1px solid rgba(196, 112, 75, 0.1)',
+              padding: '20px 22px',
+            }}
+          >
+            <div className="flex items-start gap-4">
+              <div
+                className="flex-shrink-0 flex items-center justify-center"
+                style={{
+                  width: 42,
+                  height: 42,
+                  borderRadius: 12,
+                  background: 'linear-gradient(135deg, var(--color-terracotta), #D4A853)',
+                  boxShadow: '0 4px 12px rgba(196, 112, 75, 0.25)',
+                }}
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FDFBF7" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polygon points="23 7 16 12 23 17 23 7" />
+                  <rect x="1" y="5" width="15" height="14" rx="2" />
+                </svg>
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <h3
+                  className="text-base"
+                  style={{
+                    fontFamily: 'var(--font-display)',
+                    color: 'var(--text-primary)',
+                    margin: '0 0 4px',
+                    lineHeight: 1.3,
+                  }}
+                >
+                  Your moments, one highlight reel
+                </h3>
+                <p
+                  className="text-[13px] leading-relaxed"
+                  style={{ color: 'var(--text-secondary)', margin: 0 }}
+                >
+                  Every photo and video shared here is curated into a personalized wedding highlight film — a keepsake made just for you.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* Bento Grid — 2-col base, items span as needed */}
         <section className="grid grid-cols-2 gap-4">
 
@@ -295,7 +344,7 @@ export default function GuestHomePage() {
                 Social Feed
               </h3>
               <p className="text-[13px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-                Share moments with everyone
+                Share moments — they become part of your highlight reel
               </p>
             </div>
           </Link>
@@ -324,7 +373,7 @@ export default function GuestHomePage() {
                 FAQ
               </h3>
               <p className="text-[13px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-                Ask the chatbot anything about the wedding
+                Get instant answers to any wedding question
               </p>
             </div>
           </Link>
@@ -356,7 +405,7 @@ export default function GuestHomePage() {
                     Gallery
                   </h3>
                   <p className="text-[13px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-                    Photos, videos &amp; AI portraits
+                    Your photos power the couple&apos;s highlight reel
                   </p>
                 </div>
                 <div className="pt-4 flex -space-x-2">
