@@ -2,10 +2,18 @@
 
 import { useState, useEffect, useRef, use } from 'react';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
+import ImageCropEditor from '@/components/ui/ImageCropEditor';
+
+interface CropData {
+  x: number;
+  y: number;
+  zoom: number;
+}
 
 interface HomeCardImageData {
   url: string;
   position: string;
+  crop?: CropData;
 }
 
 interface KnowledgeData {
@@ -64,9 +72,9 @@ export default function KnowledgePage({ params }: { params: Promise<{ weddingId:
   const [plannerName, setPlannerName] = useState('');
   const [plannerEmail, setPlannerEmail] = useState('');
   const [scheduleImage, setScheduleImage] = useState('');
-  const [schedulePosition, setSchedulePosition] = useState('50% 50%');
+  const [scheduleCrop, setScheduleCrop] = useState<CropData>({ x: 50, y: 50, zoom: 1 });
   const [travelImage, setTravelImage] = useState('');
-  const [travelPosition, setTravelPosition] = useState('50% 50%');
+  const [travelCrop, setTravelCrop] = useState<CropData>({ x: 50, y: 50, zoom: 1 });
   const [confirmResetOpen, setConfirmResetOpen] = useState(false);
 
   useEffect(() => {
@@ -82,13 +90,18 @@ export default function KnowledgePage({ params }: { params: Promise<{ weddingId:
         setPlannerName(d.wedding_planner?.name || '');
         setPlannerEmail(d.wedding_planner?.email || '');
         setScheduleImage(d.home_card_images?.schedule?.url || '');
-        setSchedulePosition(d.home_card_images?.schedule?.position || '50% 50%');
+        setScheduleCrop(d.home_card_images?.schedule?.crop || { x: 50, y: 50, zoom: 1 });
         setTravelImage(d.home_card_images?.travel?.url || '');
-        setTravelPosition(d.home_card_images?.travel?.position || '50% 50%');
+        setTravelCrop(d.home_card_images?.travel?.crop || { x: 50, y: 50, zoom: 1 });
       })
       .catch(() => setError('Failed to load'))
       .finally(() => setLoading(false));
   }, [weddingId]);
+
+  const cropEqual = (a: CropData, b?: CropData) => {
+    const d = b || { x: 50, y: 50, zoom: 1 };
+    return a.x === d.x && a.y === d.y && a.zoom === d.zoom;
+  };
 
   const dirty =
     !!data &&
@@ -96,9 +109,9 @@ export default function KnowledgePage({ params }: { params: Promise<{ weddingId:
       plannerName !== data.wedding_planner.name ||
       plannerEmail !== data.wedding_planner.email ||
       scheduleImage !== (data.home_card_images?.schedule?.url || '') ||
-      schedulePosition !== (data.home_card_images?.schedule?.position || '50% 50%') ||
+      !cropEqual(scheduleCrop, data.home_card_images?.schedule?.crop) ||
       travelImage !== (data.home_card_images?.travel?.url || '') ||
-      travelPosition !== (data.home_card_images?.travel?.position || '50% 50%'));
+      !cropEqual(travelCrop, data.home_card_images?.travel?.crop));
 
   const handleSave = async () => {
     setSaving(true);
@@ -112,9 +125,11 @@ export default function KnowledgePage({ params }: { params: Promise<{ weddingId:
           wedding_planner_name: plannerName,
           wedding_planner_email: plannerEmail,
           home_schedule_image: scheduleImage,
-          home_schedule_position: schedulePosition,
+          home_schedule_position: `${scheduleCrop.x}% ${scheduleCrop.y}%`,
+          home_schedule_crop: scheduleCrop,
           home_travel_image: travelImage,
-          home_travel_position: travelPosition,
+          home_travel_position: `${travelCrop.x}% ${travelCrop.y}%`,
+          home_travel_crop: travelCrop,
         }),
       });
       if (!res.ok) {
@@ -127,9 +142,9 @@ export default function KnowledgePage({ params }: { params: Promise<{ weddingId:
       setPlannerName(updated.wedding_planner?.name || '');
       setPlannerEmail(updated.wedding_planner?.email || '');
       setScheduleImage(updated.home_card_images?.schedule?.url || '');
-      setSchedulePosition(updated.home_card_images?.schedule?.position || '50% 50%');
+      setScheduleCrop(updated.home_card_images?.schedule?.crop || { x: 50, y: 50, zoom: 1 });
       setTravelImage(updated.home_card_images?.travel?.url || '');
-      setTravelPosition(updated.home_card_images?.travel?.position || '50% 50%');
+      setTravelCrop(updated.home_card_images?.travel?.crop || { x: 50, y: 50, zoom: 1 });
       setSavedAt(new Date());
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save');
@@ -138,18 +153,6 @@ export default function KnowledgePage({ params }: { params: Promise<{ weddingId:
     }
   };
 
-  // Convert a click anywhere on the full-image preview into an
-  // object-position percentage string. The guest home page then uses that
-  // as the focal point when cropping to the card's aspect ratio.
-  const handleFocalClick = (
-    e: React.MouseEvent<HTMLImageElement>,
-    setter: (v: string) => void
-  ) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = Math.max(0, Math.min(100, Math.round(((e.clientX - rect.left) / rect.width) * 100)));
-    const y = Math.max(0, Math.min(100, Math.round(((e.clientY - rect.top) / rect.height) * 100)));
-    setter(`${x}% ${y}%`);
-  };
 
   if (loading) {
     return (
@@ -291,28 +294,26 @@ export default function KnowledgePage({ params }: { params: Promise<{ weddingId:
 
         <div style={{ display: 'grid', gap: 28 }}>
           {/* Schedule card image */}
-          <ImageFocalEditor
+          <ImageUploadField
             label="Schedule card image"
             helperText="Appears in the ~3:2 area on the right side of the Schedule card."
-            cardAspectRatio="3 / 2"
+            aspectRatio="3 / 2"
             url={scheduleImage}
-            position={schedulePosition}
+            crop={scheduleCrop}
             onUrlChange={setScheduleImage}
-            onPositionChange={setSchedulePosition}
-            handleFocalClick={handleFocalClick}
+            onCropChange={setScheduleCrop}
             weddingId={weddingId}
           />
 
           {/* Travel card image */}
-          <ImageFocalEditor
+          <ImageUploadField
             label="Travel card image"
             helperText="Appears as a wide hero strip on top of the Travel card (128px tall, spans the whole card)."
-            cardAspectRatio="6 / 1"
+            aspectRatio="6 / 1"
             url={travelImage}
-            position={travelPosition}
+            crop={travelCrop}
             onUrlChange={setTravelImage}
-            onPositionChange={setTravelPosition}
-            handleFocalClick={handleFocalClick}
+            onCropChange={setTravelCrop}
             weddingId={weddingId}
           />
         </div>
@@ -566,40 +567,31 @@ const kbdStyle: React.CSSProperties = {
   color: 'var(--text-primary)',
 };
 
-interface ImageFocalEditorProps {
+interface ImageUploadFieldProps {
   label: string;
   helperText: string;
-  /** CSS aspect-ratio value for the live crop preview, e.g. "3 / 2" or "6 / 1". */
-  cardAspectRatio: string;
+  aspectRatio: string;
   url: string;
-  position: string;
+  crop: CropData;
   onUrlChange: (v: string) => void;
-  onPositionChange: (v: string) => void;
-  handleFocalClick: (
-    e: React.MouseEvent<HTMLImageElement>,
-    setter: (v: string) => void
-  ) => void;
+  onCropChange: (crop: CropData) => void;
   weddingId: string;
 }
 
 /**
- * URL input + click-to-set focal point editor. Shows:
- *  1. A URL text input
- *  2. The full uncropped image with a crosshair marker at the focal point —
- *     click anywhere to move it.
- *  3. A live crop preview at the actual card aspect ratio the guest sees.
+ * URL/upload input paired with an interactive crop editor. The user can
+ * paste a URL or upload a file, then drag and zoom to frame the image.
  */
-function ImageFocalEditor({
+function ImageUploadField({
   label,
   helperText,
-  cardAspectRatio,
+  aspectRatio,
   url,
-  position,
+  crop,
   onUrlChange,
-  onPositionChange,
-  handleFocalClick,
+  onCropChange,
   weddingId,
-}: ImageFocalEditorProps) {
+}: ImageUploadFieldProps) {
   const [loadError, setLoadError] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -621,6 +613,7 @@ function ImageFocalEditor({
       }
       const data = await res.json();
       onUrlChange(data.data.url);
+      onCropChange({ x: 50, y: 50, zoom: 1 });
       setLoadError(false);
     } catch (err) {
       setUploadError(err instanceof Error ? err.message : 'Upload failed');
@@ -629,11 +622,6 @@ function ImageFocalEditor({
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
-
-  // Parse "X% Y%" into numbers for the crosshair marker overlay.
-  const match = position.match(/^(\d+(?:\.\d+)?)%\s+(\d+(?:\.\d+)?)%$/);
-  const focalX = match ? parseFloat(match[1]) : 50;
-  const focalY = match ? parseFloat(match[2]) : 50;
 
   return (
     <div>
@@ -644,6 +632,7 @@ function ImageFocalEditor({
           value={url}
           onChange={(e) => {
             onUrlChange(e.target.value);
+            onCropChange({ x: 50, y: 50, zoom: 1 });
             setLoadError(false);
             setUploadError(null);
           }}
@@ -708,149 +697,15 @@ function ImageFocalEditor({
       </p>
 
       {url && !loadError && (
-        <div style={{ marginTop: 12, display: 'grid', gap: 12 }}>
-          {/* Full image with click-to-set focal point */}
-          <div>
-            <p
-              style={{
-                fontSize: 10,
-                textTransform: 'uppercase',
-                letterSpacing: '0.5px',
-                color: 'var(--text-tertiary)',
-                margin: '0 0 6px',
-                fontFamily: 'var(--font-body)',
-                fontWeight: 500,
-              }}
-            >
-              Click to set focal point
-            </p>
-            <div
-              style={{
-                position: 'relative',
-                display: 'inline-block',
-                maxWidth: '100%',
-                borderRadius: 10,
-                overflow: 'hidden',
-                border: '1px solid var(--border-light)',
-                cursor: 'crosshair',
-                lineHeight: 0,
-              }}
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={url}
-                alt={`${label} full preview`}
-                onClick={(e) => handleFocalClick(e, onPositionChange)}
-                onError={() => setLoadError(true)}
-                style={{
-                  display: 'block',
-                  maxWidth: 420,
-                  maxHeight: 240,
-                  width: 'auto',
-                  height: 'auto',
-                  userSelect: 'none',
-                }}
-                draggable={false}
-              />
-              {/* Crosshair marker at the focal point */}
-              <div
-                aria-hidden
-                style={{
-                  position: 'absolute',
-                  left: `${focalX}%`,
-                  top: `${focalY}%`,
-                  width: 22,
-                  height: 22,
-                  borderRadius: '50%',
-                  border: '2px solid #FDFBF7',
-                  background: 'rgba(196,112,75,0.85)',
-                  transform: 'translate(-50%, -50%)',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.35)',
-                  pointerEvents: 'none',
-                }}
-              />
-            </div>
-          </div>
-
-          {/* Live crop preview at the actual card aspect ratio */}
-          <div>
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                marginBottom: 6,
-              }}
-            >
-              <p
-                style={{
-                  fontSize: 10,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.5px',
-                  color: 'var(--text-tertiary)',
-                  margin: 0,
-                  fontFamily: 'var(--font-body)',
-                  fontWeight: 500,
-                }}
-              >
-                How guests see it ({cardAspectRatio.replace(' / ', ':')})
-              </p>
-              <button
-                type="button"
-                onClick={() => onPositionChange('50% 50%')}
-                style={{
-                  padding: '4px 10px',
-                  borderRadius: 8,
-                  border: '1px solid var(--border-light)',
-                  background: 'var(--bg-pure-white)',
-                  fontSize: 10,
-                  fontWeight: 500,
-                  fontFamily: 'var(--font-body)',
-                  color: 'var(--text-secondary)',
-                  cursor: 'pointer',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.5px',
-                }}
-              >
-                Reset to center
-              </button>
-            </div>
-            <div
-              style={{
-                width: '100%',
-                maxWidth: 420,
-                aspectRatio: cardAspectRatio,
-                borderRadius: 10,
-                border: '1px solid var(--border-light)',
-                overflow: 'hidden',
-                background: 'var(--bg-soft-cream)',
-              }}
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={url}
-                alt={`${label} cropped preview`}
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'cover',
-                  objectPosition: position,
-                  display: 'block',
-                }}
-              />
-            </div>
-            <p
-              style={{
-                fontSize: 10,
-                color: 'var(--text-tertiary)',
-                margin: '6px 0 0',
-                fontFamily: 'var(--font-body)',
-                fontVariantNumeric: 'tabular-nums',
-              }}
-            >
-              Focal point: <code>{position}</code>
-            </p>
-          </div>
+        <div style={{ marginTop: 12 }}>
+          <ImageCropEditor
+            url={url}
+            cropX={crop.x}
+            cropY={crop.y}
+            cropZoom={crop.zoom}
+            aspectRatio={aspectRatio}
+            onCropChange={(x, y, zoom) => onCropChange({ x, y, zoom })}
+          />
         </div>
       )}
 

@@ -22,29 +22,57 @@ const objectPosition = z
   .max(40)
   .regex(/^[0-9a-zA-Z%.\s-]+$/, 'Invalid focal point value');
 
+const cropSchema = z.object({
+  x: z.number().min(0).max(100),
+  y: z.number().min(0).max(100),
+  zoom: z.number().min(1).max(3),
+});
+
 const updateSchema = z.object({
   knowledge_base: z.string().max(50000).optional(),
   wedding_planner_name: z.string().max(200).optional().or(z.literal('')),
   wedding_planner_email: z.string().email().optional().or(z.literal('')),
   home_schedule_image: imagePathOrUrl.optional(),
   home_schedule_position: objectPosition.optional(),
+  home_schedule_crop: cropSchema.optional(),
   home_travel_image: imagePathOrUrl.optional(),
   home_travel_position: objectPosition.optional(),
+  home_travel_crop: cropSchema.optional(),
 });
 
+interface NormalizedImage {
+  url: string;
+  position: string;
+  crop?: { x: number; y: number; zoom: number };
+}
+
 /**
- * Coerce stored home_card_images.* values into { url, position } — handles
- * legacy string-only rows from before focal-point control shipped.
+ * Coerce stored home_card_images.* values into the normalized shape — handles
+ * legacy string-only rows from before the crop editor shipped.
  */
-function normalizeImage(raw: unknown): { url: string; position: string } {
+function normalizeImage(raw: unknown): NormalizedImage {
   if (!raw) return { url: '', position: '50% 50%' };
   if (typeof raw === 'string') return { url: raw, position: '50% 50%' };
   if (typeof raw === 'object' && raw !== null) {
-    const { url, position } = raw as { url?: unknown; position?: unknown };
-    return {
-      url: typeof url === 'string' ? url : '',
-      position: typeof position === 'string' && position ? position : '50% 50%',
+    const obj = raw as Record<string, unknown>;
+    const result: NormalizedImage = {
+      url: typeof obj.url === 'string' ? obj.url : '',
+      position:
+        typeof obj.position === 'string' && obj.position
+          ? (obj.position as string)
+          : '50% 50%',
     };
+    if (obj.crop && typeof obj.crop === 'object') {
+      const c = obj.crop as Record<string, unknown>;
+      if (
+        typeof c.x === 'number' &&
+        typeof c.y === 'number' &&
+        typeof c.zoom === 'number'
+      ) {
+        result.crop = { x: c.x, y: c.y, zoom: c.zoom };
+      }
+    }
+    return result;
   }
   return { url: '', position: '50% 50%' };
 }
@@ -136,8 +164,10 @@ export async function PATCH(
     if (
       parsed.home_schedule_image !== undefined ||
       parsed.home_schedule_position !== undefined ||
+      parsed.home_schedule_crop !== undefined ||
       parsed.home_travel_image !== undefined ||
-      parsed.home_travel_position !== undefined
+      parsed.home_travel_position !== undefined ||
+      parsed.home_travel_crop !== undefined
     ) {
       // Normalize any existing values (handles legacy string-only rows).
       const existingSchedule = normalizeImage(config.home_card_images?.schedule);
@@ -151,6 +181,10 @@ export async function PATCH(
         parsed.home_schedule_position !== undefined
           ? parsed.home_schedule_position.trim() || '50% 50%'
           : existingSchedule.position;
+      const scheduleCrop =
+        parsed.home_schedule_crop !== undefined
+          ? parsed.home_schedule_crop
+          : existingSchedule.crop;
 
       const travelUrl =
         parsed.home_travel_image !== undefined
@@ -160,10 +194,18 @@ export async function PATCH(
         parsed.home_travel_position !== undefined
           ? parsed.home_travel_position.trim() || '50% 50%'
           : existingTravel.position;
+      const travelCrop =
+        parsed.home_travel_crop !== undefined
+          ? parsed.home_travel_crop
+          : existingTravel.crop;
 
-      const images: Record<string, { url: string; position: string } | null> = {};
-      images.schedule = scheduleUrl ? { url: scheduleUrl, position: schedulePosition } : null;
-      images.travel = travelUrl ? { url: travelUrl, position: travelPosition } : null;
+      const images: Record<string, NormalizedImage | null> = {};
+      images.schedule = scheduleUrl
+        ? { url: scheduleUrl, position: schedulePosition, ...(scheduleCrop && { crop: scheduleCrop }) }
+        : null;
+      images.travel = travelUrl
+        ? { url: travelUrl, position: travelPosition, ...(travelCrop && { crop: travelCrop }) }
+        : null;
 
       if (!images.schedule && !images.travel) {
         delete config.home_card_images;

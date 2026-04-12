@@ -230,8 +230,16 @@ export default function GuestHomePage() {
                 <img
                   src={config.home_card_images.schedule.url}
                   alt=""
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                  style={{ objectPosition: config.home_card_images.schedule.position }}
+                  className="w-full h-full object-cover"
+                  style={
+                    config.home_card_images.schedule.crop
+                      ? {
+                          objectPosition: `${config.home_card_images.schedule.crop.x}% ${config.home_card_images.schedule.crop.y}%`,
+                          transform: `scale(${config.home_card_images.schedule.crop.zoom})`,
+                          transformOrigin: `${config.home_card_images.schedule.crop.x}% ${config.home_card_images.schedule.crop.y}%`,
+                        }
+                      : { objectPosition: config.home_card_images.schedule.position }
+                  }
                 />
               ) : (
                 <div
@@ -451,8 +459,16 @@ export default function GuestHomePage() {
                 <img
                   src={config.home_card_images.travel.url}
                   alt=""
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                  style={{ objectPosition: config.home_card_images.travel.position }}
+                  className="w-full h-full object-cover"
+                  style={
+                    config.home_card_images.travel.crop
+                      ? {
+                          objectPosition: `${config.home_card_images.travel.crop.x}% ${config.home_card_images.travel.crop.y}%`,
+                          transform: `scale(${config.home_card_images.travel.crop.zoom})`,
+                          transformOrigin: `${config.home_card_images.travel.crop.x}% ${config.home_card_images.travel.crop.y}%`,
+                        }
+                      : { objectPosition: config.home_card_images.travel.position }
+                  }
                 />
               ) : (
                 <div
