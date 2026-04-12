@@ -418,7 +418,7 @@ export default function SettingsPage({ params }: { params: Promise<{ weddingId: 
           Import Events
         </h1>
         <p style={{ fontSize: 13, color: 'var(--text-secondary)', fontFamily: 'var(--font-body)', marginBottom: 24 }}>
-          Paste your event details from Zola, The Knot, or any wedding website. We'll use AI to extract event names, times, venues, dress codes, and descriptions.
+          Paste your event details from Zola, The Knot, or any wedding website. We&apos;ll use AI to extract event names, times, venues, dress codes, and descriptions.
         </p>
 
         <div style={{ padding: 24, background: 'var(--bg-pure-white)', borderRadius: 16, border: '1px solid var(--border-light)' }}>

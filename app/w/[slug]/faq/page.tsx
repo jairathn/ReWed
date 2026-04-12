@@ -113,10 +113,6 @@ export default function FaqPage() {
     );
   }
 
-  const coupleName = config?.couple_names?.name1 && config?.couple_names?.name2
-    ? `${config.couple_names.name1} & ${config.couple_names.name2}`
-    : config?.display_name || 'the couple';
-
   const plannerEmail = config?.wedding_planner?.email || null;
   const plannerName = config?.wedding_planner?.name || null;
   const plannerMailto = plannerEmail

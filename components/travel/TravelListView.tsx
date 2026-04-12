@@ -82,8 +82,8 @@ export default function TravelListView({
   const [rideShares, setRideShares] = useState<RideShareGroup[]>([]);
   const [mySharing, setMySharing] = useState(false);
   const [loadingStops, setLoadingStops] = useState(true);
-  const [loadingOverlaps, setLoadingOverlaps] = useState(true);
-  const [loadingRides, setLoadingRides] = useState(true);
+  const [overlapsFetched, setOverlapsFetched] = useState(false);
+  const [ridesFetched, setRidesFetched] = useState(false);
   const [citySearch, setCitySearch] = useState('');
   const [expandedGuest, setExpandedGuest] = useState<string | null>(null);
 
@@ -96,28 +96,32 @@ export default function TravelListView({
   }, [slug]);
 
   useEffect(() => {
-    if (!hasPlan) {
-      setLoadingOverlaps(false);
-      setLoadingRides(false);
-      return;
-    }
+    if (!hasPlan) return;
+
+    let cancelled = false;
+
     fetch(`/api/v1/w/${slug}/travel/overlaps`)
       .then((res) => res.json())
-      .then((data) => setOverlaps(data.data?.overlaps || []))
+      .then((data) => { if (!cancelled) setOverlaps(data.data?.overlaps || []); })
       .catch(console.error)
-      .finally(() => setLoadingOverlaps(false));
+      .finally(() => { if (!cancelled) setOverlapsFetched(true); });
 
     fetch(`/api/v1/w/${slug}/travel/ride-shares`)
       .then((res) => res.json())
       .then((data) => {
-        setRideShares(data.data?.ride_shares || []);
-        setMySharing(data.data?.my_sharing || false);
+        if (!cancelled) {
+          setRideShares(data.data?.ride_shares || []);
+          setMySharing(data.data?.my_sharing || false);
+        }
       })
       .catch(console.error)
-      .finally(() => setLoadingRides(false));
+      .finally(() => { if (!cancelled) setRidesFetched(true); });
+
+    return () => { cancelled = true; };
   }, [slug, hasPlan]);
 
-  const loading = loadingStops || loadingOverlaps || loadingRides;
+  // Overlaps/rides loading when we have a plan but haven't fetched yet.
+  const loading = loadingStops || (hasPlan ? (!overlapsFetched || !ridesFetched) : false);
 
   // Build a map of guest_id → all their stops across cities
   const guestItineraries = useMemo(() => {

@@ -35,7 +35,7 @@ const COSTS = {
   sms_per_guest: 2.4, // $0.024 per guest (~3 messages)
 };
 
-function getBasePriceCents(guestCount: number, eventCount: number): number {
+function getBasePriceCents(guestCount: number): number {
   // Scale: 25 guests = $149, 100 = $199, 200 = $249, 300 = $299, 500+ = $349
   if (guestCount <= 50) return 149_00;
   if (guestCount <= 100) return 199_00;
@@ -60,7 +60,7 @@ function getDeliverablePriceCents(deliverables: string, guestCount: number): num
 }
 
 export function calculatePackagePrice(input: PackageInput): PackagePrice {
-  const base = getBasePriceCents(input.guest_count, input.event_count);
+  const base = getBasePriceCents(input.guest_count);
   const portraits = getPortraitPriceCents(input.ai_portraits_per_guest, input.guest_count);
   const deliverables = getDeliverablePriceCents(input.deliverables, input.guest_count);
   const social_feed = input.social_feed ? 25_00 : 0;

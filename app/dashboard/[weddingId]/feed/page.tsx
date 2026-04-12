@@ -46,12 +46,13 @@ export default function FeedModerationPage({ params }: { params: Promise<{ weddi
       }
     } catch (err) {
       console.error('Failed to fetch feed:', err);
+    } finally {
+      setLoading(false);
     }
   }, [weddingId]);
 
   useEffect(() => {
-    setLoading(true);
-    fetchPosts().finally(() => setLoading(false));
+    fetchPosts();
   }, [fetchPosts]);
 
   const handleAction = async (postId: string, action: string) => {

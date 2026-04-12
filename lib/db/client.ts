@@ -1,5 +1,5 @@
 import { Pool, PoolClient } from 'pg';
-import { neon, neonConfig } from '@neondatabase/serverless';
+import { neon } from '@neondatabase/serverless';
 
 // For serverless environments (Vercel Edge), use Neon's HTTP driver
 // For long-running processes (tests, scripts), use pg Pool

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { AppError, handleApiError, ErrorCodes } from '@/lib/errors';
+import { AppError, handleApiError } from '@/lib/errors';
 
 describe('Error Handling', () => {
   describe('AppError', () => {

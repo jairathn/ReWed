@@ -351,7 +351,7 @@ export default function FaqPage({ params }: { params: Promise<{ weddingId: strin
           Import FAQ
         </h1>
         <p style={{ fontSize: 14, color: 'var(--text-secondary)', marginBottom: 24 }}>
-          Paste your FAQ content below. Supports copy-paste from Zola, The Knot, Q:/A: format, or any free-form text with questions and answers — we'll use AI to extract them.
+          Paste your FAQ content below. Supports copy-paste from Zola, The Knot, Q:/A: format, or any free-form text with questions and answers — we&apos;ll use AI to extract them.
         </p>
 
         <div style={{ padding: 24, background: 'var(--bg-pure-white)', borderRadius: 16, border: '1px solid var(--border-light)' }}>

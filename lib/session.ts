@@ -1,6 +1,5 @@
 import { randomBytes, createHmac } from 'crypto';
-import bcrypt from 'bcryptjs';
-import type { PoolClient, Pool } from 'pg';
+import type { Pool } from 'pg';
 
 const SESSION_TOKEN_LENGTH = 48;
 

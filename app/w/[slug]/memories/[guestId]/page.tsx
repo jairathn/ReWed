@@ -363,7 +363,6 @@ export default function GuestMemoirPage() {
   const couple = coupleLabel(wedding.couple_names) || wedding.display_name;
   const guestName = guest.display_name || guest.first_name;
   const keeperReel = highlight_reels?.keeper;
-  const socialReel = highlight_reels?.reel;
   const hasHighlightVideo = keeperReel?.status === 'ready';
   const topPhotos = (carousel_photos || []).slice(0, 12);
   const bottomPhotos = (carousel_photos || []).slice(12, 24);

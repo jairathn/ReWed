@@ -9,7 +9,7 @@ export async function GET(
   { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
-    const { slug } = await params;
+    await params;
     const pool = getPool();
 
     const sessionToken = request.cookies.get('wedding_session')?.value;

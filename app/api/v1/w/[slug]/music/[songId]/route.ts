@@ -8,7 +8,7 @@ export async function DELETE(
   { params }: { params: Promise<{ slug: string; songId: string }> }
 ) {
   try {
-    const { slug, songId } = await params;
+    const { songId } = await params;
     const pool = getPool();
 
     const sessionToken = request.cookies.get('wedding_session')?.value;
