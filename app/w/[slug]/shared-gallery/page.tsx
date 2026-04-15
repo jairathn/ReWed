@@ -114,14 +114,14 @@ export default function SharedGalleryPage() {
 
   if (isLoading || !guest) {
     return (
-      <div className="min-h-screen flex flex-col" style={{ background: 'var(--bg-warm-white)' }}>
+      <div className="min-h-screen flex flex-col">
         <header
           className="fixed top-0 w-full z-50 flex justify-between items-center px-6 py-4"
           style={{
-            background: 'rgba(250, 249, 245, 0.90)',
+            background: 'rgba(250, 249, 245, 0.55)',
             backdropFilter: 'blur(20px)',
             WebkitBackdropFilter: 'blur(20px)',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+            boxShadow: '0 0.5px 0 rgba(208, 197, 175, 0.25)',
           }}
         >
           <div className="flex items-center gap-3">
@@ -162,14 +162,14 @@ export default function SharedGalleryPage() {
   ];
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: 'var(--bg-warm-white)' }}>
+    <div className="min-h-screen flex flex-col">
       <header
         className="fixed top-0 w-full z-50 flex justify-between items-center px-6 py-4"
         style={{
-          background: 'rgba(250, 249, 245, 0.90)',
+          background: 'rgba(250, 249, 245, 0.55)',
           backdropFilter: 'blur(20px)',
           WebkitBackdropFilter: 'blur(20px)',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+          boxShadow: '0 0.5px 0 rgba(208, 197, 175, 0.25)',
         }}
       >
         <div className="flex items-center gap-3">
@@ -209,7 +209,7 @@ export default function SharedGalleryPage() {
               color: 'var(--color-terracotta)',
             }}
           >
-            {totalCount} photos &amp; videos from all guests
+            {totalCount} shots from everyone
           </p>
           <span className="h-px w-8" style={{ background: 'var(--border-light)' }} />
         </div>
@@ -261,7 +261,7 @@ export default function SharedGalleryPage() {
               color: 'var(--text-secondary)',
             }}
           >
-            No photos yet — be the first to capture a moment!
+            Nothing here yet. Be the first.
           </p>
           <button
             onClick={() => router.push(`/w/${slug}/capture`)}
@@ -280,7 +280,7 @@ export default function SharedGalleryPage() {
               <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" />
               <circle cx="12" cy="13" r="3" />
             </svg>
-            Open Camera
+            Open the camera
           </button>
         </div>
       ) : (

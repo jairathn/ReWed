@@ -162,14 +162,14 @@ function ReviewContent() {
   // Loading skeleton
   if (isLoading || !guest) {
     return (
-      <div className="min-h-screen flex flex-col" style={{ background: 'var(--bg-warm-white)' }}>
+      <div className="min-h-screen flex flex-col">
         <header
           className="fixed top-0 w-full z-50 flex justify-between items-center px-6 py-4"
           style={{
-            background: 'rgba(250, 249, 245, 0.90)',
+            background: 'rgba(250, 249, 245, 0.55)',
             backdropFilter: 'blur(20px)',
             WebkitBackdropFilter: 'blur(20px)',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+            boxShadow: '0 0.5px 0 rgba(208, 197, 175, 0.25)',
           }}
         >
           <div className="flex items-center gap-3">
@@ -203,14 +203,14 @@ function ReviewContent() {
   // No media to review
   if (loadError && phase === 'review') {
     return (
-      <div className="min-h-screen flex flex-col" style={{ background: 'var(--bg-warm-white)' }}>
+      <div className="min-h-screen flex flex-col">
         <header
           className="fixed top-0 w-full z-50 flex justify-between items-center px-6 py-4"
           style={{
-            background: 'rgba(250, 249, 245, 0.90)',
+            background: 'rgba(250, 249, 245, 0.55)',
             backdropFilter: 'blur(20px)',
             WebkitBackdropFilter: 'blur(20px)',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+            boxShadow: '0 0.5px 0 rgba(208, 197, 175, 0.25)',
           }}
         >
           <div className="flex items-center gap-3">
@@ -246,23 +246,23 @@ function ReviewContent() {
                 color: 'var(--text-primary)',
               }}
             >
-              Nothing to Review
+              Nothing to look at yet
             </h2>
             <p className="text-sm mb-8 text-center" style={{ color: 'var(--text-secondary)' }}>
-              Capture a photo or record a video first, then come back here to review and save it.
+              Grab a photo or a video first, then circle back here to save it.
             </p>
             <div className="flex gap-3">
               <button
                 onClick={() => router.push(`/w/${slug}/photo`)}
                 className="btn-primary px-6"
               >
-                Take Photo
+                Take a photo
               </button>
               <button
                 onClick={() => router.push(`/w/${slug}/video`)}
                 className="btn-secondary px-6"
               >
-                Record Video
+                Record a video
               </button>
             </div>
           </div>
@@ -273,14 +273,14 @@ function ReviewContent() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: 'var(--bg-warm-white)' }}>
+    <div className="min-h-screen flex flex-col">
       <header
         className="fixed top-0 w-full z-50 flex justify-between items-center px-6 py-4"
         style={{
-          background: 'rgba(250, 249, 245, 0.90)',
+          background: 'rgba(250, 249, 245, 0.55)',
           backdropFilter: 'blur(20px)',
           WebkitBackdropFilter: 'blur(20px)',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+          boxShadow: '0 0.5px 0 rgba(208, 197, 175, 0.25)',
         }}
       >
         <div className="flex items-center gap-3">
@@ -322,7 +322,7 @@ function ReviewContent() {
                   color: 'var(--color-terracotta)',
                 }}
               >
-                Looking good!
+                Look good?
               </p>
               <span className="h-px w-8" style={{ background: 'var(--border-light)' }} />
             </div>
@@ -363,7 +363,7 @@ function ReviewContent() {
               onClick={goBack}
               className="btn-secondary flex-1 py-4"
             >
-              Retake
+              Redo
             </button>
             <button
               onClick={saveToGallery}
@@ -373,7 +373,7 @@ function ReviewContent() {
                 opacity: mediaBlob ? 1 : 0.5,
               }}
             >
-              Save to Gallery
+              Save it
             </button>
           </div>
         </>
@@ -397,7 +397,7 @@ function ReviewContent() {
               className="text-base font-medium mb-4"
               style={{ color: 'var(--text-primary)' }}
             >
-              Saving to gallery...
+              Tucking it away...
             </p>
             {/* Progress bar */}
             <div
@@ -457,10 +457,10 @@ function ReviewContent() {
                 color: 'var(--text-primary)',
               }}
             >
-              Saved!
+              Got it.
             </h2>
             <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-              Redirecting to your gallery...
+              Taking you to your gallery...
             </p>
           </div>
         </div>
@@ -495,14 +495,14 @@ export default function ReviewPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen flex flex-col" style={{ background: 'var(--bg-warm-white)' }}>
+        <div className="min-h-screen flex flex-col">
           <header
             className="fixed top-0 w-full z-50 flex justify-between items-center px-6 py-4"
             style={{
-              background: 'rgba(250, 249, 245, 0.90)',
+              background: 'rgba(250, 249, 245, 0.55)',
               backdropFilter: 'blur(20px)',
               WebkitBackdropFilter: 'blur(20px)',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+              boxShadow: '0 0.5px 0 rgba(208, 197, 175, 0.25)',
             }}
           >
             <div className="w-8" />

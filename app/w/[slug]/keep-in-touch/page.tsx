@@ -92,7 +92,7 @@ export default function KeepInTouchPage() {
         }
       }
     } catch {
-      setFetchError('Could not load contacts. Please try again.');
+      setFetchError("Couldn't pull the contacts — try again?");
     } finally {
       setLoadingContacts(false);
     }
@@ -109,7 +109,7 @@ export default function KeepInTouchPage() {
     setSubmitError('');
 
     if (!instagram.trim() && !phone.trim() && !email.trim()) {
-      setSubmitError('Please share at least one way to stay connected.');
+      setSubmitError('Add at least one way for folks to reach you.');
       return;
     }
 
@@ -127,13 +127,13 @@ export default function KeepInTouchPage() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setSubmitError(data.error?.message || 'Something went wrong.');
+        setSubmitError(data.error?.message || "Something didn't work.");
         return;
       }
       setEditing(false);
       await fetchContacts();
     } catch {
-      setSubmitError('Could not save. Please try again.');
+      setSubmitError("Couldn't save that — give it another go.");
     } finally {
       setSubmitting(false);
     }
@@ -143,14 +143,14 @@ export default function KeepInTouchPage() {
 
   if (isLoading || loadingContacts) {
     return (
-      <div className="min-h-screen flex flex-col" style={{ background: 'var(--bg-warm-white)' }}>
+      <div className="min-h-screen flex flex-col">
         <header
           className="fixed top-0 w-full z-50 flex justify-between items-center px-6 py-4"
           style={{
-            background: 'rgba(250, 249, 245, 0.90)',
+            background: 'rgba(250, 249, 245, 0.55)',
             backdropFilter: 'blur(20px)',
             WebkitBackdropFilter: 'blur(20px)',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+            boxShadow: '0 0.5px 0 rgba(208, 197, 175, 0.25)',
           }}
         >
           <div className="flex items-center gap-3">
@@ -194,14 +194,14 @@ export default function KeepInTouchPage() {
   const showForm = !myShare || editing;
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: 'var(--bg-warm-white)' }}>
+    <div className="min-h-screen flex flex-col">
       <header
         className="fixed top-0 w-full z-50 flex justify-between items-center px-6 py-4"
         style={{
-          background: 'rgba(250, 249, 245, 0.90)',
+          background: 'rgba(250, 249, 245, 0.55)',
           backdropFilter: 'blur(20px)',
           WebkitBackdropFilter: 'blur(20px)',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+          boxShadow: '0 0.5px 0 rgba(208, 197, 175, 0.25)',
         }}
       >
         <div className="flex items-center gap-3">
@@ -230,7 +230,7 @@ export default function KeepInTouchPage() {
             color: 'var(--text-primary)',
           }}
         >
-          Keep in Touch
+          Keep in touch
         </h2>
         <div className="flex items-center justify-center gap-3">
           <span className="h-px w-8" style={{ background: 'var(--border-light)' }} />
@@ -242,7 +242,7 @@ export default function KeepInTouchPage() {
               color: 'var(--color-terracotta)',
             }}
           >
-            Stay connected
+            Swap info before you go
           </p>
           <span className="h-px w-8" style={{ background: 'var(--border-light)' }} />
         </div>
@@ -282,13 +282,13 @@ export default function KeepInTouchPage() {
               color: 'var(--text-primary)',
             }}
           >
-            {myShare ? 'Update Your Info' : 'Share Your Contact Info'}
+            {myShare ? 'Update your info' : 'Leave your info'}
           </h2>
           <p
             className="text-xs mb-4"
             style={{ color: 'var(--text-tertiary)', lineHeight: '1.5' }}
           >
-            You choose what to share. Only other guests who&apos;ve opted in can see this.
+            You pick what to share. Only other guests who&apos;ve opted in can see it.
           </p>
 
           <form onSubmit={handleSubmit}>
@@ -446,8 +446,8 @@ export default function KeepInTouchPage() {
                 {submitting
                   ? 'Saving...'
                   : myShare
-                    ? 'Update My Info'
-                    : 'Share My Info'}
+                    ? 'Update it'
+                    : 'Share it'}
               </button>
             </div>
           </form>
@@ -472,7 +472,7 @@ export default function KeepInTouchPage() {
                 color: 'var(--text-primary)',
               }}
             >
-              Your Shared Info
+              What you&rsquo;ve shared
             </h2>
             <button
               onClick={() => setEditing(true)}
@@ -486,7 +486,7 @@ export default function KeepInTouchPage() {
                 cursor: 'pointer',
               }}
             >
-              Update
+              Edit
             </button>
           </div>
 
@@ -543,7 +543,7 @@ export default function KeepInTouchPage() {
               color: 'var(--text-primary)',
             }}
           >
-            People staying connected{' '}
+            Others staying in touch{' '}
             <span
               className="text-sm font-normal"
               style={{ color: 'var(--text-tertiary)' }}
@@ -679,7 +679,7 @@ export default function KeepInTouchPage() {
           style={{ color: 'var(--text-tertiary)' }}
         >
           <p className="text-sm">
-            You&apos;re the first to share! Others will appear here as they opt in.
+            You&apos;re the first. Others will show up as they opt in.
           </p>
         </div>
       )}

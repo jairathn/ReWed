@@ -1,7 +1,7 @@
 'use client';
 
 import { useWedding } from '@/components/WeddingProvider';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useRef, useState, useCallback } from 'react';
 
 type RecordMode = 'with-prompt' | 'free';
@@ -12,6 +12,8 @@ const MAX_DURATION_SECONDS = 90;
 export default function VideoRecordingPage() {
   const { config, guest, slug, isAuthenticated, isLoading } = useWedding();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const initialMode: RecordMode = searchParams.get('mode') === 'free' ? 'free' : 'with-prompt';
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const playbackRef = useRef<HTMLVideoElement>(null);
@@ -20,7 +22,7 @@ export default function VideoRecordingPage() {
   const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const [recordMode, setRecordMode] = useState<RecordMode>('with-prompt');
+  const [recordMode, setRecordMode] = useState<RecordMode>(initialMode);
   const [phase, setPhase] = useState<Phase>('viewfinder');
   const [promptIndex, setPromptIndex] = useState(0);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
@@ -68,7 +70,7 @@ export default function VideoRecordingPage() {
         ...DEFAULT_PROMPTS.fun,
         ...DEFAULT_PROMPTS.quick_takes,
       ];
-  const currentPrompt = prompts[promptIndex] || 'Share a message for the couple!';
+  const currentPrompt = prompts[promptIndex] || 'Say something for the couple!';
 
   // Auth guard
   useEffect(() => {
@@ -200,7 +202,7 @@ export default function VideoRecordingPage() {
       }, 1000);
     } catch (err) {
       console.error('Failed to start MediaRecorder:', err);
-      setToastMessage('Could not start recording. Please try again.');
+      setToastMessage("Recording didn't start — give it another shot.");
     }
   };
 
@@ -297,14 +299,14 @@ export default function VideoRecordingPage() {
 
       setUploadProgress(100);
       setPhase('success');
-      setToastMessage('Video saved to gallery!');
+      setToastMessage('Sent — thank you!');
 
       setTimeout(() => {
         reRecord();
       }, 1500);
     } catch (err) {
       console.error('Upload failed:', err);
-      setToastMessage('Upload failed. Please try again.');
+      setToastMessage("Didn't send — try once more?");
       setPhase('review');
     }
   };
@@ -356,13 +358,13 @@ export default function VideoRecordingPage() {
               className="text-xl font-medium mb-3"
               style={{ fontFamily: 'var(--font-display)', color: '#e8d5b8' }}
             >
-              Camera &amp; Microphone Needed
+              We&rsquo;ll need your camera &amp; mic
             </h2>
             <p className="text-sm mb-6 leading-relaxed" style={{ color: 'rgba(232, 213, 184, 0.5)' }}>
-              To record a video message, please allow camera and microphone access in your browser settings.
+              Pop into your browser settings and let us in — then we can record.
             </p>
             <button onClick={() => startCamera()} className="btn-primary">
-              Try Again
+              Try again
             </button>
           </div>
         </div>
@@ -398,10 +400,10 @@ export default function VideoRecordingPage() {
           <header
             className="absolute top-0 w-full z-30 flex justify-between items-center px-6 py-4"
             style={{
-              background: 'rgba(250, 249, 245, 0.90)',
+              background: 'rgba(250, 249, 245, 0.55)',
               backdropFilter: 'blur(20px)',
               WebkitBackdropFilter: 'blur(20px)',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+              boxShadow: '0 0.5px 0 rgba(208, 197, 175, 0.25)',
             }}
           >
             <div className="flex items-center gap-4">
@@ -463,14 +465,15 @@ export default function VideoRecordingPage() {
                 }}
               >
                 <span
-                  className="block text-lg mb-2"
+                  className="block text-sm mb-2 uppercase"
                   style={{
-                    fontFamily: 'var(--font-display)',
-                    fontStyle: 'italic',
+                    fontFamily: 'var(--font-body)',
+                    letterSpacing: '0.22em',
                     color: 'var(--color-gold-light)',
+                    fontWeight: 600,
                   }}
                 >
-                  A Digital Keepsake
+                  Try this one
                 </span>
                 <h2
                   className="text-3xl leading-tight"
@@ -565,7 +568,7 @@ export default function VideoRecordingPage() {
                       color: recordMode === 'with-prompt' ? '#ffffff' : 'rgba(168, 162, 158, 1)',
                     }}
                   >
-                    With Prompt
+                    Toast
                   </button>
                   <button
                     onClick={() => setRecordMode('free')}
@@ -581,7 +584,7 @@ export default function VideoRecordingPage() {
                       color: recordMode === 'free' ? '#ffffff' : 'rgba(168, 162, 158, 1)',
                     }}
                   >
-                    Free Record
+                    Free
                   </button>
                 </div>
               )}
@@ -761,7 +764,7 @@ export default function VideoRecordingPage() {
                   fontFamily: 'var(--font-body)',
                 }}
               >
-                Re-record
+                Redo
               </button>
               <button
                 onClick={uploadVideo}
@@ -773,7 +776,7 @@ export default function VideoRecordingPage() {
                   fontFamily: 'var(--font-body)',
                 }}
               >
-                Save
+                Send it
               </button>
             </div>
           </div>
@@ -795,7 +798,7 @@ export default function VideoRecordingPage() {
               </svg>
             </div>
             <p className="text-base font-medium mb-4" style={{ color: '#e8d5b8', fontFamily: 'var(--font-display)', fontStyle: 'italic' }}>
-              Saving your video...
+              Sending it over...
             </p>
             <div
               className="w-full h-1.5 rounded-full overflow-hidden"
@@ -833,7 +836,7 @@ export default function VideoRecordingPage() {
               className="text-xl font-medium"
               style={{ fontFamily: 'var(--font-display)', color: '#e8d5b8', fontStyle: 'italic' }}
             >
-              Saved!
+              Thank you.
             </p>
           </div>
         </div>

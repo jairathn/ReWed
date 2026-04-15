@@ -79,10 +79,10 @@ export default function GuestHomePage() {
       <header
         className="fixed top-0 w-full z-50 flex justify-between items-center px-6 py-4"
         style={{
-          background: 'rgba(250, 249, 245, 0.90)',
-          backdropFilter: 'blur(20px)',
-          WebkitBackdropFilter: 'blur(20px)',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+          background: 'rgba(250, 249, 245, 0.55)',
+          backdropFilter: 'blur(24px) saturate(160%)',
+          WebkitBackdropFilter: 'blur(24px) saturate(160%)',
+          boxShadow: '0 0.5px 0 rgba(208, 197, 175, 0.25)',
         }}
       >
         <div className="flex items-center gap-4">
@@ -187,14 +187,16 @@ export default function GuestHomePage() {
           )}
         </section>
 
-        {/* Highlight Reel Banner */}
+        {/* Highlight Reel Banner — doubles as a CTA into the video toast flow */}
         <section>
-          <div
-            className="rounded-2xl overflow-hidden relative"
+          <Link
+            href={`/w/${slug}/capture`}
+            className="block rounded-2xl overflow-hidden relative group transition-all duration-300 hover:-translate-y-0.5"
             style={{
               background: 'linear-gradient(135deg, rgba(196, 112, 75, 0.06) 0%, rgba(212, 168, 83, 0.08) 100%)',
               border: '1px solid rgba(196, 112, 75, 0.1)',
               padding: '20px 22px',
+              textDecoration: 'none',
             }}
           >
             <div className="flex items-start gap-4">
@@ -223,17 +225,26 @@ export default function GuestHomePage() {
                     lineHeight: 1.3,
                   }}
                 >
-                  Your moments, one highlight reel
+                  Leave them a toast
                 </h3>
                 <p
                   className="text-[13px] leading-relaxed"
                   style={{ color: 'var(--text-secondary)', margin: 0 }}
                 >
-                  Every photo and video shared here is curated into a personalized wedding highlight film — a keepsake made just for you.
+                  It ends up in their highlight reel — the stuff a photo can&rsquo;t quite say.
                 </p>
+                <div
+                  className="mt-3 inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] transition-transform duration-300 group-hover:translate-x-0.5"
+                  style={{ color: 'var(--color-terracotta)' }}
+                >
+                  Record yours
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+                    <path d="M5 12h14M12 5l7 7-7 7" />
+                  </svg>
+                </div>
               </div>
             </div>
-          </div>
+          </Link>
         </section>
 
         {/* Bento Grid — 2-col base, items span as needed */}
@@ -263,11 +274,11 @@ export default function GuestHomePage() {
                   Schedule
                 </h3>
                 <p className="text-sm leading-relaxed max-w-[260px]" style={{ color: 'var(--text-secondary)' }}>
-                  Events, venues, dress codes &amp; directions
+                  What&rsquo;s happening, where to be, what to wear
                 </p>
               </div>
               <div className="mt-5 flex items-center gap-2 text-xs font-semibold tracking-widest uppercase" style={{ color: 'var(--color-gold-dark)' }}>
-                Explore Events
+                Take a look
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
                   <path d="M5 12h14M12 5l7 7-7 7" />
                 </svg>
@@ -344,7 +355,7 @@ export default function GuestHomePage() {
                 Social Feed
               </h3>
               <p className="text-[13px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-                Share moments — they become part of your highlight reel
+                Share a moment — it lands in their reel
               </p>
             </div>
           </Link>
@@ -373,7 +384,7 @@ export default function GuestHomePage() {
                 FAQ
               </h3>
               <p className="text-[13px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-                Get instant answers to any wedding question
+                Ask anything — we&rsquo;ve got the answers
               </p>
             </div>
           </Link>
@@ -405,7 +416,7 @@ export default function GuestHomePage() {
                     Gallery
                   </h3>
                   <p className="text-[13px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-                    Your photos power the couple&apos;s highlight reel
+                    Everything everyone&rsquo;s sharing, in one place
                   </p>
                 </div>
                 <div className="pt-4 flex -space-x-2">
@@ -483,7 +494,7 @@ export default function GuestHomePage() {
                     My Table
                   </h3>
                   <p className="text-[13px]" style={{ color: 'var(--text-secondary)' }}>
-                    Find your seat &amp; meet your tablemates
+                    Find your seat. See who&rsquo;s at the table.
                   </p>
                 </div>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-gold-dark)" strokeWidth="2" strokeLinecap="round" className="flex-shrink-0">
@@ -556,7 +567,7 @@ export default function GuestHomePage() {
                 </span>
               </div>
               <p className="text-[13px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-                Share plans, find friends nearby, or coordinate a ride
+                See who&rsquo;s in town. Share a ride.
               </p>
             </div>
           </Link>

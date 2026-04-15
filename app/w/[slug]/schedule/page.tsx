@@ -163,14 +163,14 @@ export default async function SchedulePage({
   }
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: 'var(--bg-warm-white)' }}>
+    <div className="min-h-screen flex flex-col">
       <header
         className="fixed top-0 w-full z-50 flex justify-between items-center px-6 py-4"
         style={{
-          background: 'rgba(250, 249, 245, 0.90)',
+          background: 'rgba(250, 249, 245, 0.55)',
           backdropFilter: 'blur(20px)',
           WebkitBackdropFilter: 'blur(20px)',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+          boxShadow: '0 0.5px 0 rgba(208, 197, 175, 0.25)',
         }}
       >
         <div className="flex items-center gap-3">
@@ -210,7 +210,7 @@ export default async function SchedulePage({
                 color: 'var(--color-terracotta)',
               }}
             >
-              {venueCity ? `${venueCity}${venueCountry ? `, ${venueCountry}` : ''}` : dateRangeStr || 'Your weekend itinerary'}
+              {venueCity ? `${venueCity}${venueCountry ? `, ${venueCountry}` : ''}` : dateRangeStr || "Here's the weekend"}
             </p>
             <span className="h-px w-8" style={{ background: 'var(--border-light)' }} />
           </div>
@@ -221,7 +221,7 @@ export default async function SchedulePage({
         <div className="text-center py-12">
           <p className="text-4xl mb-4">&#128197;</p>
           <p style={{ color: 'var(--text-secondary)' }}>
-            The schedule will be posted soon!
+            Still pulling the schedule together — check back soon.
           </p>
         </div>
       ) : (
@@ -410,7 +410,7 @@ export default async function SchedulePage({
                             marginBottom: 10,
                           }}
                         >
-                          What to Wear
+                          What to wear
                         </p>
                         <p style={{ fontSize: 13, color: 'var(--text-primary)', lineHeight: 1.6, whiteSpace: 'pre-line' }}>
                           {event.dress_code}

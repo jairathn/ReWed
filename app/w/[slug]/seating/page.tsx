@@ -82,10 +82,10 @@ function FixedHeader({ slug }: { slug: string }) {
     <header
       className="fixed top-0 w-full z-50 flex justify-between items-center px-6 py-4"
       style={{
-        background: 'rgba(250, 249, 245, 0.90)',
+        background: 'rgba(250, 249, 245, 0.55)',
         backdropFilter: 'blur(20px)',
         WebkitBackdropFilter: 'blur(20px)',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+        boxShadow: '0 0.5px 0 rgba(208, 197, 175, 0.25)',
       }}
     >
       <div className="flex items-center gap-3">
@@ -150,7 +150,7 @@ export default function SeatingPage() {
           setSubmitted(true);
         }
       })
-      .catch(() => setError('Could not load seating info.'))
+      .catch(() => setError("Couldn't pull your seat info right now."))
       .finally(() => setLoading(false));
   }, [slug, isAuthenticated]);
 
@@ -192,7 +192,7 @@ export default function SeatingPage() {
   // --- Loading skeleton ---
   if (configLoading || loading) {
     return (
-      <div className="min-h-screen flex flex-col" style={{ background: 'var(--bg-warm-white)' }}>
+      <div className="min-h-screen flex flex-col">
         <FixedHeader slug={slug} />
         <main className="pt-24 pb-32 px-6 max-w-2xl mx-auto flex-1">
           <div className="skeleton h-8 w-56 mb-2 rounded" />
@@ -213,7 +213,7 @@ export default function SeatingPage() {
   // --- Error state ---
   if (error) {
     return (
-      <div className="min-h-screen flex flex-col" style={{ background: 'var(--bg-warm-white)' }}>
+      <div className="min-h-screen flex flex-col">
         <FixedHeader slug={slug} />
         <main className="pt-24 pb-32 px-6 max-w-2xl mx-auto flex-1">
           <section className="mb-8 text-center">
@@ -236,7 +236,7 @@ export default function SeatingPage() {
                   color: 'var(--color-terracotta)',
                 }}
               >
-                Something went wrong
+                Hmm, that didn&rsquo;t work
               </p>
               <span className="h-px w-8" style={{ background: 'var(--border-light)' }} />
             </div>
@@ -255,7 +255,7 @@ export default function SeatingPage() {
   // --- Not assigned ---
   if (!seating?.assigned) {
     return (
-      <div className="min-h-screen flex flex-col" style={{ background: 'var(--bg-warm-white)' }}>
+      <div className="min-h-screen flex flex-col">
         <FixedHeader slug={slug} />
         <main className="pt-24 pb-32 px-6 max-w-2xl mx-auto flex-1">
           <section className="mb-8 text-center">
@@ -278,7 +278,7 @@ export default function SeatingPage() {
                   color: 'var(--color-terracotta)',
                 }}
               >
-                Check back closer to the big day
+                Seats land closer to the day
               </p>
               <span className="h-px w-8" style={{ background: 'var(--border-light)' }} />
             </div>
@@ -296,10 +296,10 @@ export default function SeatingPage() {
               className="text-base font-medium mb-1"
               style={{ color: 'var(--text-primary)' }}
             >
-              Table assignment coming soon
+              Your seat is on the way
             </p>
             <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-              Check back closer to the big day to find your seat and meet your tablemates!
+              We&rsquo;ll show you your table (and who&rsquo;s on it) closer to the day.
             </p>
           </div>
         </main>
@@ -310,7 +310,7 @@ export default function SeatingPage() {
 
   // --- Main content ---
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: 'var(--bg-warm-white)' }}>
+    <div className="min-h-screen flex flex-col">
       <FixedHeader slug={slug} />
       <main className="pt-24 pb-32 px-6 max-w-2xl mx-auto flex-1">
         <section className="mb-8 text-center">
@@ -333,7 +333,7 @@ export default function SeatingPage() {
                 color: 'var(--color-terracotta)',
               }}
             >
-              Meet your tablemates
+              Here&rsquo;s who you&rsquo;re with
             </p>
             <span className="h-px w-8" style={{ background: 'var(--border-light)' }} />
           </div>
@@ -352,7 +352,7 @@ export default function SeatingPage() {
             className="text-xs font-semibold uppercase tracking-wider mb-2"
             style={{ color: 'var(--color-terracotta)' }}
           >
-            You are seated at
+            You&rsquo;re at
           </p>
           <p
             className="text-3xl font-medium mb-1"
@@ -408,7 +408,7 @@ export default function SeatingPage() {
                 style={{ color: 'var(--color-terracotta)' }}
                 onClick={() => setSubmitted(false)}
               >
-                Edit answer
+                Change it
               </button>
             </div>
           ) : (
@@ -423,7 +423,7 @@ export default function SeatingPage() {
                 }}
                 rows={2}
                 maxLength={200}
-                placeholder="Type your answer..."
+                placeholder="Say something..."
                 value={icebreakerAnswer}
                 onChange={(e) => setIcebreakerAnswer(e.target.value)}
               />
@@ -457,7 +457,7 @@ export default function SeatingPage() {
             className="text-xs font-semibold uppercase tracking-wider mb-3"
             style={{ color: 'var(--text-secondary)' }}
           >
-            At your table ({(others.length + (me ? 1 : 0))})
+            Your table ({(others.length + (me ? 1 : 0))})
           </p>
 
           <div className="space-y-3">
@@ -486,7 +486,7 @@ export default function SeatingPage() {
             }}
           >
             <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-              Looks like you have the table to yourself for now. More guests may be assigned soon!
+              Just you for now — more folks might land here soon.
             </p>
           </div>
         )}

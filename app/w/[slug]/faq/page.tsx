@@ -59,13 +59,13 @@ export default function FaqPage() {
       const reply: ChatMessage = {
         id: `a-${Date.now()}`,
         role: 'assistant',
-        content: data.data?.answer || data.error?.message || 'Something went wrong. Please try again.',
+        content: data.data?.answer || data.error?.message || "Hmm, that didn't go through — try once more?",
       };
       setMessages((prev) => [...prev, reply]);
     } catch {
       setMessages((prev) => [
         ...prev,
-        { id: `e-${Date.now()}`, role: 'assistant', content: "I'm having trouble connecting. Please try again in a moment." },
+        { id: `e-${Date.now()}`, role: 'assistant', content: "Can't seem to connect right now — give me a sec and try again." },
       ]);
     } finally {
       setSending(false);
@@ -79,14 +79,14 @@ export default function FaqPage() {
 
   if (isLoading || !guest) {
     return (
-      <div className="min-h-screen flex flex-col" style={{ background: 'var(--bg-warm-white)' }}>
+      <div className="min-h-screen flex flex-col">
         <header
           className="fixed top-0 w-full z-50 flex justify-between items-center px-6 py-4"
           style={{
-            background: 'rgba(250, 249, 245, 0.90)',
+            background: 'rgba(250, 249, 245, 0.55)',
             backdropFilter: 'blur(20px)',
             WebkitBackdropFilter: 'blur(20px)',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+            boxShadow: '0 0.5px 0 rgba(208, 197, 175, 0.25)',
           }}
         >
           <div className="flex items-center gap-3">
@@ -120,14 +120,14 @@ export default function FaqPage() {
     : null;
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: 'var(--bg-warm-white)' }}>
+    <div className="min-h-screen flex flex-col">
       <header
         className="fixed top-0 w-full z-50 flex justify-between items-center px-6 py-4"
         style={{
-          background: 'rgba(250, 249, 245, 0.90)',
+          background: 'rgba(250, 249, 245, 0.55)',
           backdropFilter: 'blur(20px)',
           WebkitBackdropFilter: 'blur(20px)',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+          boxShadow: '0 0.5px 0 rgba(208, 197, 175, 0.25)',
         }}
       >
         <div className="flex items-center gap-3">
@@ -167,7 +167,7 @@ export default function FaqPage() {
                 color: 'var(--color-terracotta)',
               }}
             >
-              Ask anything about the wedding
+              Ask away — we&rsquo;ve got you
             </p>
             <span className="h-px w-8" style={{ background: 'var(--border-light)' }} />
           </div>
@@ -190,10 +190,10 @@ export default function FaqPage() {
               </svg>
             </div>
             <p className="text-lg font-medium mb-1" style={{ fontFamily: 'var(--font-display)', color: 'var(--text-primary)' }}>
-              How can I help?
+              What can I tell you?
             </p>
             <p className="text-xs mb-5" style={{ color: 'var(--text-tertiary)' }}>
-              I know all the details about this wedding
+              I&rsquo;ve got the details — fire away
             </p>
             <div className="flex flex-wrap gap-2 justify-center">
               {QUICK_QUESTIONS.map((q) => (
@@ -256,7 +256,7 @@ export default function FaqPage() {
               type="text"
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
-              placeholder="Ask a question..."
+              placeholder="Ask anything..."
               className="flex-1 rounded-full px-5 py-3 text-sm"
               style={{
                 background: 'var(--bg-pure-white)',
@@ -326,9 +326,9 @@ export default function FaqPage() {
                 <polyline points="22,6 12,13 2,6" />
               </svg>
               <span>
-                Didn&apos;t get the answer you&apos;re looking for?{' '}
+                Still stuck?{' '}
                 <strong style={{ color: 'var(--color-gold-dark)' }}>
-                  Email {plannerName ? `${plannerName}, ` : ''}our wedding planner
+                  Email {plannerName ? `${plannerName}, ` : ''}our planner
                 </strong>
               </span>
             </a>

@@ -228,14 +228,14 @@ export default function GalleryPage() {
 
   if (isLoading || !guest) {
     return (
-      <div className="min-h-screen flex flex-col" style={{ background: 'var(--bg-warm-white)' }}>
+      <div className="min-h-screen flex flex-col">
         <header
           className="fixed top-0 w-full z-50 flex justify-between items-center px-6 py-4"
           style={{
-            background: 'rgba(250, 249, 245, 0.90)',
+            background: 'rgba(250, 249, 245, 0.55)',
             backdropFilter: 'blur(20px)',
             WebkitBackdropFilter: 'blur(20px)',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+            boxShadow: '0 0.5px 0 rgba(208, 197, 175, 0.25)',
           }}
         >
           <div className="w-8" />
@@ -272,14 +272,14 @@ export default function GalleryPage() {
   ];
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: 'var(--bg-warm-white)' }}>
+    <div className="min-h-screen flex flex-col">
       <header
         className="fixed top-0 w-full z-50 flex justify-between items-center px-6 py-4"
         style={{
-          background: 'rgba(250, 249, 245, 0.90)',
+          background: 'rgba(250, 249, 245, 0.55)',
           backdropFilter: 'blur(20px)',
           WebkitBackdropFilter: 'blur(20px)',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+          boxShadow: '0 0.5px 0 rgba(208, 197, 175, 0.25)',
         }}
       >
         <div className="flex items-center gap-3">
@@ -318,7 +318,7 @@ export default function GalleryPage() {
                 color: 'var(--color-terracotta)',
               }}
             >
-              Your captured moments
+              The ones you caught
             </p>
             <span className="h-px w-8" style={{ background: 'var(--border-light)' }} />
           </div>
@@ -531,10 +531,10 @@ export default function GalleryPage() {
               color: 'var(--text-secondary)',
             }}
           >
-            {activeTab === 'favorite' ? 'No favorites yet' : 'Capture more moments'}
+            {activeTab === 'favorite' ? 'No favorites yet' : 'Nothing here yet'}
           </p>
           <p className="text-xs mb-5 max-w-[240px] mx-auto" style={{ color: 'var(--text-tertiary)', lineHeight: 1.5 }}>
-            Every photo you take becomes part of your personalized highlight reel
+            Everything you capture lands in their highlight reel
           </p>
           <button
             onClick={() => router.push(`/w/${slug}/capture`)}
@@ -554,7 +554,7 @@ export default function GalleryPage() {
               <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" />
               <circle cx="12" cy="13" r="3" />
             </svg>
-            Open Camera
+            Open the camera
           </button>
         </div>
       ) : (
@@ -762,7 +762,7 @@ export default function GalleryPage() {
                 <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" />
                 <circle cx="12" cy="13" r="3" />
               </svg>
-              Open Camera
+              Open the camera
             </button>
           </div>
         </>
@@ -881,10 +881,10 @@ export default function GalleryPage() {
               style={{ background: 'var(--bg-pure-white)' }}
             >
               <p className="text-center font-medium mb-1" style={{ color: 'var(--text-primary)' }}>
-                Delete this {selectedItem.type}?
+                Toss this {selectedItem.type}?
               </p>
               <p className="text-center text-sm mb-4" style={{ color: 'var(--text-secondary)' }}>
-                This can&apos;t be undone.
+                No taking it back.
               </p>
               <div className="flex gap-3">
                 <button
