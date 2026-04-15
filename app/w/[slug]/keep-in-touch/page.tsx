@@ -143,14 +143,14 @@ export default function KeepInTouchPage() {
 
   if (isLoading || loadingContacts) {
     return (
-      <div className="min-h-screen flex flex-col" style={{ background: 'var(--bg-warm-white)' }}>
+      <div className="min-h-screen flex flex-col">
         <header
           className="fixed top-0 w-full z-50 flex justify-between items-center px-6 py-4"
           style={{
-            background: 'rgba(250, 249, 245, 0.90)',
+            background: 'rgba(250, 249, 245, 0.55)',
             backdropFilter: 'blur(20px)',
             WebkitBackdropFilter: 'blur(20px)',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+            boxShadow: '0 0.5px 0 rgba(208, 197, 175, 0.25)',
           }}
         >
           <div className="flex items-center gap-3">
@@ -194,14 +194,14 @@ export default function KeepInTouchPage() {
   const showForm = !myShare || editing;
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: 'var(--bg-warm-white)' }}>
+    <div className="min-h-screen flex flex-col">
       <header
         className="fixed top-0 w-full z-50 flex justify-between items-center px-6 py-4"
         style={{
-          background: 'rgba(250, 249, 245, 0.90)',
+          background: 'rgba(250, 249, 245, 0.55)',
           backdropFilter: 'blur(20px)',
           WebkitBackdropFilter: 'blur(20px)',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+          boxShadow: '0 0.5px 0 rgba(208, 197, 175, 0.25)',
         }}
       >
         <div className="flex items-center gap-3">

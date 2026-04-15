@@ -55,15 +55,15 @@ export default function CapturePage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: 'var(--bg-warm-white)' }}>
+    <div className="min-h-screen flex flex-col">
       {/* Top App Bar */}
       <header
         className="fixed top-0 w-full z-50 flex justify-between items-center px-6 py-4"
         style={{
-          background: 'rgba(250, 249, 245, 0.90)',
+          background: 'rgba(250, 249, 245, 0.55)',
           backdropFilter: 'blur(20px)',
           WebkitBackdropFilter: 'blur(20px)',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+          boxShadow: '0 0.5px 0 rgba(208, 197, 175, 0.25)',
         }}
       >
         <div className="flex items-center gap-3">
@@ -305,6 +305,42 @@ export default function CapturePage() {
             </svg>
           </div>
         </Link>
+
+        {/* Photo booth coming soon note */}
+        <div
+          className="mt-5 flex items-start gap-3 rounded-xl"
+          style={{
+            background: 'rgba(168, 136, 63, 0.06)',
+            border: '1px dashed rgba(168, 136, 63, 0.28)',
+            padding: '12px 16px',
+          }}
+        >
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="var(--color-gold-dark)"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            style={{ flexShrink: 0, marginTop: 1 }}
+          >
+            <path d="M14.5 4h-5L7 7H4a2 2 0 00-2 2v9a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2h-3l-2.5-3z" />
+            <circle cx="12" cy="13" r="3" />
+          </svg>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <p
+              className="text-[13px] font-semibold mb-0.5"
+              style={{ color: 'var(--color-gold-dark)', fontFamily: 'var(--font-body)' }}
+            >
+              Photo booth opens during the wedding
+            </p>
+            <p className="text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+              AI portraits and instant photos unlock on the wedding day — check back then.
+            </p>
+          </div>
+        </div>
 
         {/* Gallery Link */}
         <div className="mt-auto pt-14 text-center">
