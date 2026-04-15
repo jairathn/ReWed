@@ -1,7 +1,7 @@
 'use client';
 
 import { useWedding } from '@/components/WeddingProvider';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useRef, useState, useCallback } from 'react';
 
 type RecordMode = 'with-prompt' | 'free';
@@ -12,6 +12,8 @@ const MAX_DURATION_SECONDS = 90;
 export default function VideoRecordingPage() {
   const { config, guest, slug, isAuthenticated, isLoading } = useWedding();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const initialMode: RecordMode = searchParams.get('mode') === 'free' ? 'free' : 'with-prompt';
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const playbackRef = useRef<HTMLVideoElement>(null);
@@ -20,7 +22,7 @@ export default function VideoRecordingPage() {
   const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const [recordMode, setRecordMode] = useState<RecordMode>('with-prompt');
+  const [recordMode, setRecordMode] = useState<RecordMode>(initialMode);
   const [phase, setPhase] = useState<Phase>('viewfinder');
   const [promptIndex, setPromptIndex] = useState(0);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
@@ -463,14 +465,15 @@ export default function VideoRecordingPage() {
                 }}
               >
                 <span
-                  className="block text-lg mb-2"
+                  className="block text-sm mb-2 uppercase"
                   style={{
-                    fontFamily: 'var(--font-display)',
-                    fontStyle: 'italic',
+                    fontFamily: 'var(--font-body)',
+                    letterSpacing: '0.22em',
                     color: 'var(--color-gold-light)',
+                    fontWeight: 600,
                   }}
                 >
-                  A Digital Keepsake
+                  Your Video Toast
                 </span>
                 <h2
                   className="text-3xl leading-tight"
@@ -565,7 +568,7 @@ export default function VideoRecordingPage() {
                       color: recordMode === 'with-prompt' ? '#ffffff' : 'rgba(168, 162, 158, 1)',
                     }}
                   >
-                    With Prompt
+                    Toast
                   </button>
                   <button
                     onClick={() => setRecordMode('free')}
@@ -581,7 +584,7 @@ export default function VideoRecordingPage() {
                       color: recordMode === 'free' ? '#ffffff' : 'rgba(168, 162, 158, 1)',
                     }}
                   >
-                    Free Record
+                    Free
                   </button>
                 </div>
               )}

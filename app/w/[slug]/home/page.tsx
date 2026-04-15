@@ -187,14 +187,16 @@ export default function GuestHomePage() {
           )}
         </section>
 
-        {/* Highlight Reel Banner */}
+        {/* Highlight Reel Banner — doubles as a CTA into the video toast flow */}
         <section>
-          <div
-            className="rounded-2xl overflow-hidden relative"
+          <Link
+            href={`/w/${slug}/capture`}
+            className="block rounded-2xl overflow-hidden relative group transition-all duration-300 hover:-translate-y-0.5"
             style={{
               background: 'linear-gradient(135deg, rgba(196, 112, 75, 0.06) 0%, rgba(212, 168, 83, 0.08) 100%)',
               border: '1px solid rgba(196, 112, 75, 0.1)',
               padding: '20px 22px',
+              textDecoration: 'none',
             }}
           >
             <div className="flex items-start gap-4">
@@ -223,17 +225,26 @@ export default function GuestHomePage() {
                     lineHeight: 1.3,
                   }}
                 >
-                  Your moments, one highlight reel
+                  Leave a video toast they&apos;ll watch forever
                 </h3>
                 <p
                   className="text-[13px] leading-relaxed"
                   style={{ color: 'var(--text-secondary)', margin: 0 }}
                 >
-                  Every photo and video shared here is curated into a personalized wedding highlight film — a keepsake made just for you.
+                  Your toast is woven into the couple&rsquo;s highlight film — a personal keepsake no photo can replace.
                 </p>
+                <div
+                  className="mt-3 inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] transition-transform duration-300 group-hover:translate-x-0.5"
+                  style={{ color: 'var(--color-terracotta)' }}
+                >
+                  Record Your Toast
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+                    <path d="M5 12h14M12 5l7 7-7 7" />
+                  </svg>
+                </div>
               </div>
             </div>
-          </div>
+          </Link>
         </section>
 
         {/* Bento Grid — 2-col base, items span as needed */}
