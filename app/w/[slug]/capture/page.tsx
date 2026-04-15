@@ -90,7 +90,7 @@ export default function CapturePage() {
             className="inline-block uppercase tracking-[0.25em] text-[10px] mb-3"
             style={{ color: 'var(--color-terracotta)', fontWeight: 600 }}
           >
-            A Gift for the Couple
+            A little gift for them
           </div>
           <h2
             className="text-5xl mb-3 tracking-tight"
@@ -114,7 +114,7 @@ export default function CapturePage() {
                 color: 'var(--color-terracotta)',
               }}
             >
-              Your words, saved forever
+              Your words — they&rsquo;ll keep them
             </p>
             <span
               className="h-px w-8"
@@ -185,7 +185,7 @@ export default function CapturePage() {
                   letterSpacing: '-0.01em',
                 }}
               >
-                Record a message the couple will watch forever.
+                Say a few words. They&rsquo;ll replay it for years.
               </h3>
 
               {/* Sample prompt, quoted */}
@@ -202,7 +202,7 @@ export default function CapturePage() {
                   className="uppercase tracking-[0.22em] text-[10px] mb-2"
                   style={{ color: 'rgba(255,255,255,0.7)', fontWeight: 600 }}
                 >
-                  Tonight&apos;s prompt
+                  Try this one
                 </div>
                 <p
                   className="text-xl leading-snug"
@@ -223,13 +223,13 @@ export default function CapturePage() {
                     <circle cx="12" cy="12" r="10" />
                     <polyline points="12 6 12 12 16 14" />
                   </svg>
-                  Under 90 seconds
+                  90 seconds, tops
                 </span>
                 <span className="flex items-center gap-2">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
                     <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" />
                   </svg>
-                  Goes in their highlight reel
+                  Makes the highlight reel
                 </span>
               </div>
 
@@ -242,7 +242,7 @@ export default function CapturePage() {
                   className="text-sm font-semibold tracking-[0.18em] uppercase"
                   style={{ color: 'white' }}
                 >
-                  Start Your Toast
+                  Start toasting
                 </span>
                 <span
                   className="w-10 h-10 rounded-full flex items-center justify-center transition-transform duration-300 group-hover:translate-x-1"
@@ -285,10 +285,10 @@ export default function CapturePage() {
                 className="text-base mb-0.5"
                 style={{ fontFamily: 'var(--font-display)', color: 'var(--text-primary)' }}
               >
-                Or just say whatever&apos;s on your heart
+                Or just say whatever&rsquo;s on your mind
               </h3>
               <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-                Free-form video — no prompt, record your own message
+                Skip the prompt — record whatever you want
               </p>
             </div>
             <svg
@@ -334,10 +334,10 @@ export default function CapturePage() {
               className="text-[13px] font-semibold mb-0.5"
               style={{ color: 'var(--color-gold-dark)', fontFamily: 'var(--font-body)' }}
             >
-              Photo booth opens during the wedding
+              Photo booth opens on the big day
             </p>
             <p className="text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-              AI portraits and instant photos unlock on the wedding day — check back then.
+              AI portraits and instant photos show up at the wedding — pop back in then.
             </p>
           </div>
         </div>
@@ -367,7 +367,7 @@ export default function CapturePage() {
               className="uppercase tracking-[0.2em] text-[10px]"
               style={{ color: 'var(--text-tertiary)' }}
             >
-              See what others shared
+              Peek at what others left
             </p>
           </Link>
         </div>

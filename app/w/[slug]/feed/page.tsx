@@ -82,7 +82,7 @@ export default function FeedPage() {
         }
       } catch (err) {
         console.error('Failed to fetch feed:', err);
-        if (!cursor) setFetchError('Could not load feed. Pull down to retry.');
+        if (!cursor) setFetchError("Couldn't load the feed — pull down to retry.");
       }
     },
     [slug]
@@ -408,7 +408,7 @@ export default function FeedPage() {
             fontFamily: 'var(--font-body)',
           }}
         >
-          Every photo and video you share here becomes part of your personalized highlight reel
+          Everything you share lands in their highlight reel
         </p>
       </section>
 
@@ -425,7 +425,7 @@ export default function FeedPage() {
               letterSpacing: '0.02em',
             }}
           >
-            + Share a Moment
+            + Share something
           </button>
         </div>
       )}
@@ -445,7 +445,7 @@ export default function FeedPage() {
             className="text-xl font-medium mb-2"
             style={{ fontFamily: 'var(--font-display)', color: '#5C4A2F' }}
           >
-            Enjoy the moment!
+            Be here for this one.
           </p>
           <p className="text-sm mb-3" style={{ color: '#7A6B52' }}>
             {blockedMessage}
@@ -456,7 +456,7 @@ export default function FeedPage() {
               <circle cx="12" cy="13" r="4" />
             </svg>
             <span className="text-xs" style={{ color: '#B8963E' }}>
-              Don&apos;t forget to take pictures!
+              Snap a few pics anyway — you&rsquo;ll want them later
             </span>
           </div>
         </div>
@@ -485,7 +485,7 @@ export default function FeedPage() {
                   border: composeType === t ? 'none' : '1px solid var(--border-light)',
                 }}
               >
-                {t === 'text' ? 'Share a moment' : 'Favorite memory'}
+                {t === 'text' ? 'A moment' : 'A favorite memory'}
               </button>
             ))}
           </div>
@@ -494,8 +494,8 @@ export default function FeedPage() {
             onChange={(e) => setComposeText(e.target.value)}
             placeholder={
               composeType === 'memory'
-                ? `My favorite story about ${config?.couple_names?.name1 || 'the couple'}...`
-                : 'Share a moment from the celebration...'
+                ? `My favorite story about ${config?.couple_names?.name1 || 'them'}...`
+                : "What's happening right now?"
             }
             className="w-full resize-none rounded-xl p-3 text-sm"
             style={{
@@ -662,13 +662,13 @@ export default function FeedPage() {
             </svg>
           </div>
           <p className="text-lg font-medium mb-2" style={{ fontFamily: 'var(--font-display)', color: 'var(--text-primary)' }}>
-            No posts yet
+            Nothing here yet
           </p>
           <p className="text-sm mb-1" style={{ color: 'var(--text-secondary)' }}>
-            Be the first to share a moment!
+            Be the first — go on.
           </p>
           <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
-            Your posts become part of the wedding highlight reel
+            It all ends up in their highlight reel
           </p>
         </div>
       ) : (
@@ -783,7 +783,7 @@ export default function FeedPage() {
                       type="text"
                       value={commentText}
                       onChange={(e) => setCommentText(e.target.value)}
-                      placeholder="Add a comment..."
+                      placeholder="Say something..."
                       className="flex-1 px-3 py-2 rounded-full text-xs"
                       style={{
                         background: 'var(--bg-soft-cream)',

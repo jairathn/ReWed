@@ -210,7 +210,7 @@ export default async function SchedulePage({
                 color: 'var(--color-terracotta)',
               }}
             >
-              {venueCity ? `${venueCity}${venueCountry ? `, ${venueCountry}` : ''}` : dateRangeStr || 'Your weekend itinerary'}
+              {venueCity ? `${venueCity}${venueCountry ? `, ${venueCountry}` : ''}` : dateRangeStr || "Here's the weekend"}
             </p>
             <span className="h-px w-8" style={{ background: 'var(--border-light)' }} />
           </div>
@@ -221,7 +221,7 @@ export default async function SchedulePage({
         <div className="text-center py-12">
           <p className="text-4xl mb-4">&#128197;</p>
           <p style={{ color: 'var(--text-secondary)' }}>
-            The schedule will be posted soon!
+            Still pulling the schedule together — check back soon.
           </p>
         </div>
       ) : (
@@ -410,7 +410,7 @@ export default async function SchedulePage({
                             marginBottom: 10,
                           }}
                         >
-                          What to Wear
+                          What to wear
                         </p>
                         <p style={{ fontSize: 13, color: 'var(--text-primary)', lineHeight: 1.6, whiteSpace: 'pre-line' }}>
                           {event.dress_code}

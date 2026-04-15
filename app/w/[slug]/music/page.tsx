@@ -198,7 +198,7 @@ export default function MusicPage() {
               color: 'var(--color-terracotta)',
             }}
           >
-            What gets you on the dance floor?
+            What gets you moving?
           </p>
           <span className="h-px w-8" style={{ background: 'var(--border-light)' }} />
         </div>
@@ -220,7 +220,7 @@ export default function MusicPage() {
             className="text-sm font-medium mb-3"
             style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-display)' }}
           >
-            Add a song
+            Drop one in
           </p>
 
           <input
@@ -277,7 +277,7 @@ export default function MusicPage() {
               transition: 'opacity 0.2s',
             }}
           >
-            {submitting ? 'Adding...' : 'Request Song'}
+            {submitting ? 'Adding...' : 'Request it'}
           </button>
         </div>
       </form>
@@ -303,10 +303,10 @@ export default function MusicPage() {
               color: 'var(--text-primary)',
             }}
           >
-            What song gets you on the dance floor?
+            What gets you moving?
           </p>
           <p className="text-sm" style={{ color: 'var(--text-tertiary)' }}>
-            Add your first song request above
+            Drop your first one in above
           </p>
         </div>
       ) : (
@@ -405,18 +405,18 @@ export default function MusicPage() {
 
       <ConfirmDialog
         open={confirmDelete !== null}
-        title="Remove this song request?"
+        title="Take this one off?"
         description={
           confirmDelete ? (
             <>
-              <strong>{confirmDelete.title}</strong> will be removed from your song requests. You
-              can always add it again later.
+              We&rsquo;ll pull <strong>{confirmDelete.title}</strong> from your list. You can always
+              add it back.
             </>
           ) : (
             ''
           )
         }
-        confirmLabel="Remove song"
+        confirmLabel="Take it off"
         onConfirm={async () => {
           if (confirmDelete) {
             await performDelete(confirmDelete.id);

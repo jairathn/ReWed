@@ -246,23 +246,23 @@ function ReviewContent() {
                 color: 'var(--text-primary)',
               }}
             >
-              Nothing to Review
+              Nothing to look at yet
             </h2>
             <p className="text-sm mb-8 text-center" style={{ color: 'var(--text-secondary)' }}>
-              Capture a photo or record a video first, then come back here to review and save it.
+              Grab a photo or a video first, then circle back here to save it.
             </p>
             <div className="flex gap-3">
               <button
                 onClick={() => router.push(`/w/${slug}/photo`)}
                 className="btn-primary px-6"
               >
-                Take Photo
+                Take a photo
               </button>
               <button
                 onClick={() => router.push(`/w/${slug}/video`)}
                 className="btn-secondary px-6"
               >
-                Record Video
+                Record a video
               </button>
             </div>
           </div>
@@ -322,7 +322,7 @@ function ReviewContent() {
                   color: 'var(--color-terracotta)',
                 }}
               >
-                Looking good!
+                Look good?
               </p>
               <span className="h-px w-8" style={{ background: 'var(--border-light)' }} />
             </div>
@@ -363,7 +363,7 @@ function ReviewContent() {
               onClick={goBack}
               className="btn-secondary flex-1 py-4"
             >
-              Retake
+              Redo
             </button>
             <button
               onClick={saveToGallery}
@@ -373,7 +373,7 @@ function ReviewContent() {
                 opacity: mediaBlob ? 1 : 0.5,
               }}
             >
-              Save to Gallery
+              Save it
             </button>
           </div>
         </>
@@ -397,7 +397,7 @@ function ReviewContent() {
               className="text-base font-medium mb-4"
               style={{ color: 'var(--text-primary)' }}
             >
-              Saving to gallery...
+              Tucking it away...
             </p>
             {/* Progress bar */}
             <div
@@ -457,10 +457,10 @@ function ReviewContent() {
                 color: 'var(--text-primary)',
               }}
             >
-              Saved!
+              Got it.
             </h2>
             <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-              Redirecting to your gallery...
+              Taking you to your gallery...
             </p>
           </div>
         </div>

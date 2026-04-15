@@ -115,7 +115,7 @@ export default function TravelPage() {
                 color: 'var(--color-terracotta)',
               }}
             >
-              Connect with fellow guests
+              See who&rsquo;s in town
             </p>
             <span className="h-px w-8" style={{ background: 'var(--border-light)' }} />
           </div>

@@ -70,7 +70,7 @@ export default function VideoRecordingPage() {
         ...DEFAULT_PROMPTS.fun,
         ...DEFAULT_PROMPTS.quick_takes,
       ];
-  const currentPrompt = prompts[promptIndex] || 'Share a message for the couple!';
+  const currentPrompt = prompts[promptIndex] || 'Say something for the couple!';
 
   // Auth guard
   useEffect(() => {
@@ -202,7 +202,7 @@ export default function VideoRecordingPage() {
       }, 1000);
     } catch (err) {
       console.error('Failed to start MediaRecorder:', err);
-      setToastMessage('Could not start recording. Please try again.');
+      setToastMessage("Recording didn't start — give it another shot.");
     }
   };
 
@@ -299,14 +299,14 @@ export default function VideoRecordingPage() {
 
       setUploadProgress(100);
       setPhase('success');
-      setToastMessage('Video saved to gallery!');
+      setToastMessage('Sent — thank you!');
 
       setTimeout(() => {
         reRecord();
       }, 1500);
     } catch (err) {
       console.error('Upload failed:', err);
-      setToastMessage('Upload failed. Please try again.');
+      setToastMessage("Didn't send — try once more?");
       setPhase('review');
     }
   };
@@ -358,13 +358,13 @@ export default function VideoRecordingPage() {
               className="text-xl font-medium mb-3"
               style={{ fontFamily: 'var(--font-display)', color: '#e8d5b8' }}
             >
-              Camera &amp; Microphone Needed
+              We&rsquo;ll need your camera &amp; mic
             </h2>
             <p className="text-sm mb-6 leading-relaxed" style={{ color: 'rgba(232, 213, 184, 0.5)' }}>
-              To record a video message, please allow camera and microphone access in your browser settings.
+              Pop into your browser settings and let us in — then we can record.
             </p>
             <button onClick={() => startCamera()} className="btn-primary">
-              Try Again
+              Try again
             </button>
           </div>
         </div>
@@ -473,7 +473,7 @@ export default function VideoRecordingPage() {
                     fontWeight: 600,
                   }}
                 >
-                  Your Video Toast
+                  Try this one
                 </span>
                 <h2
                   className="text-3xl leading-tight"
@@ -764,7 +764,7 @@ export default function VideoRecordingPage() {
                   fontFamily: 'var(--font-body)',
                 }}
               >
-                Re-record
+                Redo
               </button>
               <button
                 onClick={uploadVideo}
@@ -776,7 +776,7 @@ export default function VideoRecordingPage() {
                   fontFamily: 'var(--font-body)',
                 }}
               >
-                Save
+                Send it
               </button>
             </div>
           </div>
@@ -798,7 +798,7 @@ export default function VideoRecordingPage() {
               </svg>
             </div>
             <p className="text-base font-medium mb-4" style={{ color: '#e8d5b8', fontFamily: 'var(--font-display)', fontStyle: 'italic' }}>
-              Saving your video...
+              Sending it over...
             </p>
             <div
               className="w-full h-1.5 rounded-full overflow-hidden"
@@ -836,7 +836,7 @@ export default function VideoRecordingPage() {
               className="text-xl font-medium"
               style={{ fontFamily: 'var(--font-display)', color: '#e8d5b8', fontStyle: 'italic' }}
             >
-              Saved!
+              Thank you.
             </p>
           </div>
         </div>

@@ -111,7 +111,7 @@ export default async function DirectoryPage({
               color: 'var(--text-primary)',
             }}
           >
-            Guest Directory
+            Who&rsquo;s coming
           </h2>
           <div className="flex items-center justify-center gap-3">
             <span className="h-px w-8" style={{ background: 'var(--border-light)' }} />
