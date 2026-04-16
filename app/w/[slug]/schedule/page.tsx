@@ -225,6 +225,17 @@ export default async function SchedulePage({
           </p>
         </div>
       ) : (
+        <div
+          style={{
+            background: 'rgba(250, 249, 245, 0.72)',
+            backdropFilter: 'blur(16px)',
+            WebkitBackdropFilter: 'blur(16px)',
+            borderRadius: 20,
+            padding: '28px 22px',
+            border: '1px solid rgba(208, 197, 175, 0.18)',
+            boxShadow: '0 2px 12px rgba(0,0,0,0.03)',
+          }}
+        >
         <div className="relative" style={{ paddingLeft: 24 }}>
           {/* Vertical timeline line */}
           <div
@@ -448,6 +459,7 @@ export default async function SchedulePage({
               </div>
             );
           })}
+        </div>
         </div>
       )}
 
