@@ -474,7 +474,7 @@ export default function GuestHomePage() {
                     My Table
                   </h3>
                   <p className="text-[13px]" style={{ color: 'var(--text-secondary)' }}>
-                    Find your seat. See who&rsquo;s at the table.
+                    Find your seat and see who&rsquo;s at your table
                   </p>
                 </div>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-gold-dark)" strokeWidth="2" strokeLinecap="round" className="flex-shrink-0">
@@ -547,7 +547,7 @@ export default function GuestHomePage() {
                 </span>
               </div>
               <p className="text-[13px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-                See who&rsquo;s in town. Share a ride.
+                See who&rsquo;s in town and share a ride!
               </p>
             </div>
           </Link>

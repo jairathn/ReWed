@@ -261,7 +261,7 @@ export default function SharedGalleryPage() {
               color: 'var(--text-secondary)',
             }}
           >
-            Nothing here yet. Be the first.
+            Nothing here yet — be the first!
           </p>
           <button
             onClick={() => router.push(`/w/${slug}/capture`)}
