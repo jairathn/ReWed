@@ -39,18 +39,7 @@ const navItems: NavItem[] = [
     filledPaths: ['M14.5 4h-5L7 7H4a2 2 0 00-2 2v9a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2h-3l-2.5-3z'],
     fillWhenActive: true,
   },
-  {
-    id: 'social',
-    label: 'Social',
-    path: '/feed',
-    paths: [
-      'M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2',
-      'M9 11a4 4 0 100-8 4 4 0 000 8z',
-      'M23 21v-2a4 4 0 00-3-3.87',
-      'M16 3.13a4 4 0 010 7.75',
-    ],
-  },
-  {
+{
     id: 'travel',
     label: 'Travel',
     path: '/travel',
@@ -92,10 +81,7 @@ export default function BottomNav() {
                   pathname.startsWith(`${basePath}/photo`) ||
                   pathname.startsWith(`${basePath}/video`) ||
                   pathname.startsWith(`${basePath}/gallery`)
-                : item.id === 'social'
-                  ? pathname.startsWith(`${basePath}/feed`) ||
-                    pathname.startsWith(`${basePath}/shared-gallery`)
-                  : pathname.startsWith(`${basePath}${item.path}`);
+                : pathname.startsWith(`${basePath}${item.path}`);
 
           const activeColor = '#735C00';
           const inactiveColor = '#A8A29E';

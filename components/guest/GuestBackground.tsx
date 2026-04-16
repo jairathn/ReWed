@@ -37,6 +37,16 @@ export default function GuestBackground() {
           opacity: opacity,
         }}
       />
+      {/* Light wash so page titles stay readable over the photo */}
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          background:
+            'linear-gradient(to bottom, rgba(250,249,245,0.55) 0%, rgba(250,249,245,0.25) 260px, transparent 420px)',
+          pointerEvents: 'none',
+        }}
+      />
     </div>
   );
 }

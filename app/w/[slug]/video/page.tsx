@@ -430,30 +430,9 @@ export default function VideoRecordingPage() {
             <div className="w-8" />
           </header>
 
-          {/* Recording indicator */}
-          {phase === 'recording' && (
-            <div
-              className="absolute top-20 left-1/2 -translate-x-1/2 flex items-center gap-2 px-4 py-2 rounded-full z-20"
-              style={{
-                background: 'rgba(12, 10, 9, 0.72)',
-                border: '0.5px solid rgba(200, 174, 140, 0.3)',
-                backdropFilter: 'blur(12px)',
-                WebkitBackdropFilter: 'blur(12px)',
-              }}
-            >
-              <div
-                className="w-2 h-2 rounded-full recording-dot"
-                style={{ background: '#c4503c' }}
-              />
-              <span className="text-xs font-normal tabular-nums" style={{ color: '#e8d5b8', letterSpacing: '0.3px' }}>
-                {formatTime(elapsedSeconds)} / {formatTime(MAX_DURATION_SECONDS)}
-              </span>
-            </div>
-          )}
-
-          {/* Prompt Card — centered, with "A Digital Keepsake" label */}
+          {/* Prompt Card — pinned near top so face stays visible */}
           {recordMode === 'with-prompt' && prompts.length > 0 && (
-            <section className="absolute left-0 right-0 z-10 w-full max-w-lg mx-auto px-6 flex flex-col items-center text-center" style={{ bottom: 220 }}>
+            <section className="absolute left-0 right-0 z-10 w-full max-w-lg mx-auto px-6 flex flex-col items-center text-center" style={{ top: 72 }}>
               <div
                 className="w-full px-6 py-7 rounded-xl"
                 style={{
