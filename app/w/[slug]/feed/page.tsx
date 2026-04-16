@@ -665,7 +665,7 @@ export default function FeedPage() {
             Nothing here yet
           </p>
           <p className="text-sm mb-1" style={{ color: 'var(--text-secondary)' }}>
-            Be the first — go on.
+            Be the first to share something!
           </p>
           <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
             It all ends up in their highlight reel
