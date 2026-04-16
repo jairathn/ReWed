@@ -322,48 +322,10 @@ export default function GuestHomePage() {
             </div>
           </Link>
 
-          {/* Social Feed — half width */}
-          <Link
-            href={`/w/${slug}/feed`}
-            className="col-span-1 group p-6 rounded-2xl flex flex-col justify-between transition-all hover:shadow-md"
-            style={{
-              background: 'rgba(122, 139, 92, 0.06)',
-              border: '1px solid rgba(122, 139, 92, 0.1)',
-              textDecoration: 'none',
-              minHeight: 180,
-            }}
-          >
-            <div className="space-y-3">
-              <div className="flex justify-between items-start">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--color-olive)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
-                  <circle cx="9" cy="7" r="4" />
-                  <path d="M23 21v-2a4 4 0 00-3-3.87" />
-                  <path d="M16 3.13a4 4 0 010 7.75" />
-                </svg>
-                <span
-                  className="text-[9px] font-bold uppercase tracking-tight px-2 py-0.5 rounded"
-                  style={{ background: 'rgba(122, 139, 92, 0.1)', color: 'var(--color-olive)' }}
-                >
-                  Live
-                </span>
-              </div>
-              <h3
-                className="text-xl"
-                style={{ fontFamily: 'var(--font-display)', color: 'var(--text-primary)' }}
-              >
-                Social Feed
-              </h3>
-              <p className="text-[13px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-                Share a moment — it lands in their reel
-              </p>
-            </div>
-          </Link>
-
-          {/* FAQ — half width */}
+          {/* FAQ */}
           <Link
             href={`/w/${slug}/faq`}
-            className="col-span-1 group p-6 rounded-2xl flex flex-col justify-between transition-all hover:shadow-md"
+            className="col-span-2 group p-6 rounded-2xl flex flex-col justify-between transition-all hover:shadow-md"
             style={{
               background: 'var(--bg-pure-white)',
               border: '1px solid var(--border-light)',
