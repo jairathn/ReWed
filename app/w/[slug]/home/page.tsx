@@ -77,7 +77,7 @@ export default function GuestHomePage() {
     <div className="pb-32 pt-6 max-w-4xl mx-auto">
       {/* Top App Bar */}
       <header
-        className="fixed top-0 w-full z-50 flex justify-between items-center px-6 py-4"
+        className="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-6 py-4"
         style={{
           background: 'rgba(250, 249, 245, 0.55)',
           backdropFilter: 'blur(24px) saturate(160%)',
