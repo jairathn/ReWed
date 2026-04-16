@@ -322,32 +322,50 @@ export default function GuestHomePage() {
             </div>
           </Link>
 
-          {/* FAQ */}
+          {/* FAQ — full width, horizontal layout like Schedule */}
           <Link
             href={`/w/${slug}/faq`}
-            className="col-span-2 group p-6 rounded-2xl flex flex-col justify-between transition-all hover:shadow-md"
+            className="col-span-2 group overflow-hidden rounded-2xl flex flex-col sm:flex-row relative transition-all duration-500 hover:shadow-lg"
             style={{
-              background: 'var(--bg-pure-white)',
-              border: '1px solid var(--border-light)',
+              background: 'var(--bg-soft-cream)',
               textDecoration: 'none',
-              minHeight: 180,
             }}
           >
-            <div className="space-y-3">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--color-mediterranean-blue, #2B5F8A)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="10" />
+            <div className="p-7 flex-1 flex flex-col justify-between z-10">
+              <div className="space-y-3">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--color-gold-dark)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
+                  <path d="M12 7v1" />
+                  <path d="M12 12h.01" />
+                </svg>
+                <h3
+                  className="text-2xl"
+                  style={{ fontFamily: 'var(--font-display)', color: 'var(--text-primary)' }}
+                >
+                  FAQ
+                </h3>
+                <p className="text-[13px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+                  Ask anything — we&rsquo;ve got the answers
+                </p>
+              </div>
+              <div className="mt-5 flex items-center gap-2 text-xs font-semibold tracking-widest uppercase" style={{ color: 'var(--color-gold-dark)' }}>
+                Ask away
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                  <path d="M5 12h14M12 5l7 7-7 7" />
+                </svg>
+              </div>
+            </div>
+            <div
+              className="w-full sm:w-2/5 h-32 sm:h-auto overflow-hidden relative flex items-center justify-center"
+              style={{
+                background: 'linear-gradient(135deg, var(--color-gold-faint) 0%, rgba(212,175,55,0.12) 100%)',
+              }}
+            >
+              <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="var(--color-gold-rule)" strokeWidth="0.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.5" className="transition-transform duration-700 group-hover:scale-110">
+                <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
                 <path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3" />
                 <line x1="12" y1="17" x2="12.01" y2="17" />
               </svg>
-              <h3
-                className="text-xl"
-                style={{ fontFamily: 'var(--font-display)', color: 'var(--text-primary)' }}
-              >
-                FAQ
-              </h3>
-              <p className="text-[13px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-                Ask anything — we&rsquo;ve got the answers
-              </p>
             </div>
           </Link>
 
