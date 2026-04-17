@@ -167,10 +167,7 @@ export default async function SchedulePage({
       <header
         className="fixed top-0 w-full z-50 flex justify-between items-center px-6 py-4"
         style={{
-          background: 'rgba(250, 249, 245, 0.55)',
-          backdropFilter: 'blur(20px)',
-          WebkitBackdropFilter: 'blur(20px)',
-          boxShadow: '0 0.5px 0 rgba(208, 197, 175, 0.25)',
+          background: 'linear-gradient(to bottom, rgba(250, 249, 245, 0.88) 0%, rgba(250, 249, 245, 0.5) 55%, rgba(250, 249, 245, 0) 100%)',
         }}
       >
         <div className="flex items-center gap-3">
@@ -189,7 +186,7 @@ export default async function SchedulePage({
         <div className="w-8" />
       </header>
 
-      <main className="pt-24 pb-32 px-6 max-w-2xl mx-auto flex-1">
+      <main className="pt-24 pb-32 px-4 sm:px-6 max-w-2xl mx-auto flex-1 w-full">
         <section className="mb-10 text-center">
           <h2
             className="text-5xl mb-3 tracking-tight"
@@ -226,14 +223,16 @@ export default async function SchedulePage({
         </div>
       ) : (
         <div
+          className="px-4 py-6 sm:px-6 sm:py-7"
           style={{
             background: 'rgba(250, 249, 245, 0.72)',
             backdropFilter: 'blur(16px)',
             WebkitBackdropFilter: 'blur(16px)',
             borderRadius: 20,
-            padding: '28px 22px',
             border: '1px solid rgba(208, 197, 175, 0.18)',
             boxShadow: '0 2px 12px rgba(0,0,0,0.03)',
+            overflowWrap: 'anywhere',
+            wordBreak: 'break-word',
           }}
         >
         <div className="relative" style={{ paddingLeft: 24 }}>

@@ -296,10 +296,7 @@ export default function FeedPage() {
         <header
           className="fixed top-0 w-full z-50 flex justify-between items-center px-6 py-4"
           style={{
-            background: 'rgba(250, 249, 245, 0.55)',
-            backdropFilter: 'blur(20px)',
-            WebkitBackdropFilter: 'blur(20px)',
-            boxShadow: '0 0.5px 0 rgba(208, 197, 175, 0.25)',
+            background: 'linear-gradient(to bottom, rgba(250, 249, 245, 0.88) 0%, rgba(250, 249, 245, 0.5) 55%, rgba(250, 249, 245, 0) 100%)',
           }}
         >
           <div className="flex items-center gap-3">
@@ -354,10 +351,7 @@ export default function FeedPage() {
       <header
         className="fixed top-0 w-full z-50 flex justify-between items-center px-6 py-4"
         style={{
-          background: 'rgba(250, 249, 245, 0.55)',
-          backdropFilter: 'blur(20px)',
-          WebkitBackdropFilter: 'blur(20px)',
-          boxShadow: '0 0.5px 0 rgba(208, 197, 175, 0.25)',
+          background: 'linear-gradient(to bottom, rgba(250, 249, 245, 0.88) 0%, rgba(250, 249, 245, 0.5) 55%, rgba(250, 249, 245, 0) 100%)',
         }}
       >
         <div className="flex items-center gap-3">
