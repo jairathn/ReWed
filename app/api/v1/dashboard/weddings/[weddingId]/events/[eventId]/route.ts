@@ -13,7 +13,7 @@ const updateEventSchema = z.object({
   end_date: z.string().optional().or(z.null()),
   venue_name: z.string().max(200).optional().or(z.null()),
   venue_address: z.string().max(500).optional().or(z.null()),
-  dress_code: z.string().max(100).optional().or(z.null()),
+  dress_code: z.string().max(1000).optional().or(z.null()),
   description: z.string().max(2000).optional().or(z.null()),
   logistics: z.string().max(2000).optional().or(z.null()),
   accent_color: z.string().max(20).optional().or(z.null()),

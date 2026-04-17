@@ -13,7 +13,7 @@ const createEventSchema = z.object({
   end_date: z.string().optional(),
   venue_name: z.string().max(200).optional(),
   venue_address: z.string().max(500).optional(),
-  dress_code: z.string().max(100).optional(),
+  dress_code: z.string().max(1000).optional(),
   description: z.string().max(2000).optional(),
   logistics: z.string().max(2000).optional(),
   accent_color: z.string().max(20).optional(),

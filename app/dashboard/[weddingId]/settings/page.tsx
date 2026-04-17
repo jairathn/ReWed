@@ -481,20 +481,24 @@ export default function SettingsPage({ params }: { params: Promise<{ weddingId: 
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
-            <div>
-              <label style={labelStyle}>Venue Name</label>
-              <input style={inputStyle} value={venueName} onChange={(e) => setVenueName(e.target.value)} placeholder="e.g., The Grand Ballroom" />
-            </div>
-            <div>
-              <label style={labelStyle}>Dress Code</label>
-              <input style={inputStyle} value={dressCode} onChange={(e) => setDressCode(e.target.value)} placeholder="e.g., Black Tie, Formal" />
-            </div>
+          <div style={{ marginBottom: 16 }}>
+            <label style={labelStyle}>Venue Name</label>
+            <input style={inputStyle} value={venueName} onChange={(e) => setVenueName(e.target.value)} placeholder="e.g., The Grand Ballroom" />
           </div>
 
           <div style={{ marginBottom: 16 }}>
             <label style={labelStyle}>Venue Address</label>
             <input style={inputStyle} value={venueAddress} onChange={(e) => setVenueAddress(e.target.value)} placeholder="123 Main St, City, State" />
+          </div>
+
+          <div style={{ marginBottom: 16 }}>
+            <label style={labelStyle}>Dress Code</label>
+            <textarea
+              style={{ ...inputStyle, minHeight: 60, resize: 'vertical' }}
+              value={dressCode}
+              onChange={(e) => setDressCode(e.target.value)}
+              placeholder="e.g., Black tie, or a longer note about what to wear..."
+            />
           </div>
 
           <div style={{ marginBottom: 16 }}>
