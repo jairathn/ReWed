@@ -722,18 +722,35 @@ export default function GalleryPage() {
                   {/* Toast prompt caption on video thumbnail */}
                   {item.type === 'video' && item.prompt_answered && (
                     <div
-                      className="absolute inset-x-0 bottom-0 px-2 py-1.5 pointer-events-none"
+                      className="absolute inset-x-0 bottom-0 pointer-events-none"
                       style={{
-                        background: 'linear-gradient(to top, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.4) 60%, transparent 100%)',
-                        paddingRight: item.duration_ms ? 40 : 8,
+                        padding: i === 0 ? '56px 18px 14px' : '36px 10px 10px',
+                        paddingRight: item.duration_ms ? (i === 0 ? 56 : 42) : undefined,
+                        background: 'linear-gradient(to top, rgba(12,10,9,0.88) 0%, rgba(12,10,9,0.55) 45%, rgba(12,10,9,0.2) 75%, transparent 100%)',
                       }}
                     >
                       <p
-                        className="text-white text-[10px] leading-tight line-clamp-2"
+                        className="uppercase mb-1"
+                        style={{
+                          fontFamily: 'var(--font-body)',
+                          fontSize: i === 0 ? 10 : 8,
+                          letterSpacing: '0.22em',
+                          fontWeight: 600,
+                          color: 'var(--color-gold-light)',
+                          opacity: 0.9,
+                        }}
+                      >
+                        A Toast
+                      </p>
+                      <p
+                        className="leading-tight line-clamp-3"
                         style={{
                           fontFamily: 'var(--font-display)',
                           fontStyle: 'italic',
-                          textShadow: '0 1px 2px rgba(0,0,0,0.5)',
+                          fontWeight: 400,
+                          fontSize: i === 0 ? 18 : 12,
+                          color: 'rgba(254, 252, 249, 0.96)',
+                          textShadow: '0 1px 6px rgba(0,0,0,0.5)',
                         }}
                       >
                         &ldquo;{item.prompt_answered}&rdquo;
@@ -817,29 +834,37 @@ export default function GalleryPage() {
             <div className="w-10" />
           </div>
 
-          {/* Toast prompt caption */}
+          {/* Toast prompt caption — mirrors the viewfinder prompt card */}
           {selectedItem.type === 'video' && selectedItem.prompt_answered && (
-            <div className="px-6 pb-3 flex-shrink-0">
+            <div className="px-6 pb-4 flex-shrink-0">
               <div
-                className="mx-auto max-w-xl px-4 py-2.5 rounded-xl text-center"
+                className="mx-auto max-w-xl px-6 py-5 rounded-xl text-center"
                 style={{
-                  background: 'rgba(254, 252, 249, 0.08)',
-                  border: '1px solid rgba(198, 163, 85, 0.25)',
-                  backdropFilter: 'blur(8px)',
+                  background: 'rgba(12, 10, 9, 0.40)',
+                  backdropFilter: 'blur(16px)',
+                  WebkitBackdropFilter: 'blur(16px)',
+                  border: '1px solid rgba(255, 255, 255, 0.10)',
+                  boxShadow: '0 24px 48px rgba(0,0,0,0.3)',
                 }}
               >
-                <p
-                  className="text-[10px] uppercase tracking-[0.15em] mb-1"
-                  style={{ color: 'rgba(212, 168, 83, 0.7)' }}
+                <span
+                  className="block text-xs mb-2 uppercase"
+                  style={{
+                    fontFamily: 'var(--font-body)',
+                    letterSpacing: '0.22em',
+                    color: 'var(--color-gold-light)',
+                    fontWeight: 600,
+                  }}
                 >
-                  Answering
-                </p>
+                  A Toast
+                </span>
                 <p
-                  className="text-sm leading-snug"
+                  className="text-xl leading-tight"
                   style={{
                     fontFamily: 'var(--font-display)',
                     fontStyle: 'italic',
-                    color: 'rgba(254, 252, 249, 0.92)',
+                    color: '#ffffff',
+                    fontWeight: 400,
                   }}
                 >
                   &ldquo;{selectedItem.prompt_answered}&rdquo;
