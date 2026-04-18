@@ -119,6 +119,7 @@ export type MediaItem = {
   event_name: string | null;
   filter_applied: string | null;
   duration_ms: number | null;
+  prompt_answered: string | null;
   favorited: boolean;
   created_at: string;
 };
