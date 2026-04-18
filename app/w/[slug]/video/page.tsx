@@ -434,10 +434,7 @@ export default function VideoRecordingPage() {
           <header
             className="absolute top-0 w-full z-30 flex justify-between items-center px-6 py-4"
             style={{
-              background: 'rgba(250, 249, 245, 0.55)',
-              backdropFilter: 'blur(20px)',
-              WebkitBackdropFilter: 'blur(20px)',
-              boxShadow: '0 0.5px 0 rgba(208, 197, 175, 0.25)',
+              background: 'linear-gradient(to bottom, rgba(12, 10, 9, 0.55) 0%, rgba(12, 10, 9, 0.25) 60%, rgba(12, 10, 9, 0) 100%)',
             }}
           >
             <div className="flex items-center gap-4">
@@ -446,7 +443,7 @@ export default function VideoRecordingPage() {
                 aria-label="Back"
                 style={{ background: 'none', border: 'none', cursor: 'pointer', lineHeight: 0, padding: 0 }}
               >
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--color-gold-dark)" strokeWidth="1.5" strokeLinecap="round">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgba(254, 252, 249, 0.9)" strokeWidth="1.5" strokeLinecap="round">
                   <path d="M15 18l-6-6 6-6" />
                 </svg>
               </button>
@@ -455,7 +452,8 @@ export default function VideoRecordingPage() {
                 style={{
                   fontFamily: 'var(--font-display)',
                   fontStyle: 'italic',
-                  color: 'var(--color-gold-dark)',
+                  color: 'var(--color-golden)',
+                  textShadow: '0 1px 4px rgba(0, 0, 0, 0.3)',
                 }}
               >
                 ReWed
