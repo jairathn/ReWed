@@ -103,10 +103,13 @@ export default function VideoRecordingPage() {
   }, [facingMode]);
 
   useEffect(() => {
-    if ((phase === 'viewfinder' || phase === 'recording') && !isLoading && isAuthenticated) {
+    if (phase === 'viewfinder' && !isLoading && isAuthenticated) {
       startCamera();
     }
+  }, [phase, isLoading, isAuthenticated, facingMode, startCamera]);
 
+  // Cleanup only on unmount
+  useEffect(() => {
     return () => {
       if (streamRef.current) {
         streamRef.current.getTracks().forEach((t) => t.stop());
@@ -115,8 +118,7 @@ export default function VideoRecordingPage() {
         clearInterval(timerRef.current);
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase === 'viewfinder', isLoading, isAuthenticated, facingMode]);
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -385,7 +387,10 @@ export default function VideoRecordingPage() {
               playsInline
               muted
               className="absolute inset-0 w-full h-full"
-              style={{ objectFit: 'cover' }}
+              style={{
+                objectFit: 'cover',
+                transform: facingMode === 'user' ? 'scaleX(-1)' : undefined,
+              }}
             />
             {/* Gradient overlay */}
             <div
