@@ -231,6 +231,20 @@ export default function VideoRecordingPage() {
     setPhase('viewfinder');
   };
 
+  const refreshSession = async (): Promise<boolean> => {
+    if (!guest) return false;
+    try {
+      const res = await fetch(`/api/v1/w/${slug}/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ guest_id: guest.id }),
+      });
+      return res.ok;
+    } catch {
+      return false;
+    }
+  };
+
   const uploadVideo = async () => {
     if (!recordedBlob || !guest) return;
 
@@ -240,7 +254,7 @@ export default function VideoRecordingPage() {
     const mimeType = recordedBlob.type.includes('mp4') ? 'video/mp4' : 'video/webm';
 
     try {
-      const presignRes = await fetch(`/api/v1/w/${slug}/upload/presign`, {
+      let presignRes = await fetch(`/api/v1/w/${slug}/upload/presign`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -249,6 +263,21 @@ export default function VideoRecordingPage() {
           size_bytes: recordedBlob.size,
         }),
       });
+
+      if (presignRes.status === 401) {
+        const refreshed = await refreshSession();
+        if (refreshed) {
+          presignRes = await fetch(`/api/v1/w/${slug}/upload/presign`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              type: 'video',
+              mime_type: mimeType,
+              size_bytes: recordedBlob.size,
+            }),
+          });
+        }
+      }
 
       if (!presignRes.ok) {
         throw new Error('Failed to get upload URL');
