@@ -676,7 +676,7 @@ export default function GalleryPage() {
                           letterSpacing: '0.02em',
                         }}
                       >
-                        {uploaderName.split(' ')[0]}
+                        {uploaderName}
                       </p>
                     </div>
                   )}
