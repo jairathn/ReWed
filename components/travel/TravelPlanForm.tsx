@@ -71,6 +71,12 @@ interface ValidationIssue {
   message: string;
 }
 
+interface Companion {
+  id: string;
+  first_name: string;
+  last_name: string;
+}
+
 export default function TravelPlanForm({ slug, onSaved, venueCity, venueCountry }: TravelPlanFormProps) {
   const [planType, setPlanType] = useState<PlanType | null>(null);
   const [originCity, setOriginCity] = useState('');
@@ -85,6 +91,13 @@ export default function TravelPlanForm({ slug, onSaved, venueCity, venueCountry 
   const [error, setError] = useState<string | null>(null);
   const [existingPlan, setExistingPlan] = useState(false);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+
+  // Traveling-with companions
+  const [currentGuestId, setCurrentGuestId] = useState<string | null>(null);
+  const [companions, setCompanions] = useState<Companion[]>([]);
+  const [companionSearch, setCompanionSearch] = useState('');
+  const [companionResults, setCompanionResults] = useState<Companion[]>([]);
+  const [companionSearchFocused, setCompanionSearchFocused] = useState(false);
 
   // Wedding venue coordinates (looked up on mount)
   const [venueLat, setVenueLat] = useState(0);
@@ -127,10 +140,22 @@ export default function TravelPlanForm({ slug, onSaved, venueCity, venueCountry 
     fetch(`/api/v1/w/${slug}/travel/my-plan`)
       .then((res) => res.json())
       .then((data) => {
+        if (data.data?.guest_id) setCurrentGuestId(data.data.guest_id);
         const plan = data.data?.plan;
         if (!plan) return;
 
         setExistingPlan(true);
+
+        // Load traveling-with companions
+        if (plan.traveling_with?.length > 0) {
+          setCompanions(
+            plan.traveling_with.map((g: { id: string; first_name: string; last_name: string }) => ({
+              id: g.id,
+              first_name: g.first_name,
+              last_name: g.last_name,
+            }))
+          );
+        }
         setPlanType(plan.plan_type);
         setOriginCity(plan.origin_city || '');
         setOriginCountry(plan.origin_country || '');
@@ -198,6 +223,39 @@ export default function TravelPlanForm({ slug, onSaved, venueCity, venueCountry 
       })
       .catch(console.error);
   }, [slug]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Debounced companion search
+  useEffect(() => {
+    if (companionSearch.trim().length < 2) {
+      setCompanionResults([]);
+      return;
+    }
+    const timeout = setTimeout(() => {
+      fetch(`/api/v1/w/${slug}/guests/search?q=${encodeURIComponent(companionSearch.trim())}`)
+        .then((res) => res.json())
+        .then((data) => {
+          const guests: Companion[] = data.data?.guests || [];
+          const selectedIds = new Set(companions.map((c) => c.id));
+          setCompanionResults(
+            guests.filter(
+              (g) => g.id !== currentGuestId && !selectedIds.has(g.id)
+            )
+          );
+        })
+        .catch(console.error);
+    }, 250);
+    return () => clearTimeout(timeout);
+  }, [companionSearch, slug, companions, currentGuestId]);
+
+  function addCompanion(guest: Companion) {
+    setCompanions((prev) => [...prev, guest]);
+    setCompanionSearch('');
+    setCompanionResults([]);
+  }
+
+  function removeCompanion(guestId: string) {
+    setCompanions((prev) => prev.filter((c) => c.id !== guestId));
+  }
 
   const weddingLegIndex = useMemo(() => legs.findIndex((l) => l.isWedding), [legs]);
 
@@ -375,6 +433,7 @@ export default function TravelPlanForm({ slug, onSaved, venueCity, venueCountry 
           share_contact: shareTransport ? shareContact : undefined,
           visibility,
           notes: planNotes || undefined,
+          traveling_with_guest_ids: companions.length > 0 ? companions.map((c) => c.id) : undefined,
           stops,
         }),
       });
@@ -404,6 +463,7 @@ export default function TravelPlanForm({ slug, onSaved, venueCity, venueCountry 
       setOriginLng(0);
       setShareContact('');
       setLegs([createWeddingLeg(venueCity || '', venueCountry || '', venueLat, venueLng)]);
+      setCompanions([]);
       setExistingPlan(false);
     } catch {
       setError('Failed to delete');
@@ -718,6 +778,110 @@ export default function TravelPlanForm({ slug, onSaved, venueCity, venueCountry 
               >
                 + Add a stop after the wedding
               </button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Traveling with */}
+      <div
+        className="rounded-2xl p-4"
+        style={{
+          background: 'linear-gradient(145deg, rgba(198,163,85,0.08) 0%, rgba(196,112,75,0.05) 100%)',
+          border: '1px solid rgba(198,163,85,0.18)',
+        }}
+      >
+        <div className="flex items-center gap-2 mb-1">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-gold-dark)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
+            <circle cx="9" cy="7" r="4" />
+            <path d="M23 21v-2a4 4 0 00-3-3.87" />
+            <path d="M16 3.13a4 4 0 010 7.75" />
+          </svg>
+          <label className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+            Traveling with
+          </label>
+        </div>
+        <p className="text-xs mb-3" style={{ color: 'var(--text-secondary)' }}>
+          Add partners or friends you&rsquo;re traveling with &mdash; we&rsquo;ll mirror your plan to theirs
+        </p>
+
+        {/* Selected companions */}
+        {companions.length > 0 && (
+          <div className="flex flex-wrap gap-2 mb-3">
+            {companions.map((c) => (
+              <span
+                key={c.id}
+                className="inline-flex items-center gap-1.5 pl-3 pr-1 py-1 rounded-full text-sm"
+                style={{
+                  background: 'linear-gradient(135deg, var(--color-gold-dark), var(--color-gold))',
+                  color: '#FDFBF7',
+                  boxShadow: '0 2px 6px rgba(198,163,85,0.25)',
+                }}
+              >
+                {c.first_name} {c.last_name}
+                <button
+                  type="button"
+                  onClick={() => removeCompanion(c.id)}
+                  className="w-5 h-5 rounded-full flex items-center justify-center text-xs"
+                  style={{ background: 'rgba(255,255,255,0.25)', color: '#FDFBF7' }}
+                  aria-label={`Remove ${c.first_name}`}
+                >
+                  &times;
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
+
+        {/* Search */}
+        <div className="relative">
+          <input
+            type="text"
+            value={companionSearch}
+            onChange={(e) => setCompanionSearch(e.target.value)}
+            onFocus={() => setCompanionSearchFocused(true)}
+            onBlur={() => setTimeout(() => setCompanionSearchFocused(false), 150)}
+            placeholder={companions.length > 0 ? 'Add another guest...' : 'Search guests by name...'}
+            className="w-full px-3 py-2 rounded-lg text-sm border"
+            style={{
+              borderColor: 'var(--border-light)',
+              color: 'var(--text-primary)',
+              background: 'var(--bg-pure-white)',
+            }}
+          />
+          {companionSearchFocused && companionResults.length > 0 && (
+            <div
+              className="absolute z-20 left-0 right-0 mt-1 rounded-xl overflow-hidden"
+              style={{
+                background: 'var(--bg-pure-white)',
+                border: '1px solid var(--border-light)',
+                boxShadow: '0 8px 24px rgba(0,0,0,0.08)',
+                maxHeight: 240,
+                overflowY: 'auto',
+              }}
+            >
+              {companionResults.map((g) => (
+                <button
+                  key={g.id}
+                  type="button"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => addCompanion(g)}
+                  className="w-full px-4 py-2.5 text-left text-sm flex items-center gap-3 transition-colors hover:bg-[var(--bg-warm-white)]"
+                  style={{ color: 'var(--text-primary)' }}
+                >
+                  <div
+                    className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold flex-shrink-0"
+                    style={{
+                      background: 'linear-gradient(145deg, rgba(198,163,85,0.15), rgba(198,163,85,0.08))',
+                      color: 'var(--color-gold-dark)',
+                    }}
+                  >
+                    {g.first_name.charAt(0)}
+                  </div>
+                  {g.first_name} {g.last_name}
+                </button>
+              ))}
             </div>
           )}
         </div>
