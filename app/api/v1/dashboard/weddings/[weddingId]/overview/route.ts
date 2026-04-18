@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server';
 import { handleApiError } from '@/lib/errors';
 import { getPool } from '@/lib/db/client';
 import { toDateString } from '@/lib/db/format';
-import { getCoupleId, verifyWeddingOwnership } from '@/lib/dashboard-auth';
+import { requireWeddingAccess } from '@/lib/dashboard-auth';
 
 /**
  * GET /api/v1/dashboard/weddings/[weddingId]/overview
@@ -14,8 +14,7 @@ export async function GET(
 ) {
   try {
     const { weddingId } = await params;
-    const coupleId = getCoupleId(request);
-    await verifyWeddingOwnership(coupleId, weddingId);
+    const actor = await requireWeddingAccess(request, weddingId);
 
     const pool = getPool();
 
@@ -60,6 +59,7 @@ export async function GET(
 
     return Response.json({
       wedding,
+      actor: { role: actor.role },
       stats: {
         guests: {
           total: parseInt(guests.total),

@@ -229,13 +229,21 @@ export default function TimelinePage({
             if (f) handleUpload(f);
           }}
         />
-        <button
-          onClick={() => fileInputRef.current?.click()}
-          disabled={uploading}
-          style={primaryButtonStyle(uploading)}
-        >
-          {uploading ? 'Parsing...' : 'Choose .xlsx file'}
-        </button>
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
+            style={primaryButtonStyle(uploading)}
+          >
+            {uploading ? 'Parsing...' : 'Choose .xlsx file'}
+          </button>
+          <a
+            href={`/api/v1/dashboard/weddings/${weddingId}/timeline/export`}
+            style={{ ...secondaryButtonStyle, textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}
+          >
+            Download current as .xlsx
+          </a>
+        </div>
         {uploadResult && (
           <div
             style={{

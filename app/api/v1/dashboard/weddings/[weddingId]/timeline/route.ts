@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server';
 import { z } from 'zod';
 import { handleApiError, AppError } from '@/lib/errors';
 import { getPool } from '@/lib/db/client';
-import { getCoupleId, verifyWeddingOwnership } from '@/lib/dashboard-auth';
+import { requireWeddingAccess } from '@/lib/dashboard-auth';
 
 const createSchema = z.object({
   event_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
@@ -23,8 +23,7 @@ export async function GET(
 ) {
   try {
     const { weddingId } = await params;
-    const coupleId = getCoupleId(request);
-    await verifyWeddingOwnership(coupleId, weddingId);
+    await requireWeddingAccess(request, weddingId);
 
     const pool = getPool();
     const entriesResult = await pool.query(
@@ -69,8 +68,7 @@ export async function POST(
 ) {
   try {
     const { weddingId } = await params;
-    const coupleId = getCoupleId(request);
-    await verifyWeddingOwnership(coupleId, weddingId);
+    await requireWeddingAccess(request, weddingId);
 
     const body = await request.json();
     const parsed = createSchema.safeParse(body);

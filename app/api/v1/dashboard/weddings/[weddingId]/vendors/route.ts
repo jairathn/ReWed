@@ -3,7 +3,7 @@ import { randomBytes } from 'crypto';
 import { z } from 'zod';
 import { handleApiError, AppError } from '@/lib/errors';
 import { getPool } from '@/lib/db/client';
-import { getCoupleId, verifyWeddingOwnership } from '@/lib/dashboard-auth';
+import { requireWeddingAccess } from '@/lib/dashboard-auth';
 
 // Phone accepts digits, spaces, hyphens, parens, and a leading +
 // (e.g. "+34 622 48 92 76", "+1 (812) 484-8334"). We trim to 50 chars in schema.
@@ -34,8 +34,7 @@ export async function GET(
 ) {
   try {
     const { weddingId } = await params;
-    const coupleId = getCoupleId(request);
-    await verifyWeddingOwnership(coupleId, weddingId);
+    await requireWeddingAccess(request, weddingId);
 
     const pool = getPool();
     const result = await pool.query(
@@ -60,8 +59,7 @@ export async function POST(
 ) {
   try {
     const { weddingId } = await params;
-    const coupleId = getCoupleId(request);
-    await verifyWeddingOwnership(coupleId, weddingId);
+    await requireWeddingAccess(request, weddingId);
 
     const body = await request.json();
     const parsed = createSchema.safeParse(body);

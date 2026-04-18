@@ -20,6 +20,15 @@ interface Wedding {
   slug: string;
 }
 
+interface Planner {
+  id: string;
+  name: string | null;
+  email: string;
+  access_token: string;
+  created_at: string;
+  revoked_at: string | null;
+}
+
 const DEFAULT_NOTIFICATION_EMAIL = 'shriyaneilwedding@gmail.com';
 
 export default function VendorsPage({
@@ -37,14 +46,19 @@ export default function VendorsPage({
   const [editing, setEditing] = useState<Partial<Vendor> & { id?: string } | null>(null);
   const [error, setError] = useState('');
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [planners, setPlanners] = useState<Planner[]>([]);
+  const [plannerForm, setPlannerForm] = useState({ name: '', email: '' });
+  const [plannerSaving, setPlannerSaving] = useState(false);
+  const [plannerLastLink, setPlannerLastLink] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [vRes, wRes, sRes] = await Promise.all([
+      const [vRes, wRes, sRes, pRes] = await Promise.all([
         fetch(`/api/v1/dashboard/weddings/${weddingId}/vendors`),
         fetch(`/api/v1/dashboard/weddings/${weddingId}/overview`),
         fetch(`/api/v1/dashboard/weddings/${weddingId}/vendor-settings`),
+        fetch(`/api/v1/dashboard/weddings/${weddingId}/planners`),
       ]);
       const vData = await vRes.json();
       const wData = await wRes.json();
@@ -54,6 +68,11 @@ export default function VendorsPage({
       setNotificationEmail(
         sData.data?.vendor_notification_email || DEFAULT_NOTIFICATION_EMAIL
       );
+      // /planners is couple-only — planners can't manage other planners.
+      if (pRes.ok) {
+        const pData = await pRes.json();
+        setPlanners(pData.data?.planners || []);
+      }
     } catch {
       setError('Failed to load');
     } finally {
@@ -132,6 +151,44 @@ export default function VendorsPage({
     return `${origin}/v/${wedding.slug}/${token}`;
   };
 
+  const plannerUrl = (token: string) => {
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    return `${origin}/planner/${token}`;
+  };
+
+  const grantPlanner = async () => {
+    if (!plannerForm.email.trim()) return;
+    setPlannerSaving(true);
+    setPlannerLastLink(null);
+    try {
+      const res = await fetch(`/api/v1/dashboard/weddings/${weddingId}/planners`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: plannerForm.email.trim(),
+          name: plannerForm.name.trim() || undefined,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error?.message || 'Failed to grant');
+      setPlannerForm({ name: '', email: '' });
+      setPlannerLastLink(data.data?.magic_link || null);
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to grant');
+    } finally {
+      setPlannerSaving(false);
+    }
+  };
+
+  const revokePlanner = async (id: string) => {
+    if (!confirm('Revoke this planner\'s access?')) return;
+    await fetch(`/api/v1/dashboard/weddings/${weddingId}/planners/${id}`, {
+      method: 'DELETE',
+    });
+    await load();
+  };
+
   const copyLink = async (vendor: Vendor) => {
     const url = vendorUrl(vendor.access_token);
     if (!url) return;
@@ -198,6 +255,111 @@ export default function VendorsPage({
             {notificationSaving ? 'Saving…' : notificationSaved ? 'Saved ✓' : 'Save'}
           </button>
         </div>
+      </div>
+
+      {/* Planners card */}
+      <div style={cardStyle}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+          <div style={iconWrap('rgba(122,139,92,0.08)')}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-olive)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" />
+              <circle cx="12" cy="7" r="4" />
+            </svg>
+          </div>
+          <h3 style={cardLabelStyle}>Wedding planner access</h3>
+        </div>
+        <p style={{ ...subtitleStyle, marginTop: 0, marginBottom: 12 }}>
+          Grant edit access on the master timeline and vendors. They&apos;ll get a magic link by email — no password needed. Revoke anytime.
+        </p>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr auto', gap: 8, marginBottom: 10 }}>
+          <input
+            type="text"
+            placeholder="Name (optional)"
+            value={plannerForm.name}
+            onChange={(e) => setPlannerForm({ ...plannerForm, name: e.target.value })}
+            style={inputStyle}
+          />
+          <input
+            type="email"
+            placeholder="planner@email.com"
+            value={plannerForm.email}
+            onChange={(e) => setPlannerForm({ ...plannerForm, email: e.target.value })}
+            style={inputStyle}
+          />
+          <button
+            onClick={grantPlanner}
+            disabled={plannerSaving || !plannerForm.email.trim()}
+            style={primaryButtonStyle(plannerSaving || !plannerForm.email.trim())}
+          >
+            {plannerSaving ? 'Sending…' : 'Grant access'}
+          </button>
+        </div>
+        {plannerLastLink && (
+          <p style={{ fontSize: 12, color: 'var(--text-secondary)', fontFamily: 'var(--font-body)', margin: '0 0 12px' }}>
+            Magic link sent. Or share directly:{' '}
+            <code
+              style={{
+                fontSize: 11,
+                padding: '2px 6px',
+                borderRadius: 4,
+                background: 'var(--bg-soft-cream)',
+              }}
+            >
+              {plannerLastLink}
+            </code>
+          </p>
+        )}
+        {planners.length > 0 && (
+          <div style={{ borderTop: '1px solid var(--border-light)', paddingTop: 12 }}>
+            {planners.map((p) => (
+              <div
+                key={p.id}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '8px 0',
+                  borderBottom: '1px solid var(--border-light)',
+                }}
+              >
+                <div>
+                  <div style={{ fontSize: 13, color: 'var(--text-primary)', fontFamily: 'var(--font-body)', fontWeight: 500 }}>
+                    {p.name || p.email}
+                    {p.revoked_at && (
+                      <span style={{ marginLeft: 8, fontSize: 11, color: 'var(--color-terracotta)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                        Revoked
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ fontSize: 11, color: 'var(--text-tertiary)', fontFamily: 'var(--font-body)' }}>
+                    {p.email}
+                    {!p.revoked_at && (
+                      <>
+                        {' · '}
+                        <a
+                          href={plannerUrl(p.access_token)}
+                          target="_blank"
+                          rel="noreferrer"
+                          style={{ color: 'var(--color-gold-dark)', textDecoration: 'none' }}
+                        >
+                          magic link
+                        </a>
+                      </>
+                    )}
+                  </div>
+                </div>
+                {!p.revoked_at && (
+                  <button
+                    onClick={() => revokePlanner(p.id)}
+                    style={{ ...secondaryButtonStyle, padding: '6px 10px', fontSize: 11, color: 'var(--color-terracotta)' }}
+                  >
+                    Revoke
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Vendor list */}

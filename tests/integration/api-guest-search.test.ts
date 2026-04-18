@@ -11,54 +11,99 @@ vi.mock('@/lib/db/client', () => ({
 
 import { GET } from '@/app/api/v1/w/[slug]/guests/search/route';
 
-function makeRequest(slug: string, q: string, limit?: number) {
-  let urlStr = `http://localhost:3000/api/v1/w/${slug}/guests/search?q=${encodeURIComponent(q)}`;
-  if (limit) urlStr += `&limit=${limit}`;
-  return new NextRequest(urlStr);
+function makeRequest(slug: string, q: string) {
+  return new NextRequest(
+    `http://localhost:3000/api/v1/w/${slug}/guests/search?q=${encodeURIComponent(q)}`
+  );
 }
 
 function makeParams(slug: string) {
   return { params: Promise.resolve({ slug }) };
 }
 
+const SAMPLE_GUESTS = [
+  { id: 'g-001', first_name: 'Aditya', last_name: 'Sharma' },
+  { id: 'g-002', first_name: 'Aditi', last_name: 'Gupta' },
+  { id: 'g-003', first_name: 'Priya', last_name: 'Patel' },
+  { id: 'g-004', first_name: 'Vikram', last_name: 'Singh' },
+];
+
 describe('GET /api/v1/w/[slug]/guests/search', () => {
   beforeEach(() => {
     mockQuery.mockReset();
   });
 
-  it('returns matching guests for a valid query', async () => {
-    mockQuery
-      .mockResolvedValueOnce({ rows: [{ id: 'w-001' }] }) // wedding lookup
-      .mockResolvedValueOnce({                             // guest search
-        rows: [
-          { id: 'g-001', first_name: 'Aditya', last_name: 'Sharma' },
-          { id: 'g-002', first_name: 'Aditi', last_name: 'Gupta' },
-        ],
-      });
-
-    const response = await GET(makeRequest('test-wedding', 'Adi'), makeParams('test-wedding'));
-    const body = await response.json();
-
-    expect(response.status).toBe(200);
-    expect(body.data.guests).toHaveLength(2);
-    expect(body.data.guests[0].first_name).toBe('Aditya');
-    expect(body.data.guests[1].first_name).toBe('Aditi');
-  });
-
-  it('returns empty array when no guests match', async () => {
+  it('returns an exact match (case-insensitive) with match_type=exact', async () => {
     mockQuery
       .mockResolvedValueOnce({ rows: [{ id: 'w-001' }] })
-      .mockResolvedValueOnce({ rows: [] });
+      .mockResolvedValueOnce({ rows: SAMPLE_GUESTS });
 
-    const response = await GET(makeRequest('test-wedding', 'Zzz'), makeParams('test-wedding'));
+    const response = await GET(
+      makeRequest('test-wedding', 'aditya sharma'),
+      makeParams('test-wedding')
+    );
     const body = await response.json();
 
     expect(response.status).toBe(200);
+    expect(body.data.match_type).toBe('exact');
+    expect(body.data.guests).toHaveLength(1);
+    expect(body.data.guests[0].first_name).toBe('Aditya');
+  });
+
+  it('returns unique_first match for a single first-name query', async () => {
+    mockQuery
+      .mockResolvedValueOnce({ rows: [{ id: 'w-001' }] })
+      .mockResolvedValueOnce({ rows: SAMPLE_GUESTS });
+
+    const response = await GET(
+      makeRequest('test-wedding', 'priya'),
+      makeParams('test-wedding')
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.data.match_type).toBe('unique_first');
+    expect(body.data.guests).toHaveLength(1);
+    expect(body.data.guests[0].first_name).toBe('Priya');
+  });
+
+  it('returns fuzzy matches when off by ≤2 letters', async () => {
+    mockQuery
+      .mockResolvedValueOnce({ rows: [{ id: 'w-001' }] })
+      .mockResolvedValueOnce({ rows: SAMPLE_GUESTS });
+
+    const response = await GET(
+      makeRequest('test-wedding', 'aditya sharmaa'),
+      makeParams('test-wedding')
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.data.match_type).toBe('fuzzy');
+    expect(body.data.guests.length).toBeGreaterThan(0);
+  });
+
+  it('returns match_type=none when nothing matches', async () => {
+    mockQuery
+      .mockResolvedValueOnce({ rows: [{ id: 'w-001' }] })
+      .mockResolvedValueOnce({ rows: SAMPLE_GUESTS });
+
+    const response = await GET(
+      makeRequest('test-wedding', 'nobody here'),
+      makeParams('test-wedding')
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.data.match_type).toBe('none');
     expect(body.data.guests).toHaveLength(0);
   });
 
   it('returns 400 for a query shorter than 2 characters', async () => {
-    const response = await GET(makeRequest('test-wedding', 'A'), makeParams('test-wedding'));
+    const response = await GET(
+      makeRequest('test-wedding', 'A'),
+      makeParams('test-wedding')
+    );
     const body = await response.json();
 
     expect(response.status).toBe(400);
@@ -68,38 +113,13 @@ describe('GET /api/v1/w/[slug]/guests/search', () => {
   it('returns 404 if the wedding slug does not exist', async () => {
     mockQuery.mockResolvedValueOnce({ rows: [] });
 
-    const response = await GET(makeRequest('fake-wedding', 'Adi'), makeParams('fake-wedding'));
+    const response = await GET(
+      makeRequest('fake-wedding', 'Adi'),
+      makeParams('fake-wedding')
+    );
     const body = await response.json();
 
     expect(response.status).toBe(404);
     expect(body.error.code).toBe('WEDDING_NOT_FOUND');
-  });
-
-  it('respects the limit parameter', async () => {
-    mockQuery
-      .mockResolvedValueOnce({ rows: [{ id: 'w-001' }] })
-      .mockResolvedValueOnce({
-        rows: [{ id: 'g-001', first_name: 'Priya', last_name: 'Patel' }],
-      });
-
-    const response = await GET(makeRequest('test-wedding', 'Pri', 1), makeParams('test-wedding'));
-    await response.json();
-
-    expect(response.status).toBe(200);
-    // Verify limit was passed to query
-    const lastCall = mockQuery.mock.calls[1];
-    expect(lastCall[1][3]).toBe(1); // limit param
-  });
-
-  it('passes the search term with wildcards to the query', async () => {
-    mockQuery
-      .mockResolvedValueOnce({ rows: [{ id: 'w-001' }] })
-      .mockResolvedValueOnce({ rows: [] });
-
-    await GET(makeRequest('test-wedding', 'Vik'), makeParams('test-wedding'));
-
-    const guestSearchCall = mockQuery.mock.calls[1];
-    expect(guestSearchCall[1][1]).toBe('%Vik%'); // ILIKE wildcard
-    expect(guestSearchCall[1][2]).toBe('Vik%');  // prefix match for ordering
   });
 });

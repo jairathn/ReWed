@@ -31,6 +31,8 @@ describe('GET /api/v1/w/[slug]/feed', () => {
   it('returns paginated feed posts', async () => {
     mockQuery
       .mockResolvedValueOnce({ rows: [{ id: 'w-001' }] }) // wedding
+      .mockResolvedValueOnce({ rows: [{ timezone: 'America/New_York' }] }) // tz
+      .mockResolvedValueOnce({ rows: [{ is_during_event: false }] }) // nowResult
       .mockResolvedValueOnce({
         rows: [
           {
@@ -69,6 +71,8 @@ describe('GET /api/v1/w/[slug]/feed', () => {
   it('returns empty list for wedding with no posts', async () => {
     mockQuery
       .mockResolvedValueOnce({ rows: [{ id: 'w-001' }] })
+      .mockResolvedValueOnce({ rows: [{ timezone: 'America/New_York' }] }) // tz
+      .mockResolvedValueOnce({ rows: [{ is_during_event: false }] }) // nowResult
       .mockResolvedValueOnce({ rows: [] });
 
     const request = new NextRequest('http://localhost:3000/api/v1/w/neil-shriya/feed', {
@@ -99,6 +103,8 @@ describe('POST /api/v1/w/[slug]/feed', () => {
     const now = new Date().toISOString();
     mockQuery
       .mockResolvedValueOnce({ rows: [{ id: 'w-001', package_config: { social_feed: true } }] }) // wedding
+      .mockResolvedValueOnce({ rows: [{ timezone: 'America/New_York' }] }) // tz
+      .mockResolvedValueOnce({ rows: [{ blocked: false }] }) // blockResult
       .mockResolvedValueOnce({
         rows: [{
           id: 'p-new',
@@ -137,6 +143,8 @@ describe('POST /api/v1/w/[slug]/feed', () => {
     const now = new Date().toISOString();
     mockQuery
       .mockResolvedValueOnce({ rows: [{ id: 'w-001', package_config: { social_feed: true } }] })
+      .mockResolvedValueOnce({ rows: [{ timezone: 'America/New_York' }] }) // tz
+      .mockResolvedValueOnce({ rows: [{ blocked: false }] }) // blockResult
       .mockResolvedValueOnce({
         rows: [{
           id: 'p-new',
@@ -170,7 +178,10 @@ describe('POST /api/v1/w/[slug]/feed', () => {
   });
 
   it('rejects post without content or photo', async () => {
-    mockQuery.mockResolvedValueOnce({ rows: [{ id: 'w-001', package_config: { social_feed: true } }] });
+    mockQuery
+      .mockResolvedValueOnce({ rows: [{ id: 'w-001', package_config: { social_feed: true } }] })
+      .mockResolvedValueOnce({ rows: [{ timezone: 'America/New_York' }] })
+      .mockResolvedValueOnce({ rows: [{ blocked: false }] });
 
     const request = new NextRequest('http://localhost:3000/api/v1/w/neil-shriya/feed', {
       method: 'POST',

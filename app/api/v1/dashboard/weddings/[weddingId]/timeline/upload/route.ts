@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { handleApiError, AppError } from '@/lib/errors';
 import { getPool } from '@/lib/db/client';
-import { getCoupleId, verifyWeddingOwnership } from '@/lib/dashboard-auth';
+import { requireWeddingAccess } from '@/lib/dashboard-auth';
 import { parseWeddingExcel } from '@/lib/vendor/excel-parser';
 import { syncTimelineFromParsedExcel } from '@/lib/vendor/sync';
 
@@ -13,8 +13,7 @@ export async function POST(
 ) {
   try {
     const { weddingId } = await params;
-    const coupleId = getCoupleId(request);
-    await verifyWeddingOwnership(coupleId, weddingId);
+    await requireWeddingAccess(request, weddingId);
 
     const formData = await request.formData();
     const file = formData.get('file');

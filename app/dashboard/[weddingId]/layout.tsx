@@ -12,6 +12,8 @@ interface Wedding {
   status: string;
 }
 
+type Role = 'couple' | 'planner';
+
 export default function WeddingManageLayout({
   children,
   params,
@@ -21,6 +23,7 @@ export default function WeddingManageLayout({
 }) {
   const [weddingId, setWeddingId] = useState<string>('');
   const [wedding, setWedding] = useState<Wedding | null>(null);
+  const [role, setRole] = useState<Role>('couple');
   const pathname = usePathname();
 
   useEffect(() => {
@@ -33,6 +36,7 @@ export default function WeddingManageLayout({
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (data?.wedding) setWedding(data.wedding);
+        if (data?.actor?.role === 'planner') setRole('planner');
       })
       .catch(() => {});
   }, [weddingId]);
@@ -56,6 +60,12 @@ export default function WeddingManageLayout({
     if (href === `/dashboard/${weddingId}`) return pathname === href;
     return pathname.startsWith(href);
   };
+
+  // Planners only see Timeline + Vendors. Everything else is couple-only.
+  const visibleNav =
+    role === 'planner'
+      ? navItems.filter((n) => n.label === 'Timeline' || n.label === 'Vendors')
+      : navItems;
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh' }}>
@@ -102,24 +112,41 @@ export default function WeddingManageLayout({
 
         {/* Wedding info */}
         <div style={{ padding: '20px 24px 16px' }}>
-          <Link
-            href="/dashboard"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-              fontSize: 12,
-              color: 'var(--text-tertiary)',
-              textDecoration: 'none',
-              marginBottom: 12,
-              fontFamily: 'var(--font-body)',
-            }}
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="15 18 9 12 15 6" />
-            </svg>
-            All Weddings
-          </Link>
+          {role === 'couple' ? (
+            <Link
+              href="/dashboard"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                fontSize: 12,
+                color: 'var(--text-tertiary)',
+                textDecoration: 'none',
+                marginBottom: 12,
+                fontFamily: 'var(--font-body)',
+              }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="15 18 9 12 15 6" />
+              </svg>
+              All Weddings
+            </Link>
+          ) : (
+            <span
+              style={{
+                display: 'inline-block',
+                fontSize: 11,
+                color: 'var(--color-gold-dark)',
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px',
+                marginBottom: 12,
+                fontFamily: 'var(--font-body)',
+                fontWeight: 500,
+              }}
+            >
+              Planner access
+            </span>
+          )}
           <h2
             style={{
               fontFamily: 'var(--font-display)',
@@ -143,7 +170,7 @@ export default function WeddingManageLayout({
 
         {/* Nav items */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 2, padding: '0 12px' }}>
-          {navItems.map((item) => {
+          {visibleNav.map((item) => {
             const active = isActive(item.href);
             return (
               <Link

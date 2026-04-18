@@ -3,7 +3,7 @@ import { randomBytes } from 'crypto';
 import { z } from 'zod';
 import { handleApiError, AppError } from '@/lib/errors';
 import { getPool } from '@/lib/db/client';
-import { getCoupleId, verifyWeddingOwnership } from '@/lib/dashboard-auth';
+import { requireWeddingAccess } from '@/lib/dashboard-auth';
 
 const phoneSchema = z
   .string()
@@ -38,8 +38,7 @@ export async function PATCH(
 ) {
   try {
     const { weddingId, vendorId } = await params;
-    const coupleId = getCoupleId(request);
-    await verifyWeddingOwnership(coupleId, weddingId);
+    await requireWeddingAccess(request, weddingId);
     await ensureVendorOwned(weddingId, vendorId);
 
     const body = await request.json();
@@ -95,8 +94,7 @@ export async function DELETE(
 ) {
   try {
     const { weddingId, vendorId } = await params;
-    const coupleId = getCoupleId(request);
-    await verifyWeddingOwnership(coupleId, weddingId);
+    await requireWeddingAccess(request, weddingId);
     await ensureVendorOwned(weddingId, vendorId);
 
     const pool = getPool();
