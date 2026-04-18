@@ -17,7 +17,8 @@ export async function GET(
          ts.stop_type, ts.arrive_date, ts.depart_date, ts.arrive_time, ts.depart_time,
          ts.transport_mode, ts.transport_details,
          g.id AS guest_id, g.display_name,
-         tp.share_transport, tp.origin_city
+         tp.share_transport, tp.origin_city,
+         tp.traveling_with_guest_ids
        FROM travel_stops ts
        JOIN travel_plans tp ON ts.plan_id = tp.id
        JOIN guests g ON tp.guest_id = g.id
@@ -27,6 +28,28 @@ export async function GET(
        ORDER BY ts.arrive_date ASC, ts.arrive_time ASC`,
       [weddingId]
     );
+
+    // Collect all companion IDs for batch name resolution
+    const allCompanionIds = new Set<string>();
+    for (const row of result.rows) {
+      if (row.traveling_with_guest_ids) {
+        for (const id of row.traveling_with_guest_ids) {
+          allCompanionIds.add(id);
+        }
+      }
+    }
+
+    // Resolve companion names
+    const companionNames = new Map<string, string>();
+    if (allCompanionIds.size > 0) {
+      const namesResult = await pool.query(
+        'SELECT id, display_name FROM guests WHERE id = ANY($1)',
+        [Array.from(allCompanionIds)]
+      );
+      for (const row of namesResult.rows) {
+        companionNames.set(row.id, row.display_name);
+      }
+    }
 
     const arrivals = result.rows.map((row) => ({
       guest_id: row.guest_id,
@@ -40,6 +63,9 @@ export async function GET(
       transport_details: row.transport_details,
       share_transport: row.share_transport,
       origin_city: row.origin_city,
+      traveling_with: (row.traveling_with_guest_ids || [])
+        .map((id: string) => ({ id, display_name: companionNames.get(id) || 'Guest' }))
+        .filter((c: { id: string }) => c.id !== row.guest_id),
     }));
 
     return Response.json({ data: { arrivals } });

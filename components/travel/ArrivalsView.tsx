@@ -2,6 +2,11 @@
 
 import { useEffect, useState } from 'react';
 
+interface Companion {
+  id: string;
+  display_name: string;
+}
+
 interface ArrivalInfo {
   guest_id: string;
   display_name: string;
@@ -14,6 +19,7 @@ interface ArrivalInfo {
   transport_details: string | null;
   share_transport: boolean;
   origin_city: string | null;
+  traveling_with: Companion[];
 }
 
 const transportIcon: Record<string, string> = {
@@ -63,8 +69,29 @@ export default function ArrivalsView({ slug }: { slug: string }) {
     );
   }
 
-  const arrivingGuests = arrivals.filter((a) => a.stop_type === 'arrival');
-  const departingGuests = arrivals.filter((a) => a.stop_type === 'departure');
+  // Dedup by travel group: if a guest and their companions all appear with the same
+  // stop_type + date, only render one card for the group.
+  function dedupByGroup(list: ArrivalInfo[], dateField: 'arrive_date' | 'depart_date') {
+    const seen = new Set<string>();
+    const result: ArrivalInfo[] = [];
+    for (const a of list) {
+      const groupIds = [a.guest_id, ...a.traveling_with.map((c) => c.id)].sort();
+      const key = `${a.stop_type}|${a[dateField] || ''}|${groupIds.join(',')}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      result.push(a);
+    }
+    return result;
+  }
+
+  const arrivingGuests = dedupByGroup(
+    arrivals.filter((a) => a.stop_type === 'arrival'),
+    'arrive_date'
+  );
+  const departingGuests = dedupByGroup(
+    arrivals.filter((a) => a.stop_type === 'departure'),
+    'depart_date'
+  );
 
   // Group by date
   function groupByDate(list: ArrivalInfo[], dateField: 'arrive_date' | 'depart_date') {
@@ -154,51 +181,95 @@ export default function ArrivalsView({ slug }: { slug: string }) {
                   {date !== 'Unknown' ? formatDateLabel(date) : 'Date TBD'}
                 </p>
                 <div className="space-y-2">
-                  {dateGuests.map((guest) => (
-                    <div
-                      key={guest.guest_id}
-                      className="flex items-center gap-3 p-3.5 rounded-2xl"
-                      style={{
-                        background: 'var(--bg-pure-white)',
-                        border: '1px solid var(--border-light)',
-                        boxShadow: '0 1px 4px rgba(0,0,0,0.02)',
-                      }}
-                    >
+                  {dateGuests.map((guest) => {
+                    const hasCompanions = guest.traveling_with && guest.traveling_with.length > 0;
+                    return (
                       <div
-                        className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold flex-shrink-0"
+                        key={guest.guest_id}
+                        className="flex items-center gap-3 p-3.5 rounded-2xl relative"
                         style={{
-                          background: avatarBg,
-                          color: '#FDFBF7',
-                          boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
+                          background: hasCompanions
+                            ? 'linear-gradient(135deg, rgba(198,163,85,0.06) 0%, var(--bg-pure-white) 60%)'
+                            : 'var(--bg-pure-white)',
+                          border: hasCompanions
+                            ? '1px solid rgba(198,163,85,0.25)'
+                            : '1px solid var(--border-light)',
+                          boxShadow: '0 1px 4px rgba(0,0,0,0.02)',
                         }}
                       >
-                        {guest.display_name.charAt(0)}
+                        {hasCompanions ? (
+                          <div className="relative flex-shrink-0" style={{ width: 44, height: 40 }}>
+                            <div
+                              className="absolute w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold"
+                              style={{
+                                top: 0,
+                                left: 0,
+                                background: avatarBg,
+                                color: '#FDFBF7',
+                                boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
+                                zIndex: 2,
+                              }}
+                            >
+                              {guest.display_name.charAt(0)}
+                            </div>
+                            <div
+                              className="absolute w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold"
+                              style={{
+                                bottom: -2,
+                                right: -2,
+                                background: 'linear-gradient(145deg, var(--color-gold-dark), var(--color-gold))',
+                                color: '#FDFBF7',
+                                border: '2px solid var(--bg-pure-white)',
+                                zIndex: 1,
+                              }}
+                            >
+                              {guest.traveling_with[0].display_name.charAt(0)}
+                            </div>
+                          </div>
+                        ) : (
+                          <div
+                            className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold flex-shrink-0"
+                            style={{
+                              background: avatarBg,
+                              color: '#FDFBF7',
+                              boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
+                            }}
+                          >
+                            {guest.display_name.charAt(0)}
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+                            {guest.display_name}
+                            {hasCompanions && (
+                              <span className="font-normal" style={{ color: 'var(--text-secondary)' }}>
+                                {' '}&amp;{' '}
+                                {guest.traveling_with.map((c) => c.display_name.split(' ')[0]).join(' & ')}
+                              </span>
+                            )}
+                          </p>
+                          <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>
+                            {dateField === 'arrive_date' && guest.arrive_time ? formatTime(guest.arrive_time) : ''}
+                            {dateField === 'depart_date' && guest.depart_time ? formatTime(guest.depart_time) : ''}
+                            {guest.transport_mode && ` ${transportIcon[guest.transport_mode]}`}
+                            {guest.transport_details && ` ${guest.transport_details}`}
+                            {guest.origin_city ? ` from ${guest.origin_city}` : ''}
+                          </p>
+                        </div>
+                        {guest.share_transport && (
+                          <span
+                            className="text-[11px] font-medium px-2.5 py-1 rounded-full flex-shrink-0"
+                            style={{
+                              background: 'rgba(198,163,85,0.1)',
+                              color: 'var(--color-gold-dark)',
+                            }}
+                          >
+                            Sharing
+                          </span>
+                        )}
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
-                          {guest.display_name}
-                        </p>
-                        <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>
-                          {dateField === 'arrive_date' && guest.arrive_time ? formatTime(guest.arrive_time) : ''}
-                          {dateField === 'depart_date' && guest.depart_time ? formatTime(guest.depart_time) : ''}
-                          {guest.transport_mode && ` ${transportIcon[guest.transport_mode]}`}
-                          {guest.transport_details && ` ${guest.transport_details}`}
-                          {guest.origin_city ? ` from ${guest.origin_city}` : ''}
-                        </p>
-                      </div>
-                      {guest.share_transport && (
-                        <span
-                          className="text-[11px] font-medium px-2.5 py-1 rounded-full flex-shrink-0"
-                          style={{
-                            background: 'rgba(198,163,85,0.1)',
-                            color: 'var(--color-gold-dark)',
-                          }}
-                        >
-                          Sharing
-                        </span>
-                      )}
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             ))}

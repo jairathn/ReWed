@@ -65,6 +65,7 @@ export const travelPlanSchema = z.object({
   share_contact: z.string().max(200).optional(),
   visibility: z.enum(['full', 'city_only', 'private']).default('full'),
   notes: z.string().max(500).optional(),
+  traveling_with_guest_ids: z.array(z.string().uuid()).max(10).optional(),
   stops: z.array(travelStopInputSchema).min(1).max(20),
 }).refine(
   (d) => !d.share_transport || (d.share_contact && d.share_contact.trim().length > 0),
