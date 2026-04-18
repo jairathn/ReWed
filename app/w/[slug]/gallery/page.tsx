@@ -553,17 +553,17 @@ export default function GalleryPage() {
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-3 gap-[2px] mt-5">
+          <div className="grid grid-cols-3 gap-[3px] mt-5 sm:grid-cols-4">
             {items.map((item, i) => {
               const showActions = activeThumbId === item.id;
+              const uploaderName = guest.display_name || guest.first_name;
               return (
                 <div
                   key={item.id}
                   className="aspect-square relative overflow-hidden cursor-pointer group"
                   style={{
                     background: 'var(--bg-soft-cream)',
-                    borderRadius: i === 0 ? '10px 2px 2px 2px' : i === 2 ? '2px 10px 2px 2px' : 2,
-                    ...(i === 0 ? { gridColumn: 'span 2', gridRow: 'span 2' } : {}),
+                    borderRadius: i === 0 ? '10px 3px 3px 3px' : i === 2 ? '3px 10px 3px 3px' : 3,
                   }}
                   onClick={() => {
                     // On mobile: first tap shows actions, second tap opens lightbox
@@ -655,12 +655,30 @@ export default function GalleryPage() {
                     </button>
                   </div>
 
-                  {/* Hero image gold corner accent */}
-                  {i === 0 && (
-                    <>
-                      <div className="absolute top-0 left-0 w-10" style={{ height: 1, background: 'linear-gradient(90deg, var(--color-gold), transparent)', opacity: 0.4 }} />
-                      <div className="absolute top-0 left-0 h-10" style={{ width: 1, background: 'linear-gradient(180deg, var(--color-gold), transparent)', opacity: 0.4 }} />
-                    </>
+                  {/* Uploader name badge */}
+                  {uploaderName && (
+                    <div
+                      className="absolute top-1.5 left-1.5 pointer-events-none max-w-[calc(100%-12px)]"
+                      style={{
+                        padding: '2px 7px',
+                        borderRadius: 999,
+                        background: 'rgba(12, 10, 9, 0.45)',
+                        backdropFilter: 'blur(6px)',
+                        WebkitBackdropFilter: 'blur(6px)',
+                      }}
+                    >
+                      <p
+                        className="truncate"
+                        style={{
+                          fontSize: 9.5,
+                          fontWeight: 500,
+                          color: 'rgba(254, 252, 249, 0.92)',
+                          letterSpacing: '0.02em',
+                        }}
+                      >
+                        {uploaderName}
+                      </p>
+                    </div>
                   )}
 
                   {/* Portrait badge */}
@@ -684,7 +702,7 @@ export default function GalleryPage() {
 
                   {/* Favorite indicator */}
                   {item.favorited && (
-                    <div className="absolute top-1 left-1 text-red-500 text-sm drop-shadow pointer-events-none">
+                    <div className="absolute top-1.5 right-1.5 text-red-500 text-sm drop-shadow pointer-events-none">
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
                       </svg>
@@ -724,31 +742,32 @@ export default function GalleryPage() {
                     <div
                       className="absolute inset-x-0 bottom-0 pointer-events-none"
                       style={{
-                        padding: i === 0 ? '56px 18px 14px' : '36px 10px 10px',
-                        paddingRight: item.duration_ms ? (i === 0 ? 56 : 42) : undefined,
-                        background: 'linear-gradient(to top, rgba(12,10,9,0.88) 0%, rgba(12,10,9,0.55) 45%, rgba(12,10,9,0.2) 75%, transparent 100%)',
+                        padding: '28px 8px 8px',
+                        paddingRight: item.duration_ms ? 38 : undefined,
+                        background: 'linear-gradient(to top, rgba(12,10,9,0.88) 0%, rgba(12,10,9,0.5) 50%, transparent 100%)',
                       }}
                     >
                       <p
-                        className="uppercase mb-1"
+                        className="uppercase"
                         style={{
                           fontFamily: 'var(--font-body)',
-                          fontSize: i === 0 ? 10 : 8,
+                          fontSize: 7,
                           letterSpacing: '0.22em',
                           fontWeight: 600,
                           color: 'var(--color-gold-light)',
                           opacity: 0.9,
+                          marginBottom: 2,
                         }}
                       >
                         A Toast
                       </p>
                       <p
-                        className="leading-tight line-clamp-3"
+                        className="leading-tight line-clamp-2"
                         style={{
                           fontFamily: 'var(--font-display)',
                           fontStyle: 'italic',
                           fontWeight: 400,
-                          fontSize: i === 0 ? 18 : 12,
+                          fontSize: 11,
                           color: 'rgba(254, 252, 249, 0.96)',
                           textShadow: '0 1px 6px rgba(0,0,0,0.5)',
                         }}

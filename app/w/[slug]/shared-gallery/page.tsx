@@ -14,6 +14,7 @@ interface SharedMediaItem {
   url: string;
   thumbnail_url: string;
   duration_ms: number | null;
+  prompt_answered: string | null;
   guest: {
     id: string;
     first_name: string;
@@ -279,7 +280,7 @@ export default function SharedGalleryPage() {
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-3 gap-[2px] mt-5">
+          <div className="grid grid-cols-3 gap-[3px] mt-5 sm:grid-cols-4">
             {items.map((item, i) => {
               const guestName = item.guest.display_name || item.guest.first_name;
               return (
@@ -288,8 +289,7 @@ export default function SharedGalleryPage() {
                   className="aspect-square relative overflow-hidden cursor-pointer group"
                   style={{
                     background: 'var(--bg-soft-cream)',
-                    borderRadius: i === 0 ? '10px 2px 2px 2px' : i === 2 ? '2px 10px 2px 2px' : 2,
-                    ...(i === 0 ? { gridColumn: 'span 2', gridRow: 'span 2' } : {}),
+                    borderRadius: i === 0 ? '10px 3px 3px 3px' : i === 2 ? '3px 10px 3px 3px' : 3,
                   }}
                   onClick={() => setSelectedItem(item)}
                 >
@@ -317,48 +317,40 @@ export default function SharedGalleryPage() {
                     />
                   )}
 
-                  {/* Gradient overlay at bottom */}
+                  {/* Uploader name badge — pill at top-left */}
                   <div
-                    className="absolute inset-x-0 bottom-0 pointer-events-none"
+                    className="absolute top-1.5 left-1.5 flex items-center gap-1 pointer-events-none max-w-[calc(100%-12px)]"
                     style={{
-                      height: '40%',
-                      background: 'linear-gradient(to top, rgba(0,0,0,0.5) 0%, transparent 100%)',
+                      padding: '2px 7px 2px 2px',
+                      borderRadius: 999,
+                      background: 'rgba(12, 10, 9, 0.45)',
+                      backdropFilter: 'blur(6px)',
+                      WebkitBackdropFilter: 'blur(6px)',
                     }}
-                  />
-
-                  {/* Guest avatar + name badge */}
-                  <div className="absolute bottom-1.5 left-1.5 flex items-center gap-1 pointer-events-none">
+                  >
                     <div
-                      className="flex items-center justify-center rounded-full text-white font-medium"
+                      className="flex items-center justify-center rounded-full text-white font-medium flex-shrink-0"
                       style={{
-                        width: i === 0 ? 22 : 18,
-                        height: i === 0 ? 22 : 18,
-                        fontSize: i === 0 ? 10 : 8,
+                        width: 14,
+                        height: 14,
+                        fontSize: 8,
                         backgroundColor: getAvatarColor(guestName),
-                        flexShrink: 0,
                       }}
                     >
                       {guestName.charAt(0).toUpperCase()}
                     </div>
-                    <span
-                      className="text-white font-medium truncate"
+                    <p
+                      className="truncate"
                       style={{
-                        fontSize: i === 0 ? 11 : 9,
-                        textShadow: '0 1px 3px rgba(0,0,0,0.5)',
-                        maxWidth: i === 0 ? 120 : 60,
+                        fontSize: 9.5,
+                        fontWeight: 500,
+                        color: 'rgba(254, 252, 249, 0.92)',
+                        letterSpacing: '0.02em',
                       }}
                     >
-                      {item.guest.first_name}
-                    </span>
+                      {guestName}
+                    </p>
                   </div>
-
-                  {/* Hero image gold corner accent */}
-                  {i === 0 && (
-                    <>
-                      <div className="absolute top-0 left-0 w-10" style={{ height: 1, background: 'linear-gradient(90deg, var(--color-gold), transparent)', opacity: 0.4 }} />
-                      <div className="absolute top-0 left-0 h-10" style={{ width: 1, background: 'linear-gradient(180deg, var(--color-gold), transparent)', opacity: 0.4 }} />
-                    </>
-                  )}
 
                   {/* Video play icon */}
                   {item.type === 'video' && (
@@ -385,6 +377,46 @@ export default function SharedGalleryPage() {
                     <div className="absolute bottom-1 right-1 bg-black/60 text-white text-[10px] px-1.5 py-0.5 rounded pointer-events-none">
                       {Math.floor(item.duration_ms / 60000)}:
                       {String(Math.floor((item.duration_ms % 60000) / 1000)).padStart(2, '0')}
+                    </div>
+                  )}
+
+                  {/* Toast prompt caption on video thumbnail */}
+                  {item.type === 'video' && item.prompt_answered && (
+                    <div
+                      className="absolute inset-x-0 bottom-0 pointer-events-none"
+                      style={{
+                        padding: '28px 8px 8px',
+                        paddingRight: item.duration_ms ? 38 : undefined,
+                        background: 'linear-gradient(to top, rgba(12,10,9,0.88) 0%, rgba(12,10,9,0.5) 50%, transparent 100%)',
+                      }}
+                    >
+                      <p
+                        className="uppercase"
+                        style={{
+                          fontFamily: 'var(--font-body)',
+                          fontSize: 7,
+                          letterSpacing: '0.22em',
+                          fontWeight: 600,
+                          color: 'var(--color-gold-light)',
+                          opacity: 0.9,
+                          marginBottom: 2,
+                        }}
+                      >
+                        A Toast
+                      </p>
+                      <p
+                        className="leading-tight line-clamp-2"
+                        style={{
+                          fontFamily: 'var(--font-display)',
+                          fontStyle: 'italic',
+                          fontWeight: 400,
+                          fontSize: 11,
+                          color: 'rgba(254, 252, 249, 0.96)',
+                          textShadow: '0 1px 6px rgba(0,0,0,0.5)',
+                        }}
+                      >
+                        &ldquo;{item.prompt_answered}&rdquo;
+                      </p>
                     </div>
                   )}
                 </div>
@@ -446,11 +478,50 @@ export default function SharedGalleryPage() {
                   .toUpperCase()}
               </div>
               <span className="text-white/70 text-sm">
-                {selectedItem.guest.first_name}
+                {selectedItem.guest.display_name || selectedItem.guest.first_name}
               </span>
             </div>
             <div className="w-10" />
           </div>
+
+          {/* Toast prompt caption — mirrors the viewfinder prompt card */}
+          {selectedItem.type === 'video' && selectedItem.prompt_answered && (
+            <div className="px-6 pb-4 flex-shrink-0">
+              <div
+                className="mx-auto max-w-xl px-6 py-5 rounded-xl text-center"
+                style={{
+                  background: 'rgba(12, 10, 9, 0.40)',
+                  backdropFilter: 'blur(16px)',
+                  WebkitBackdropFilter: 'blur(16px)',
+                  border: '1px solid rgba(255, 255, 255, 0.10)',
+                  boxShadow: '0 24px 48px rgba(0,0,0,0.3)',
+                }}
+              >
+                <span
+                  className="block text-xs mb-2 uppercase"
+                  style={{
+                    fontFamily: 'var(--font-body)',
+                    letterSpacing: '0.22em',
+                    color: 'var(--color-gold-light)',
+                    fontWeight: 600,
+                  }}
+                >
+                  A Toast
+                </span>
+                <p
+                  className="text-xl leading-tight"
+                  style={{
+                    fontFamily: 'var(--font-display)',
+                    fontStyle: 'italic',
+                    color: '#ffffff',
+                    fontWeight: 400,
+                  }}
+                >
+                  &ldquo;{selectedItem.prompt_answered}&rdquo;
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* Image */}
           <div className="flex-1 flex items-center justify-center px-4 overflow-hidden">

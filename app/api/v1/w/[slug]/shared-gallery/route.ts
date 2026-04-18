@@ -43,7 +43,7 @@ export async function GET(
     queryParams.push(limit + 1);
 
     const result = await pool.query(
-      `SELECT u.id, u.type, u.storage_key, u.thumbnail_key, u.duration_ms, u.created_at,
+      `SELECT u.id, u.type, u.storage_key, u.thumbnail_key, u.duration_ms, u.prompt_answered, u.created_at,
               g.id as guest_id, g.first_name, g.last_name, g.display_name
        FROM uploads u
        JOIN guests g ON u.guest_id = g.id
@@ -68,6 +68,7 @@ export async function GET(
       url: await getMediaUrl(row.storage_key),
       thumbnail_url: await getMediaUrl(row.thumbnail_key || row.storage_key),
       duration_ms: row.duration_ms || null,
+      prompt_answered: row.prompt_answered || null,
       guest: {
         id: row.guest_id,
         first_name: row.first_name,
