@@ -42,50 +42,67 @@ export async function GET(
     const cursor = url.searchParams.get('cursor');
     const limit = Math.min(parseInt(url.searchParams.get('limit') || '20', 10), 100);
 
-    // Build query for uploads
-    const conditions: string[] = ['u.wedding_id = $1', 'u.guest_id = $2', "u.status = 'ready'"];
-    const queryParams: (string | number)[] = [session.weddingId, guestId];
-    let paramIndex = 3;
+    // Uploads query only runs for all/photo/video/favorite tabs, not for 'portrait'
+    const skipUploads = typeFilter === 'portrait';
 
-    const isFavoriteFilter = typeFilter === 'favorite';
+    type UploadRow = {
+      id: string;
+      type: string;
+      storage_key: string;
+      thumbnail_key: string | null;
+      filter_applied: string | null;
+      duration_ms: number | null;
+      created_at: Date;
+      event_name: string | null;
+      favorited?: boolean;
+    };
+    let uploadsResult: { rows: UploadRow[] } = { rows: [] };
 
-    if (typeFilter && ['photo', 'video'].includes(typeFilter)) {
-      conditions.push(`u.type = $${paramIndex}`);
-      queryParams.push(typeFilter);
-      paramIndex++;
+    if (!skipUploads) {
+      const conditions: string[] = ['u.wedding_id = $1', 'u.guest_id = $2', "u.status = 'ready'"];
+      const queryParams: (string | number)[] = [session.weddingId, guestId];
+      let paramIndex = 3;
+
+      const isFavoriteFilter = typeFilter === 'favorite';
+
+      if (typeFilter && ['photo', 'video'].includes(typeFilter)) {
+        conditions.push(`u.type = $${paramIndex}`);
+        queryParams.push(typeFilter);
+        paramIndex++;
+      }
+
+      if (isFavoriteFilter) {
+        conditions.push(`EXISTS (SELECT 1 FROM favorites fav WHERE fav.upload_id = u.id AND fav.guest_id = u.guest_id)`);
+      }
+
+      if (eventId) {
+        conditions.push(`u.event_id = $${paramIndex}`);
+        queryParams.push(eventId);
+        paramIndex++;
+      }
+
+      if (cursor) {
+        conditions.push(`u.created_at < $${paramIndex}`);
+        queryParams.push(cursor);
+        paramIndex++;
+      }
+
+      queryParams.push(limit + 1);
+
+      const uploadsQuery = `
+        SELECT u.id, u.type, u.storage_key, u.thumbnail_key, u.filter_applied,
+               u.duration_ms, u.created_at, e.name as event_name,
+               CASE WHEN f.id IS NOT NULL THEN true ELSE false END as favorited
+        FROM uploads u
+        LEFT JOIN events e ON u.event_id = e.id
+        LEFT JOIN favorites f ON f.upload_id = u.id AND f.guest_id = u.guest_id
+        WHERE ${conditions.join(' AND ')}
+        ORDER BY u.created_at DESC
+        LIMIT $${paramIndex}
+      `;
+
+      uploadsResult = await pool.query(uploadsQuery, queryParams);
     }
-
-    if (isFavoriteFilter) {
-      conditions.push(`EXISTS (SELECT 1 FROM favorites fav WHERE fav.upload_id = u.id AND fav.guest_id = u.guest_id)`);
-    }
-
-    if (eventId) {
-      conditions.push(`u.event_id = $${paramIndex}`);
-      queryParams.push(eventId);
-      paramIndex++;
-    }
-
-    if (cursor) {
-      conditions.push(`u.created_at < $${paramIndex}`);
-      queryParams.push(cursor);
-      paramIndex++;
-    }
-
-    queryParams.push(limit + 1);
-
-    const uploadsQuery = `
-      SELECT u.id, u.type, u.storage_key, u.thumbnail_key, u.filter_applied,
-             u.duration_ms, u.created_at, e.name as event_name,
-             CASE WHEN f.id IS NOT NULL THEN true ELSE false END as favorited
-      FROM uploads u
-      LEFT JOIN events e ON u.event_id = e.id
-      LEFT JOIN favorites f ON f.upload_id = u.id AND f.guest_id = u.guest_id
-      WHERE ${conditions.join(' AND ')}
-      ORDER BY u.created_at DESC
-      LIMIT $${paramIndex}
-    `;
-
-    const uploadsResult = await pool.query(uploadsQuery, queryParams);
 
     // Also get AI portraits for this guest
     let portraits: typeof uploadsResult.rows = [];

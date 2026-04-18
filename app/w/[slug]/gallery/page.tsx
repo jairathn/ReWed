@@ -581,19 +581,29 @@ export default function GalleryPage() {
                     }
                   }}
                 >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={item.thumbnail_url}
-                    alt=""
-                    className="w-full h-full object-cover"
-                    loading="lazy"
-                    onError={(e) => {
-                      const img = e.currentTarget;
-                      if (img.src !== item.url) {
-                        img.src = item.url;
-                      }
-                    }}
-                  />
+                  {item.type === 'video' ? (
+                    <video
+                      src={`${item.url}#t=0.1`}
+                      className="w-full h-full object-cover"
+                      preload="metadata"
+                      muted
+                      playsInline
+                    />
+                  ) : (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img
+                      src={item.thumbnail_url}
+                      alt=""
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                      onError={(e) => {
+                        const img = e.currentTarget;
+                        if (img.src !== item.url) {
+                          img.src = item.url;
+                        }
+                      }}
+                    />
+                  )}
 
                   {/* Action overlay - shown on hover (desktop) or tap (mobile) */}
                   <div

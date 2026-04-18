@@ -63,12 +63,12 @@ export async function POST(
       throw new AppError('VALIDATION_ERROR', 'Upload already completed');
     }
 
-    // Generate thumbnail key
-    const thumbnailKey = getThumbnailKey(storage_key);
-
-    // Generate and upload thumbnail for photos
+    // Generate thumbnail for photos only. Videos don't get a thumbnail file —
+    // the gallery renders a <video> element that shows the first frame.
     const isPhoto = !duration_ms; // videos have duration_ms
+    let thumbnailKey: string | null = null;
     if (isPhoto) {
+      thumbnailKey = getThumbnailKey(storage_key);
       try {
         const original = await getObject(storage_key);
         const thumbnailBuffer = await generateThumbnail(original);
@@ -108,7 +108,7 @@ export async function POST(
           id: updated.id,
           type: updated.type,
           url: await getMediaUrl(updated.storage_key),
-          thumbnail_url: await getMediaUrl(thumbnailKey),
+          thumbnail_url: await getMediaUrl(thumbnailKey || updated.storage_key),
           status: updated.status,
           created_at: updated.created_at,
         },
