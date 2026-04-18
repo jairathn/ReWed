@@ -55,6 +55,7 @@ export async function GET(
       created_at: Date;
       event_name: string | null;
       favorited?: boolean;
+      prompt_answered?: string | null;
     };
     let uploadsResult: { rows: UploadRow[] } = { rows: [] };
 
@@ -91,7 +92,7 @@ export async function GET(
 
       const uploadsQuery = `
         SELECT u.id, u.type, u.storage_key, u.thumbnail_key, u.filter_applied,
-               u.duration_ms, u.created_at, e.name as event_name,
+               u.duration_ms, u.prompt_answered, u.created_at, e.name as event_name,
                CASE WHEN f.id IS NOT NULL THEN true ELSE false END as favorited
         FROM uploads u
         LEFT JOIN events e ON u.event_id = e.id
@@ -128,7 +129,7 @@ export async function GET(
       const portraitQuery = `
         SELECT a.id, 'portrait' as type, a.output_key as storage_key,
                a.output_key as thumbnail_key, a.style_id as filter_applied,
-               NULL as duration_ms, a.created_at, NULL as event_name
+               NULL as duration_ms, NULL as prompt_answered, a.created_at, NULL as event_name
         FROM ai_jobs a
         WHERE ${portraitConditions.join(' AND ')}
         ORDER BY a.created_at DESC
@@ -155,6 +156,7 @@ export async function GET(
       event_name: row.event_name || null,
       filter_applied: row.filter_applied || null,
       duration_ms: row.duration_ms || null,
+      prompt_answered: row.prompt_answered || null,
       favorited: row.favorited === true,
       created_at: row.created_at,
     })));

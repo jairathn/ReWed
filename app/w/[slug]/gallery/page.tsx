@@ -718,6 +718,28 @@ export default function GalleryPage() {
                       {String(Math.floor((item.duration_ms % 60000) / 1000)).padStart(2, '0')}
                     </div>
                   )}
+
+                  {/* Toast prompt caption on video thumbnail */}
+                  {item.type === 'video' && item.prompt_answered && (
+                    <div
+                      className="absolute inset-x-0 bottom-0 px-2 py-1.5 pointer-events-none"
+                      style={{
+                        background: 'linear-gradient(to top, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.4) 60%, transparent 100%)',
+                        paddingRight: item.duration_ms ? 40 : 8,
+                      }}
+                    >
+                      <p
+                        className="text-white text-[10px] leading-tight line-clamp-2"
+                        style={{
+                          fontFamily: 'var(--font-display)',
+                          fontStyle: 'italic',
+                          textShadow: '0 1px 2px rgba(0,0,0,0.5)',
+                        }}
+                      >
+                        &ldquo;{item.prompt_answered}&rdquo;
+                      </p>
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -794,6 +816,37 @@ export default function GalleryPage() {
             )}
             <div className="w-10" />
           </div>
+
+          {/* Toast prompt caption */}
+          {selectedItem.type === 'video' && selectedItem.prompt_answered && (
+            <div className="px-6 pb-3 flex-shrink-0">
+              <div
+                className="mx-auto max-w-xl px-4 py-2.5 rounded-xl text-center"
+                style={{
+                  background: 'rgba(254, 252, 249, 0.08)',
+                  border: '1px solid rgba(198, 163, 85, 0.25)',
+                  backdropFilter: 'blur(8px)',
+                }}
+              >
+                <p
+                  className="text-[10px] uppercase tracking-[0.15em] mb-1"
+                  style={{ color: 'rgba(212, 168, 83, 0.7)' }}
+                >
+                  Answering
+                </p>
+                <p
+                  className="text-sm leading-snug"
+                  style={{
+                    fontFamily: 'var(--font-display)',
+                    fontStyle: 'italic',
+                    color: 'rgba(254, 252, 249, 0.92)',
+                  }}
+                >
+                  &ldquo;{selectedItem.prompt_answered}&rdquo;
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* Image */}
           <div className="flex-1 flex items-center justify-center px-4 overflow-hidden">
