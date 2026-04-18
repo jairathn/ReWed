@@ -11,6 +11,7 @@ export default function GuestRegistrationPage() {
   const [searchResults, setSearchResults] = useState<
     { id: string; first_name: string; last_name: string }[]
   >([]);
+  const [matchType, setMatchType] = useState<'exact' | 'unique_first' | 'fuzzy' | 'none' | null>(null);
   const [isSearching, setIsSearching] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
   const [error, setError] = useState('');
@@ -27,6 +28,7 @@ export default function GuestRegistrationPage() {
     async (query: string) => {
       if (query.length < 2) {
         setSearchResults([]);
+        setMatchType(null);
         return;
       }
 
@@ -36,8 +38,9 @@ export default function GuestRegistrationPage() {
           `/api/v1/w/${slug}/guests/search?q=${encodeURIComponent(query)}`
         );
         const data = await res.json();
-        if (data.data?.guests) {
-          setSearchResults(data.data.guests);
+        if (data.data) {
+          setSearchResults(data.data.guests || []);
+          setMatchType(data.data.match_type || 'none');
         }
       } catch (err) {
         console.error('Search failed:', err);
@@ -213,40 +216,74 @@ export default function GuestRegistrationPage() {
           )}
         </div>
 
+        {/* Match-type label above results */}
+        {searchResults.length > 0 && matchType === 'fuzzy' && (
+          <p
+            className="text-[11px] uppercase tracking-widest mb-2"
+            style={{ color: 'var(--text-tertiary)', letterSpacing: '0.15em' }}
+          >
+            Did you mean?
+          </p>
+        )}
+
         {/* Search Results */}
         {searchResults.length > 0 && (
           <div
             className="rounded-2xl overflow-hidden mb-4"
             style={{
               background: 'var(--bg-pure-white)',
-              border: '1px solid var(--border-light)',
-              boxShadow: 'var(--shadow-medium)',
+              border: matchType === 'exact'
+                ? '1px solid var(--color-gold-rule)'
+                : '1px solid var(--border-light)',
+              boxShadow: matchType === 'exact'
+                ? '0 8px 24px rgba(198, 163, 85, 0.15)'
+                : 'var(--shadow-medium)',
             }}
           >
-            {searchResults.map((guest) => (
+            {searchResults.map((guest, idx) => (
               <button
                 key={guest.id}
                 onClick={() => handleSelectGuest(guest)}
                 disabled={isRegistering}
                 className="w-full px-6 py-4 text-left hover:bg-[#F7F3ED] transition-colors flex items-center gap-3 disabled:opacity-50"
                 style={{
-                  borderBottom: '1px solid var(--border-light)',
+                  borderBottom: idx < searchResults.length - 1 ? '1px solid var(--border-light)' : 'none',
                   fontFamily: 'var(--font-body)',
                 }}
               >
                 <div
                   className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold flex-shrink-0"
                   style={{
-                    background: 'var(--color-terracotta-light)',
-                    color: 'var(--color-terracotta-dark)',
+                    background: matchType === 'exact'
+                      ? 'linear-gradient(135deg, var(--color-gold-dark), var(--color-gold))'
+                      : 'var(--color-terracotta-light)',
+                    color: matchType === 'exact' ? '#FDFBF7' : 'var(--color-terracotta-dark)',
                   }}
                 >
                   {guest.first_name[0]}
                   {guest.last_name[0]}
                 </div>
-                <span style={{ color: 'var(--text-primary)' }}>
-                  {guest.first_name} {guest.last_name}
-                </span>
+                <div className="flex-1 min-w-0">
+                  <span className="block" style={{ color: 'var(--text-primary)' }}>
+                    {guest.first_name} {guest.last_name}
+                  </span>
+                  {matchType === 'exact' && (
+                    <span
+                      className="text-[11px] uppercase tracking-widest"
+                      style={{ color: 'var(--color-gold-dark)', letterSpacing: '0.12em' }}
+                    >
+                      Continue as you
+                    </span>
+                  )}
+                  {matchType === 'unique_first' && (
+                    <span
+                      className="text-xs"
+                      style={{ color: 'var(--text-tertiary)' }}
+                    >
+                      Is this you?
+                    </span>
+                  )}
+                </div>
               </button>
             ))}
           </div>
@@ -265,14 +302,14 @@ export default function GuestRegistrationPage() {
         )}
 
         {searchQuery.length >= 2 &&
-          searchResults.length === 0 &&
+          matchType === 'none' &&
           !isSearching && (
             <p
               className="text-sm py-4"
               style={{ color: 'var(--text-secondary)' }}
             >
-              We couldn&apos;t find that name on the guest list. Try a different
-              spelling?
+              We couldn&apos;t find that name on the guest list. Try your full
+              name as it appears on the invitation?
             </p>
           )}
 
@@ -280,7 +317,7 @@ export default function GuestRegistrationPage() {
           className="text-xs mt-6"
           style={{ color: 'var(--text-tertiary)' }}
         >
-          Start typing your name to find yourself on the guest list
+          Enter your full name as it appears on the invitation
         </p>
       </div>
     </div>

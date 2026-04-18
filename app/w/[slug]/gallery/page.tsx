@@ -35,7 +35,6 @@ export default function GalleryPage() {
   const [selectedItem, setSelectedItem] = useState<MediaItem | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [activeThumbId, setActiveThumbId] = useState<string | null>(null);
   const [showAiModal, setShowAiModal] = useState(false);
   const [aiSourceItem, setAiSourceItem] = useState<MediaItem | null>(null);
   const [selectedAiStyle, setSelectedAiStyle] = useState<string | null>(null);
@@ -553,107 +552,51 @@ export default function GalleryPage() {
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-3 gap-[3px] mt-5 sm:grid-cols-4">
+          <div className="grid grid-cols-3 gap-[6px] mt-5 sm:grid-cols-4">
             {items.map((item, i) => {
-              const showActions = activeThumbId === item.id;
               const uploaderName = guest.display_name || guest.first_name;
               return (
                 <div
                   key={item.id}
-                  className="aspect-square relative overflow-hidden cursor-pointer group"
+                  className="flex flex-col group"
                   style={{
-                    background: 'var(--bg-soft-cream)',
-                    borderRadius: i === 0 ? '10px 3px 3px 3px' : i === 2 ? '3px 10px 3px 3px' : 3,
-                  }}
-                  onClick={() => {
-                    // On mobile: first tap shows actions, second tap opens lightbox
-                    if ('ontouchstart' in window) {
-                      if (activeThumbId === item.id) {
-                        setSelectedItem(item);
-                        setShowDeleteConfirm(false);
-                        setActiveThumbId(null);
-                      } else {
-                        setActiveThumbId(item.id);
-                      }
-                    } else {
-                      setSelectedItem(item);
-                      setShowDeleteConfirm(false);
-                    }
+                    background: 'var(--bg-pure-white)',
+                    borderRadius: i === 0 ? '12px 6px 6px 6px' : i === 2 ? '6px 12px 6px 6px' : 6,
+                    border: '1px solid var(--border-light)',
+                    overflow: 'hidden',
                   }}
                 >
-                  {item.type === 'video' ? (
-                    <video
-                      src={`${item.url}#t=0.1`}
-                      className="w-full h-full object-cover"
-                      preload="metadata"
-                      muted
-                      playsInline
-                    />
-                  ) : (
-                    /* eslint-disable-next-line @next/next/no-img-element */
-                    <img
-                      src={item.thumbnail_url}
-                      alt=""
-                      className="w-full h-full object-cover"
-                      loading="lazy"
-                      onError={(e) => {
-                        const img = e.currentTarget;
-                        if (img.src !== item.url) {
-                          img.src = item.url;
-                        }
-                      }}
-                    />
-                  )}
-
-                  {/* Action overlay - shown on hover (desktop) or tap (mobile) */}
                   <div
-                    className={`absolute inset-0 flex items-end justify-center gap-3 pb-2 transition-opacity duration-200 ${showActions ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
-                    style={{
-                      background: 'linear-gradient(to top, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.15) 50%, transparent 100%)',
+                    className="aspect-square relative overflow-hidden cursor-pointer"
+                    style={{ background: 'var(--bg-soft-cream)' }}
+                    onClick={() => {
+                      setSelectedItem(item);
+                      setShowDeleteConfirm(false);
                     }}
                   >
-                    <button
-                      onClick={(e) => { e.stopPropagation(); handleFavorite(item); }}
-                      className="p-1.5 rounded-full"
-                      style={{ background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(8px)' }}
-                      title={item.favorited ? 'Unsave' : 'Save'}
-                    >
-                      <svg width="16" height="16" viewBox="0 0 24 24"
-                        fill={item.favorited ? '#ef4444' : 'none'}
-                        stroke={item.favorited ? '#ef4444' : 'white'}
-                        strokeWidth="2"
-                      >
-                        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-                      </svg>
-                    </button>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); handleDownload(item); }}
-                      className="p-1.5 rounded-full"
-                      style={{ background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(8px)' }}
-                      title="Download"
-                    >
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
-                        <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
-                        <polyline points="7 10 12 15 17 10" />
-                        <line x1="12" y1="15" x2="12" y2="3" />
-                      </svg>
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSelectedItem(item);
-                        setShowDeleteConfirm(true);
-                      }}
-                      className="p-1.5 rounded-full"
-                      style={{ background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(8px)' }}
-                      title="Delete"
-                    >
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
-                        <polyline points="3 6 5 6 21 6" />
-                        <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
-                      </svg>
-                    </button>
-                  </div>
+                    {item.type === 'video' ? (
+                      <video
+                        src={`${item.url}#t=0.1`}
+                        className="w-full h-full object-cover"
+                        preload="metadata"
+                        muted
+                        playsInline
+                      />
+                    ) : (
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img
+                        src={item.thumbnail_url}
+                        alt=""
+                        className="w-full h-full object-cover"
+                        loading="lazy"
+                        onError={(e) => {
+                          const img = e.currentTarget;
+                          if (img.src !== item.url) {
+                            img.src = item.url;
+                          }
+                        }}
+                      />
+                    )}
 
                   {/* Uploader name badge */}
                   {uploaderName && (
@@ -776,6 +719,61 @@ export default function GalleryPage() {
                       </p>
                     </div>
                   )}
+                  </div>
+
+                  {/* Bottom action strip */}
+                  <div
+                    className="flex items-center justify-end gap-1 px-2"
+                    style={{
+                      height: 32,
+                      background: 'var(--bg-pure-white)',
+                      borderTop: '0.5px solid var(--border-light)',
+                    }}
+                  >
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleFavorite(item); }}
+                      disabled={actionLoading === 'favorite'}
+                      className="p-1.5 rounded-full transition-colors hover:bg-[var(--bg-soft-cream)]"
+                      title={item.favorited ? 'Unsave' : 'Save'}
+                      style={{ background: 'transparent', border: 'none', cursor: 'pointer' }}
+                    >
+                      <svg width="15" height="15" viewBox="0 0 24 24"
+                        fill={item.favorited ? '#ef4444' : 'none'}
+                        stroke={item.favorited ? '#ef4444' : 'var(--text-secondary)'}
+                        strokeWidth="1.8"
+                      >
+                        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                      </svg>
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleDownload(item); }}
+                      disabled={actionLoading === 'download'}
+                      className="p-1.5 rounded-full transition-colors hover:bg-[var(--bg-soft-cream)]"
+                      title="Download"
+                      style={{ background: 'transparent', border: 'none', cursor: 'pointer' }}
+                    >
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" strokeWidth="1.8">
+                        <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+                        <polyline points="7 10 12 15 17 10" />
+                        <line x1="12" y1="15" x2="12" y2="3" />
+                      </svg>
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedItem(item);
+                        setShowDeleteConfirm(true);
+                      }}
+                      className="p-1.5 rounded-full transition-colors hover:bg-[var(--bg-soft-cream)]"
+                      title="Delete"
+                      style={{ background: 'transparent', border: 'none', cursor: 'pointer' }}
+                    >
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" strokeWidth="1.8">
+                        <polyline points="3 6 5 6 21 6" />
+                        <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
+                      </svg>
+                    </button>
+                  </div>
                 </div>
               );
             })}
