@@ -169,30 +169,49 @@ export default function GalleryCurationPage({
 
       {/* Counts & Filter */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20, flexWrap: 'wrap' }}>
-        <div style={{ display: 'flex', gap: 6 }}>
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
           {([
-            { id: 'all' as FilterMode, label: `All (${counts.total})` },
-            { id: 'approved' as FilterMode, label: `Approved (${counts.approved})` },
-            { id: 'rejected' as FilterMode, label: `Rejected (${counts.rejected})` },
-          ]).map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setFilter(tab.id)}
-              style={{
-                padding: '6px 14px',
-                borderRadius: 6,
-                fontSize: 13,
-                fontWeight: 500,
-                fontFamily: 'var(--font-body)',
-                cursor: 'pointer',
-                border: filter === tab.id ? '1.5px solid var(--color-terracotta)' : '1px solid var(--border-medium)',
-                background: filter === tab.id ? 'rgba(196, 112, 75, 0.06)' : 'var(--bg-pure-white)',
-                color: filter === tab.id ? 'var(--color-terracotta)' : 'var(--text-secondary)',
-              }}
-            >
-              {tab.label}
-            </button>
-          ))}
+            { id: 'all' as FilterMode, label: 'All', count: counts.total, color: 'var(--text-primary)', tint: 'rgba(44,40,37,0.06)' },
+            { id: 'approved' as FilterMode, label: 'Approved', count: counts.approved, color: 'var(--color-olive)', tint: 'rgba(122,139,92,0.12)' },
+            { id: 'rejected' as FilterMode, label: 'Rejected', count: counts.rejected, color: 'var(--color-terracotta)', tint: 'rgba(196,112,75,0.12)' },
+          ]).map((tab) => {
+            const active = filter === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setFilter(tab.id)}
+                style={{
+                  padding: '7px 14px',
+                  borderRadius: 999,
+                  fontSize: 13,
+                  fontWeight: active ? 600 : 500,
+                  fontFamily: 'var(--font-body)',
+                  cursor: 'pointer',
+                  border: active ? `1px solid ${tab.color}` : '1px solid var(--border-light)',
+                  background: active ? tab.tint : 'var(--bg-pure-white)',
+                  color: active ? tab.color : 'var(--text-secondary)',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  transition: 'background 0.15s, border-color 0.15s',
+                }}
+              >
+                {tab.label}
+                <span
+                  style={{
+                    fontSize: 11,
+                    padding: '1px 7px',
+                    borderRadius: 999,
+                    background: active ? tab.color : 'var(--bg-soft-cream)',
+                    color: active ? '#FDFBF7' : 'var(--text-tertiary)',
+                    fontWeight: 600,
+                  }}
+                >
+                  {tab.count}
+                </span>
+              </button>
+            );
+          })}
         </div>
 
         {/* Bulk actions */}
@@ -206,14 +225,15 @@ export default function GalleryCurationPage({
               disabled={bulkUpdating}
               style={{
                 padding: '6px 14px',
-                borderRadius: 6,
+                borderRadius: 999,
                 fontSize: 12,
                 fontWeight: 600,
-                background: 'rgba(122, 139, 92, 0.1)',
-                color: 'var(--color-olive)',
-                border: '1px solid var(--color-olive)',
+                background: 'var(--color-olive)',
+                color: '#FDFBF7',
+                border: 'none',
                 cursor: 'pointer',
                 opacity: bulkUpdating ? 0.5 : 1,
+                fontFamily: 'var(--font-body)',
               }}
             >
               Approve
@@ -223,14 +243,15 @@ export default function GalleryCurationPage({
               disabled={bulkUpdating}
               style={{
                 padding: '6px 14px',
-                borderRadius: 6,
+                borderRadius: 999,
                 fontSize: 12,
                 fontWeight: 600,
-                background: 'rgba(239, 68, 68, 0.06)',
-                color: '#ef4444',
-                border: '1px solid #ef4444',
+                background: 'var(--color-terracotta)',
+                color: '#FDFBF7',
+                border: 'none',
                 cursor: 'pointer',
                 opacity: bulkUpdating ? 0.5 : 1,
+                fontFamily: 'var(--font-body)',
               }}
             >
               Reject
