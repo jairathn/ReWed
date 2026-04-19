@@ -2,27 +2,7 @@
 
 import { useState, useEffect, useRef, use, useCallback, useMemo } from 'react';
 import { formatDayHeader, normalizeDate } from '@/lib/utils/date-format';
-
-const VENDOR_COLORS = [
-  '#C4704B', // terracotta
-  '#2B5F8A', // mediterranean blue
-  '#7A8B5C', // olive
-  '#D4A853', // golden
-  '#A8883F', // gold-dark
-  '#9B6B1F', // amber
-  '#8F4C6B', // plum
-  '#3F7A6B', // teal
-  '#8A5A2B', // walnut
-  '#5A6F8F', // slate blue
-];
-
-function vendorColor(id: string): string {
-  let hash = 0;
-  for (let i = 0; i < id.length; i++) {
-    hash = (hash * 31 + id.charCodeAt(i)) | 0;
-  }
-  return VENDOR_COLORS[Math.abs(hash) % VENDOR_COLORS.length];
-}
+import { vendorColor } from '@/lib/utils/vendor-color';
 
 interface Vendor {
   id: string;

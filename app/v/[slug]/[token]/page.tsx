@@ -1,7 +1,14 @@
 'use client';
 
 import { useState, useEffect, use, useCallback } from 'react';
-import { formatLongDate, formatWeekdayShort, formatShortDate } from '@/lib/utils/date-format';
+import {
+  formatLongDate,
+  formatWeekdayShort,
+  formatShortDate,
+  daysUntil,
+  normalizeDate,
+} from '@/lib/utils/date-format';
+import { vendorColorByName } from '@/lib/utils/vendor-color';
 
 interface Vendor {
   id: string;
@@ -90,6 +97,8 @@ export default function VendorPortalPage({
   const [commentBox, setCommentBox] = useState({ comment: '', proposed_change: '' });
   const [submitting, setSubmitting] = useState(false);
   const [commentSentAt, setCommentSentAt] = useState<Date | null>(null);
+  // Day filter — applies to both "My timeline" and "Master timeline" tabs.
+  const [dayFilter, setDayFilter] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -163,9 +172,26 @@ export default function VendorPortalPage({
     );
   }
 
-  // Group assigned by event_date
+  const matchesDay = (eventDate: string | null) => {
+    if (!dayFilter) return true;
+    const ds = normalizeDate(eventDate);
+    return ds === dayFilter;
+  };
+
+  // Distinct days present across *either* my assignments or the master timeline
+  // — so the day pills stay consistent whichever tab you're on.
+  const allDays = Array.from(
+    new Set(
+      [...data.assigned, ...data.master_timeline]
+        .map((e) => normalizeDate(e.event_date))
+        .filter((d): d is string => !!d)
+    )
+  ).sort();
+
+  // Group assigned by event_date, after filter
   const groups = new Map<string, { date: string; name: string; entries: TimelineEntry[] }>();
   for (const e of data.assigned) {
+    if (!matchesDay(e.event_date)) continue;
     const key = `${e.event_date || 'unscheduled'}__${e.event_name || ''}`;
     if (!groups.has(key)) {
       groups.set(key, {
@@ -184,6 +210,8 @@ export default function VendorPortalPage({
     if (!contactMap.has(c.id)) contactMap.set(c.id, c);
   }
   const uniqueContacts = Array.from(contactMap.values());
+
+  const daysToGo = daysUntil(data.wedding.wedding_date);
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg-warm-gradient)' }}>
@@ -224,13 +252,60 @@ export default function VendorPortalPage({
           {data.wedding.venue_city && ` · ${data.wedding.venue_city}${data.wedding.venue_country ? ', ' + data.wedding.venue_country : ''}`}
         </p>
 
-        <div style={{ marginTop: 16, display: 'inline-flex', alignItems: 'center', gap: 8, padding: '6px 14px', borderRadius: 999, background: 'var(--bg-soft-cream)', border: '1px solid var(--border-light)' }}>
-          <span style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'var(--text-primary)', fontWeight: 500 }}>
-            {data.vendor.name}
+        <div style={{ marginTop: 16, display: 'inline-flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
+          <span
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 8,
+              padding: '6px 14px',
+              borderRadius: 999,
+              background: 'var(--bg-soft-cream)',
+              border: '1px solid var(--border-light)',
+            }}
+          >
+            <span style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'var(--text-primary)', fontWeight: 500 }}>
+              {data.vendor.name}
+            </span>
+            {data.vendor.category && (
+              <span style={{ fontSize: 11, color: 'var(--color-gold-dark)', textTransform: 'uppercase', letterSpacing: '0.5px', fontFamily: 'var(--font-body)' }}>
+                {data.vendor.category}
+              </span>
+            )}
           </span>
-          {data.vendor.category && (
-            <span style={{ fontSize: 11, color: 'var(--color-gold-dark)', textTransform: 'uppercase', letterSpacing: '0.5px', fontFamily: 'var(--font-body)' }}>
-              {data.vendor.category}
+          {daysToGo !== null && daysToGo > 0 && (
+            <span
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                padding: '6px 12px',
+                borderRadius: 999,
+                background: 'linear-gradient(135deg, var(--color-gold-dark), var(--color-gold))',
+                color: '#FDFBF7',
+                fontFamily: 'var(--font-body)',
+                fontSize: 12,
+                fontWeight: 600,
+              }}
+            >
+              {daysToGo} {daysToGo === 1 ? 'day' : 'days'} to go
+            </span>
+          )}
+          {daysToGo !== null && daysToGo === 0 && (
+            <span
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                padding: '6px 12px',
+                borderRadius: 999,
+                background: 'var(--color-terracotta)',
+                color: '#FDFBF7',
+                fontFamily: 'var(--font-body)',
+                fontSize: 12,
+                fontWeight: 600,
+              }}
+            >
+              Today&apos;s the day
             </span>
           )}
         </div>
@@ -283,8 +358,15 @@ export default function VendorPortalPage({
               title="Your assigned timeline"
               subtitle="Tap any entry to leave a note for the couple. They'll get an email immediately."
             />
+            <DayFilter days={allDays} value={dayFilter} onChange={setDayFilter} />
             {groupList.length === 0 ? (
-              <Empty text="No entries assigned to you yet." />
+              <Empty
+                text={
+                  dayFilter
+                    ? 'Nothing assigned to you on this day.'
+                    : 'No entries assigned to you yet.'
+                }
+              />
             ) : (
               groupList.map((g) => (
                 <div key={`${g.date}__${g.name}`} style={{ marginBottom: 20 }}>
@@ -356,10 +438,15 @@ export default function VendorPortalPage({
               title="Master timeline (read-only)"
               subtitle="Everything happening across all vendors and events."
             />
+            <DayFilter days={allDays} value={dayFilter} onChange={setDayFilter} />
             {data.master_timeline.length === 0 ? (
               <Empty text="No master timeline yet." />
             ) : (
-              <MasterTimeline entries={data.master_timeline} myVendorName={data.vendor.name} />
+              <MasterTimeline
+                entries={data.master_timeline.filter((e) => matchesDay(e.event_date))}
+                myVendorName={data.vendor.name}
+                emptyText={dayFilter ? 'Nothing scheduled for this day.' : 'No master timeline yet.'}
+              />
             )}
           </>
         )}
@@ -700,7 +787,18 @@ function FaqWidget({ slug, token }: { slug: string; token: string }) {
   );
 }
 
-function MasterTimeline({ entries, myVendorName }: { entries: MasterEntry[]; myVendorName: string }) {
+function MasterTimeline({
+  entries,
+  myVendorName,
+  emptyText,
+}: {
+  entries: MasterEntry[];
+  myVendorName: string;
+  emptyText?: string;
+}) {
+  if (entries.length === 0) {
+    return <Empty text={emptyText || 'Nothing scheduled.'} />;
+  }
   const groups = new Map<string, MasterEntry[]>();
   for (const e of entries) {
     const key = `${e.event_date || 'unscheduled'}__${e.event_name || ''}`;
@@ -739,12 +837,47 @@ function MasterTimeline({ entries, myVendorName }: { entries: MasterEntry[]; myV
                         {e.action}
                       </div>
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginTop: 4 }}>
-                        {e.location && <span style={chip}>{e.location}</span>}
-                        {e.vendor_names.map((n) => (
-                          <span key={n} style={n === myVendorName ? chipMine : chipVendor}>
-                            {n}
-                          </span>
-                        ))}
+                        {e.location && <span style={chip}>📍 {e.location}</span>}
+                        {e.vendor_names.length === 0 && (
+                          <span style={chipNoOwner}>⚠ No owner</span>
+                        )}
+                        {e.vendor_names.map((n) => {
+                          const isMe = n === myVendorName;
+                          const color = isMe ? '#A8883F' : vendorColorByName(n);
+                          return (
+                            <span
+                              key={n}
+                              style={{
+                                fontSize: 11,
+                                padding: '2px 9px 2px 7px',
+                                borderRadius: 999,
+                                background: isMe
+                                  ? 'linear-gradient(135deg, var(--color-gold-dark), var(--color-gold))'
+                                  : color + '18',
+                                color: isMe ? '#FDFBF7' : color,
+                                fontFamily: 'var(--font-body)',
+                                fontWeight: isMe ? 600 : 500,
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 5,
+                                whiteSpace: 'nowrap',
+                              }}
+                            >
+                              {!isMe && (
+                                <span
+                                  style={{
+                                    width: 6,
+                                    height: 6,
+                                    borderRadius: 999,
+                                    background: color,
+                                    display: 'inline-block',
+                                  }}
+                                />
+                              )}
+                              {isMe ? 'You' : n}
+                            </span>
+                          );
+                        })}
                       </div>
                     </div>
                   </div>
@@ -755,6 +888,75 @@ function MasterTimeline({ entries, myVendorName }: { entries: MasterEntry[]; myV
         );
       })}
     </>
+  );
+}
+
+function DayFilter({
+  days,
+  value,
+  onChange,
+}: {
+  days: string[];
+  value: string | null;
+  onChange: (v: string | null) => void;
+}) {
+  if (days.length <= 1) return null;
+  return (
+    <div
+      style={{
+        display: 'flex',
+        gap: 6,
+        flexWrap: 'wrap',
+        marginBottom: 16,
+        padding: '8px 10px',
+        borderRadius: 12,
+        background: 'var(--bg-pure-white)',
+        border: '1px solid var(--border-light)',
+      }}
+    >
+      <button
+        type="button"
+        onClick={() => onChange(null)}
+        style={{
+          padding: '6px 12px',
+          borderRadius: 999,
+          border: value === null ? 'none' : '1px solid var(--border-light)',
+          background: value === null ? 'var(--color-gold-dark)' : 'transparent',
+          color: value === null ? '#FDFBF7' : 'var(--text-secondary)',
+          fontSize: 12,
+          fontFamily: 'var(--font-body)',
+          fontWeight: value === null ? 600 : 500,
+          cursor: 'pointer',
+          whiteSpace: 'nowrap',
+        }}
+      >
+        All days
+      </button>
+      {days.map((d) => {
+        const active = value === d;
+        return (
+          <button
+            key={d}
+            type="button"
+            onClick={() => onChange(active ? null : d)}
+            style={{
+              padding: '6px 12px',
+              borderRadius: 999,
+              border: active ? 'none' : '1px solid var(--border-light)',
+              background: active ? 'var(--color-gold-dark)' : 'transparent',
+              color: active ? '#FDFBF7' : 'var(--text-primary)',
+              fontSize: 12,
+              fontFamily: 'var(--font-body)',
+              fontWeight: active ? 600 : 500,
+              cursor: 'pointer',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {formatWeekdayShort(d, { fallback: d })}
+          </button>
+        );
+      })}
+    </div>
   );
 }
 
@@ -868,16 +1070,11 @@ const chipTodo: React.CSSProperties = {
   color: '#9B6B1F',
 };
 
-const chipMine: React.CSSProperties = {
+const chipNoOwner: React.CSSProperties = {
   ...chip,
-  background: 'linear-gradient(135deg, var(--color-gold-dark), var(--color-gold))',
-  color: '#FDFBF7',
-};
-
-const chipVendor: React.CSSProperties = {
-  ...chip,
-  background: 'rgba(198,163,85,0.08)',
-  color: 'var(--color-gold-dark)',
+  background: 'rgba(196,112,75,0.12)',
+  color: 'var(--color-terracotta)',
+  fontWeight: 600,
 };
 
 const contactLink: React.CSSProperties = {
