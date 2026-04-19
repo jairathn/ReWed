@@ -67,6 +67,56 @@ export default function WeddingOverviewPage({
   const [qrLoading, setQrLoading] = useState(false);
   const [qrRegenerating, setQrRegenerating] = useState(false);
 
+  // Aggregate "needs attention" signal — runs after the overview loads.
+  const [attention, setAttention] = useState<{
+    urgentTodos: number;
+    agingTodos: number;
+    unownedTimeline: number;
+    vendorsWithoutTimeline: number;
+  } | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadAttention() {
+      try {
+        const [tRes, timelineRes, vRes] = await Promise.all([
+          fetch(`/api/v1/dashboard/weddings/${weddingId}/todos?status=open`),
+          fetch(`/api/v1/dashboard/weddings/${weddingId}/timeline`),
+          fetch(`/api/v1/dashboard/weddings/${weddingId}/vendors`),
+        ]);
+        if (cancelled) return;
+        const tJson = tRes.ok ? await tRes.json() : null;
+        const timelineJson = timelineRes.ok ? await timelineRes.json() : null;
+        const vJson = vRes.ok ? await vRes.json() : null;
+
+        const urgencyCounts = tJson?.data?.urgency_counts ?? {};
+        const urgent = (urgencyCounts.red || 0) + (urgencyCounts.orange || 0);
+        const aging = urgencyCounts.yellow || 0;
+
+        const entries: Array<{ vendors: unknown[] }> = timelineJson?.data?.entries || [];
+        const unowned = entries.filter(
+          (e) => !Array.isArray(e.vendors) || e.vendors.length === 0
+        ).length;
+
+        const vendorList: Array<{ entry_count: number }> = vJson?.data?.vendors || [];
+        const vendorsNoTimeline = vendorList.filter((v) => v.entry_count === 0).length;
+
+        setAttention({
+          urgentTodos: urgent,
+          agingTodos: aging,
+          unownedTimeline: unowned,
+          vendorsWithoutTimeline: vendorsNoTimeline,
+        });
+      } catch {
+        // leave attention as null; the panel just won't render
+      }
+    }
+    loadAttention();
+    return () => {
+      cancelled = true;
+    };
+  }, [weddingId]);
+
   useEffect(() => {
     fetch(`/api/v1/dashboard/weddings/${weddingId}/overview`)
       .then((res) => res.json())
@@ -306,6 +356,59 @@ export default function WeddingOverviewPage({
           })()}
         </div>
       </div>
+
+      {/* Needs attention — what the couple should do next */}
+      {attention && (attention.urgentTodos + attention.agingTodos + attention.unownedTimeline + attention.vendorsWithoutTimeline) > 0 && (
+        <div style={{ marginBottom: 24 }}>
+          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 500, color: 'var(--text-primary)', margin: '0 0 12px' }}>
+            Needs attention
+          </h2>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+              gap: 12,
+            }}
+          >
+            {attention.urgentTodos > 0 && (
+              <AttentionTile
+                count={attention.urgentTodos}
+                label="urgent to-dos"
+                sub="Open 45+ days"
+                href={`/dashboard/${weddingId}/todos`}
+                tone="red"
+              />
+            )}
+            {attention.agingTodos > 0 && (
+              <AttentionTile
+                count={attention.agingTodos}
+                label="aging to-dos"
+                sub="Open 30+ days"
+                href={`/dashboard/${weddingId}/todos`}
+                tone="yellow"
+              />
+            )}
+            {attention.unownedTimeline > 0 && (
+              <AttentionTile
+                count={attention.unownedTimeline}
+                label="timeline items with no owner"
+                sub="Assign a vendor so it shows up on their portal"
+                href={`/dashboard/${weddingId}/timeline`}
+                tone="terracotta"
+              />
+            )}
+            {attention.vendorsWithoutTimeline > 0 && (
+              <AttentionTile
+                count={attention.vendorsWithoutTimeline}
+                label="vendors with no timeline"
+                sub="They'll have nothing on their portal until you assign entries"
+                href={`/dashboard/${weddingId}/vendors`}
+                tone="gold"
+              />
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Quick action banner if no guests */}
       {stats.guests.total === 0 && (
@@ -632,5 +735,53 @@ export default function WeddingOverviewPage({
         </div>
       </div>
     </div>
+  );
+}
+
+function AttentionTile({
+  count,
+  label,
+  sub,
+  href,
+  tone,
+}: {
+  count: number;
+  label: string;
+  sub: string;
+  href: string;
+  tone: 'red' | 'yellow' | 'terracotta' | 'gold';
+}) {
+  const palette = {
+    red: { color: '#9B2222', bg: 'rgba(196,67,67,0.08)', border: 'rgba(196,67,67,0.25)' },
+    yellow: { color: '#7A5C0F', bg: 'rgba(218,175,53,0.10)', border: 'rgba(218,175,53,0.30)' },
+    terracotta: { color: 'var(--color-terracotta)', bg: 'rgba(196,112,75,0.08)', border: 'rgba(196,112,75,0.25)' },
+    gold: { color: 'var(--color-gold-dark)', bg: 'rgba(198,163,85,0.08)', border: 'rgba(198,163,85,0.25)' },
+  }[tone];
+
+  return (
+    <Link
+      href={href}
+      style={{
+        display: 'block',
+        padding: '14px 16px',
+        borderRadius: 14,
+        background: palette.bg,
+        border: `1px solid ${palette.border}`,
+        textDecoration: 'none',
+        transition: 'transform 0.15s, box-shadow 0.15s',
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 4 }}>
+        <span style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 600, color: palette.color, lineHeight: 1 }}>
+          {count}
+        </span>
+        <span style={{ fontSize: 13, color: 'var(--text-primary)', fontFamily: 'var(--font-body)', fontWeight: 500 }}>
+          {label}
+        </span>
+      </div>
+      <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: 0, fontFamily: 'var(--font-body)', lineHeight: 1.4 }}>
+        {sub}
+      </p>
+    </Link>
   );
 }
