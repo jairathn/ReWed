@@ -315,14 +315,14 @@ export default function SettingsPage({ params }: { params: Promise<{ weddingId: 
 
     const body = {
       name,
-      date: date || undefined,
-      start_time: startTime || undefined,
-      end_time: endTime || undefined,
-      venue_name: venueName || undefined,
-      venue_address: venueAddress || undefined,
-      dress_code: dressCode || undefined,
-      description: description || undefined,
-      logistics: logistics || undefined,
+      date: date || null,
+      start_time: startTime || null,
+      end_time: endTime || null,
+      venue_name: venueName || null,
+      venue_address: venueAddress || null,
+      dress_code: dressCode || null,
+      description: description || null,
+      logistics: logistics || null,
     };
 
     try {
