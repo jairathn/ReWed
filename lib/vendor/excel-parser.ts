@@ -186,6 +186,7 @@ function parseMasterTimeline(rows: string[][]): ParsedTimelineEntry[] {
   let currentDate: string | null = null;
   let currentEventName: string | null = null;
   let dayOrder = 0;
+  let lastTimeSort = 0;
 
   let headerSeen = false;
 
@@ -206,6 +207,7 @@ function parseMasterTimeline(rows: string[][]): ParsedTimelineEntry[] {
         currentDate = parsed.date;
         currentEventName = parsed.eventName;
         dayOrder = 0;
+        lastTimeSort = 0;
         continue;
       }
     }
@@ -217,7 +219,11 @@ function parseMasterTimeline(rows: string[][]): ParsedTimelineEntry[] {
     if (!c1) continue;
 
     const timeLabel = c0 || null;
-    const timeSort = timeLabelToSortOrder(c0);
+    const rawTimeSort = timeLabelToSortOrder(c0);
+    // Blank time cells inherit the previous entry's time sort so they stay
+    // in sequence rather than dropping to the bottom of the day.
+    const timeSort = rawTimeSort === 99999 ? lastTimeSort : rawTimeSort;
+    if (rawTimeSort !== 99999) lastTimeSort = rawTimeSort;
     const sortOrder = timeSort * 1000 + dayOrder;
     dayOrder++;
 
