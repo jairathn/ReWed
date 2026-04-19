@@ -410,6 +410,8 @@ export default function VendorPortalPage({
                         contacts={contactsByEntry.get(e.id) || []}
                         isLast={idx === g.entries.length - 1}
                         onLeaveNote={() => { setCommentEntry(e); setCommentSentAt(null); }}
+                        slug={slug}
+                        token={token}
                       />
                     ))}
                   </div>
@@ -1097,12 +1099,54 @@ function MyEntryCard({
   contacts,
   isLast,
   onLeaveNote,
+  slug,
+  token,
 }: {
   entry: TimelineEntry;
   contacts: CoordContact[];
   isLast: boolean;
   onLeaveNote: () => void;
+  slug: string;
+  token: string;
 }) {
+  const [contextState, setContextState] = useState<
+    | { status: 'idle' }
+    | { status: 'loading' }
+    | { status: 'ready'; text: string }
+    | { status: 'empty' }
+    | { status: 'error'; message: string }
+  >({ status: 'idle' });
+  const [expanded, setExpanded] = useState(false);
+
+  const fetchContext = async () => {
+    // Toggle behavior when we already have the answer — just collapse/expand.
+    if (contextState.status === 'ready' || contextState.status === 'empty') {
+      setExpanded((prev) => !prev);
+      return;
+    }
+    setExpanded(true);
+    setContextState({ status: 'loading' });
+    try {
+      const res = await fetch(`/api/v1/v/${slug}/${token}/context/${entry.id}`);
+      const json = await res.json();
+      if (!res.ok) throw new Error(json?.error?.message || 'Could not load context');
+      const text: string = (json.data?.context || '').trim();
+      setContextState(text ? { status: 'ready', text } : { status: 'empty' });
+    } catch (err) {
+      setContextState({
+        status: 'error',
+        message: err instanceof Error ? err.message : 'Could not load context',
+      });
+    }
+  };
+
+  const showContextBody =
+    expanded &&
+    (contextState.status === 'loading' ||
+      contextState.status === 'ready' ||
+      contextState.status === 'empty' ||
+      contextState.status === 'error');
+
   return (
     <div
       style={{
@@ -1187,8 +1231,94 @@ function MyEntryCard({
           </div>
         )}
 
-        {/* Explicit action affordance — replaces the old row-is-clickable behavior */}
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 10 }}>
+        {/* Expandable context — what this item actually means in the bigger picture */}
+        {showContextBody && (
+          <div
+            style={{
+              marginTop: 10,
+              padding: '9px 11px',
+              borderRadius: 8,
+              background: 'rgba(43, 95, 138, 0.06)',
+              borderLeft: '2px solid var(--color-mediterranean-blue, #2B5F8A)',
+              fontSize: 13,
+              color: 'var(--text-primary)',
+              fontFamily: 'var(--font-body)',
+              lineHeight: 1.55,
+            }}
+          >
+            <span
+              style={{
+                fontSize: 10,
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px',
+                color: 'var(--color-mediterranean-blue, #2B5F8A)',
+                fontWeight: 600,
+                display: 'block',
+                marginBottom: 2,
+              }}
+            >
+              Context
+            </span>
+            {contextState.status === 'loading' && (
+              <span style={{ color: 'var(--text-tertiary)', fontStyle: 'italic' }}>
+                Reading the master timeline…
+              </span>
+            )}
+            {contextState.status === 'ready' && <span>{contextState.text}</span>}
+            {contextState.status === 'empty' && (
+              <span style={{ color: 'var(--text-tertiary)', fontStyle: 'italic' }}>
+                No extra context available for this one.
+              </span>
+            )}
+            {contextState.status === 'error' && (
+              <span style={{ color: 'var(--color-terracotta)' }}>{contextState.message}</span>
+            )}
+          </div>
+        )}
+
+        {/* Action affordances — context toggle + leave-a-note */}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 6, marginTop: 10, flexWrap: 'wrap' }}>
+          <button
+            type="button"
+            onClick={fetchContext}
+            style={{
+              padding: '5px 11px',
+              borderRadius: 8,
+              border: '1px solid var(--border-light)',
+              background:
+                expanded && contextState.status !== 'idle'
+                  ? 'rgba(43, 95, 138, 0.08)'
+                  : 'var(--bg-pure-white)',
+              color:
+                expanded && contextState.status !== 'idle'
+                  ? 'var(--color-mediterranean-blue, #2B5F8A)'
+                  : 'var(--text-secondary)',
+              fontSize: 11,
+              fontFamily: 'var(--font-body)',
+              fontWeight: 500,
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 5,
+            }}
+            title="What's this about?"
+          >
+            <svg
+              width="12"
+              height="12"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="16" x2="12" y2="12" />
+              <line x1="12" y1="8" x2="12.01" y2="8" />
+            </svg>
+            {expanded ? 'Hide context' : 'Context'}
+          </button>
           <button
             type="button"
             onClick={onLeaveNote}

@@ -137,7 +137,7 @@ export default function GuestHomePage() {
           {/* Countdown Card */}
           {countdown && (
             <div
-              className="p-6 rounded-xl flex flex-wrap gap-6 items-center"
+              className="p-6 rounded-xl flex flex-wrap gap-6 items-center justify-between"
               style={{
                 background: 'var(--bg-pure-white)',
                 boxShadow: '0 32px 64px -12px rgba(27, 28, 26, 0.06)',
@@ -166,6 +166,31 @@ export default function GuestHomePage() {
                   </div>
                 ))}
               </div>
+              {config.rsvp_url && (
+                <a
+                  href={config.rsvp_url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-2 rounded-full"
+                  style={{
+                    padding: '10px 18px',
+                    background: 'var(--color-terracotta-gradient)',
+                    color: '#FDFBF7',
+                    fontSize: 13,
+                    fontWeight: 600,
+                    fontFamily: 'var(--font-body)',
+                    textDecoration: 'none',
+                    boxShadow: '0 4px 20px rgba(196, 112, 75, 0.25)',
+                    letterSpacing: '0.02em',
+                  }}
+                >
+                  RSVP details
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M7 17L17 7" />
+                    <path d="M8 7h9v9" />
+                  </svg>
+                </a>
+              )}
             </div>
           )}
         </section>

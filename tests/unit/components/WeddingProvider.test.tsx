@@ -70,6 +70,7 @@ describe('WeddingProvider', () => {
       prompts: { heartfelt: [], fun: [], quick_takes: [] },
       enabled_filters: [],
       enabled_ai_styles: [],
+      rsvp_url: null,
       events: [],
       venue_city: null,
       venue_country: null,

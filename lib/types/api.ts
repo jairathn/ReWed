@@ -78,6 +78,12 @@ export type WeddingConfig = {
   };
   enabled_filters: string[];
   enabled_ai_styles: string[];
+  /**
+   * Optional external RSVP/website URL. The guest home surfaces a button
+   * linking here so guests who need to change their RSVP can jump to the
+   * couple's existing Zola / The Knot / standalone wedding website.
+   */
+  rsvp_url: string | null;
   events: EventConfig[];
   features: {
     social_feed: boolean;
