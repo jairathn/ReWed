@@ -681,9 +681,9 @@ export default function SettingsPage({ params }: { params: Promise<{ weddingId: 
                         src={img.url}
                         alt="Style guide"
                         style={{
-                          width: 100,
-                          height: 130,
-                          objectFit: 'cover',
+                          maxWidth: 160,
+                          maxHeight: 130,
+                          objectFit: 'contain',
                           borderRadius: 10,
                           border: '1px solid var(--border-light)',
                         }}
@@ -962,9 +962,9 @@ export default function SettingsPage({ params }: { params: Promise<{ weddingId: 
                                 src={img.url}
                                 alt="Style guide"
                                 style={{
-                                  width: 72,
-                                  height: 96,
-                                  objectFit: 'cover',
+                                  maxWidth: 120,
+                                  maxHeight: 96,
+                                  objectFit: 'contain',
                                   borderRadius: 8,
                                   border: '1px solid var(--border-light)',
                                 }}
