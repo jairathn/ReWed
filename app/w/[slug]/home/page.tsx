@@ -166,20 +166,6 @@ export default function GuestHomePage() {
                   </div>
                 ))}
               </div>
-              <div className="ml-auto">
-                <Link
-                  href={`/w/${slug}/schedule`}
-                  className="inline-block px-5 py-2 rounded text-sm font-semibold tracking-wide"
-                  style={{
-                    background: 'linear-gradient(135deg, var(--color-gold-dark), var(--color-gold))',
-                    color: 'var(--bg-warm-white)',
-                    textDecoration: 'none',
-                    boxShadow: '0 2px 8px rgba(198, 163, 85, 0.2)',
-                  }}
-                >
-                  RSVP Details
-                </Link>
-              </div>
             </div>
           )}
         </section>
@@ -268,10 +254,10 @@ export default function GuestHomePage() {
                   className="text-2xl"
                   style={{ fontFamily: 'var(--font-display)', color: 'var(--text-primary)' }}
                 >
-                  Schedule
+                  Schedule &amp; Style Guide
                 </h3>
                 <p className="text-sm leading-relaxed max-w-[260px]" style={{ color: 'var(--text-secondary)' }}>
-                  What&rsquo;s happening, where to be, what to wear
+                  What&rsquo;s happening, where to be, and what to wear
                 </p>
               </div>
               <div className="mt-5 flex items-center gap-2 text-xs font-semibold tracking-widest uppercase" style={{ color: 'var(--color-gold-dark)' }}>
