@@ -204,12 +204,21 @@ export default function VendorPortalPage({
   }
   const groupList = Array.from(groups.values());
 
-  // Build coordination contacts list (deduped by id)
+  // Build coordination contacts list (deduped by id) — used by the Contacts tab.
   const contactMap = new Map<string, CoordContact>();
   for (const c of data.coordination_contacts) {
     if (!contactMap.has(c.id)) contactMap.set(c.id, c);
   }
   const uniqueContacts = Array.from(contactMap.values());
+
+  // Per-entry coordination contacts so each timeline row can surface who to
+  // talk to for that specific item without a tab switch.
+  const contactsByEntry = new Map<string, CoordContact[]>();
+  for (const c of data.coordination_contacts) {
+    const list = contactsByEntry.get(c.entry_id) || [];
+    list.push(c);
+    contactsByEntry.set(c.entry_id, list);
+  }
 
   const daysToGo = daysUntil(data.wedding.wedding_date);
 
@@ -356,7 +365,7 @@ export default function VendorPortalPage({
           <>
             <SectionHeader
               title="Your assigned timeline"
-              subtitle="Tap any entry to leave a note for the couple. They'll get an email immediately."
+              subtitle="Everything you need for each item is on its row — time, where, notes, who to coordinate with."
             />
             <DayFilter days={allDays} value={dayFilter} onChange={setDayFilter} />
             {groupList.length === 0 ? (
@@ -373,39 +382,13 @@ export default function VendorPortalPage({
                   <DayHeading date={g.date} name={g.name} />
                   <div style={cardStyle}>
                     {g.entries.map((e, idx) => (
-                      <div
+                      <MyEntryCard
                         key={e.id}
-                        onClick={() => { setCommentEntry(e); setCommentSentAt(null); }}
-                        style={{
-                          padding: '14px 16px',
-                          borderBottom: idx < g.entries.length - 1 ? '1px solid var(--border-light)' : 'none',
-                          cursor: 'pointer',
-                          display: 'grid',
-                          gridTemplateColumns: '90px 1fr',
-                          gap: 12,
-                        }}
-                      >
-                        <div style={{ fontSize: 12, color: 'var(--text-secondary)', fontFamily: 'ui-monospace, monospace', fontVariantNumeric: 'tabular-nums' }}>
-                          {e.time_label || '—'}
-                        </div>
-                        <div>
-                          <div style={{ fontSize: 14, color: 'var(--text-primary)', fontFamily: 'var(--font-body)', lineHeight: 1.45 }}>
-                            {e.action}
-                          </div>
-                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 4 }}>
-                            {e.location && <span style={chip}>{e.location}</span>}
-                            {e.deadline && <span style={chipDeadline}>Deadline</span>}
-                            {e.status && !e.deadline && /to\s*do/i.test(e.status) && (
-                              <span style={chipTodo}>To do</span>
-                            )}
-                          </div>
-                          {e.notes && (
-                            <p style={{ marginTop: 6, fontSize: 12, color: 'var(--text-secondary)', fontFamily: 'var(--font-body)', lineHeight: 1.5 }}>
-                              {e.notes}
-                            </p>
-                          )}
-                        </div>
-                      </div>
+                        entry={e}
+                        contacts={contactsByEntry.get(e.id) || []}
+                        isLast={idx === g.entries.length - 1}
+                        onLeaveNote={() => { setCommentEntry(e); setCommentSentAt(null); }}
+                      />
                     ))}
                   </div>
                 </div>
@@ -957,6 +940,204 @@ function DayFilter({
         );
       })}
     </div>
+  );
+}
+
+function MyEntryCard({
+  entry,
+  contacts,
+  isLast,
+  onLeaveNote,
+}: {
+  entry: TimelineEntry;
+  contacts: CoordContact[];
+  isLast: boolean;
+  onLeaveNote: () => void;
+}) {
+  return (
+    <div
+      style={{
+        padding: '14px 16px 12px',
+        borderBottom: isLast ? 'none' : '1px solid var(--border-light)',
+        display: 'grid',
+        gridTemplateColumns: '78px 1fr',
+        gap: 14,
+        borderLeft: entry.deadline ? '3px solid var(--color-terracotta)' : '3px solid transparent',
+      }}
+    >
+      <div
+        style={{
+          fontSize: 13,
+          color: 'var(--text-primary)',
+          fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
+          fontVariantNumeric: 'tabular-nums',
+          fontWeight: 500,
+          paddingTop: 2,
+        }}
+      >
+        {entry.time_label || '—'}
+      </div>
+      <div style={{ minWidth: 0 }}>
+        <div
+          style={{
+            fontSize: 15,
+            color: 'var(--text-primary)',
+            fontFamily: 'var(--font-body)',
+            lineHeight: 1.35,
+            fontWeight: 500,
+          }}
+        >
+          {entry.action}
+        </div>
+
+        {/* Where / status chips */}
+        {(entry.location || entry.deadline || (entry.status && /to\s*do/i.test(entry.status))) && (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 6 }}>
+            {entry.location && <span style={chip}>📍 {entry.location}</span>}
+            {entry.deadline && <span style={chipDeadline}>⏰ Deadline</span>}
+            {entry.status && !entry.deadline && /to\s*do/i.test(entry.status) && (
+              <span style={chipTodo}>To do</span>
+            )}
+          </div>
+        )}
+
+        {/* Notes — pulled out with a note marker so it doesn't blend in */}
+        {entry.notes && (
+          <div
+            style={{
+              marginTop: 10,
+              padding: '8px 10px',
+              borderRadius: 8,
+              background: 'var(--bg-soft-cream)',
+              borderLeft: '2px solid var(--color-gold-dark)',
+              fontSize: 13,
+              color: 'var(--text-primary)',
+              fontFamily: 'var(--font-body)',
+              lineHeight: 1.55,
+              whiteSpace: 'pre-line',
+            }}
+          >
+            <span style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--color-gold-dark)', fontWeight: 600, display: 'block', marginBottom: 2 }}>
+              Note
+            </span>
+            {entry.notes}
+          </div>
+        )}
+
+        {/* Coordination contacts — tap to call / WhatsApp / email */}
+        {contacts.length > 0 && (
+          <div style={{ marginTop: 10 }}>
+            <span style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--text-tertiary)', fontFamily: 'var(--font-body)', fontWeight: 600, display: 'block', marginBottom: 6 }}>
+              Coordinate with
+            </span>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+              {contacts.map((c) => (
+                <ContactPill key={c.id} contact={c} />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Explicit action affordance — replaces the old row-is-clickable behavior */}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 10 }}>
+          <button
+            type="button"
+            onClick={onLeaveNote}
+            style={{
+              padding: '5px 11px',
+              borderRadius: 8,
+              border: '1px solid var(--border-light)',
+              background: 'var(--bg-pure-white)',
+              color: 'var(--text-secondary)',
+              fontSize: 11,
+              fontFamily: 'var(--font-body)',
+              fontWeight: 500,
+              cursor: 'pointer',
+            }}
+          >
+            Leave a note for the couple
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ContactPill({ contact }: { contact: CoordContact }) {
+  const color = vendorColorByName(contact.name);
+  const phoneDigits = contact.phone ? contact.phone.replace(/[^\d+]/g, '') : '';
+  // Prefer WhatsApp (same phone, but opens chat) when the contact supports it,
+  // otherwise straight tel:, then mailto: as a last resort. One primary tap.
+  const primaryHref = contact.whatsapp && phoneDigits
+    ? `https://wa.me/${phoneDigits.replace(/^\+/, '')}`
+    : phoneDigits
+    ? `tel:${phoneDigits}`
+    : contact.email
+    ? `mailto:${contact.email}`
+    : null;
+  const primaryLabel = contact.whatsapp && phoneDigits
+    ? 'WhatsApp'
+    : phoneDigits
+    ? 'Call'
+    : contact.email
+    ? 'Email'
+    : null;
+
+  if (!primaryHref) {
+    return (
+      <span
+        style={{
+          fontSize: 12,
+          padding: '4px 10px 4px 8px',
+          borderRadius: 999,
+          background: color + '18',
+          color,
+          fontFamily: 'var(--font-body)',
+          fontWeight: 500,
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 6,
+        }}
+      >
+        <span style={{ width: 6, height: 6, borderRadius: 999, background: color, display: 'inline-block' }} />
+        {contact.name}
+      </span>
+    );
+  }
+
+  return (
+    <a
+      href={primaryHref}
+      target={contact.whatsapp && phoneDigits ? '_blank' : undefined}
+      rel={contact.whatsapp && phoneDigits ? 'noreferrer' : undefined}
+      onClick={(e) => e.stopPropagation()}
+      style={{
+        fontSize: 12,
+        padding: '4px 10px 4px 8px',
+        borderRadius: 999,
+        background: color + '18',
+        color,
+        fontFamily: 'var(--font-body)',
+        fontWeight: 500,
+        textDecoration: 'none',
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 6,
+        whiteSpace: 'nowrap',
+      }}
+      title={`${primaryLabel} ${contact.name}${contact.category ? ' · ' + contact.category : ''}`}
+    >
+      <span style={{ width: 6, height: 6, borderRadius: 999, background: color, display: 'inline-block' }} />
+      <span>
+        {contact.name}
+        {contact.category && (
+          <span style={{ opacity: 0.7, fontWeight: 400 }}> · {contact.category}</span>
+        )}
+      </span>
+      <span style={{ fontSize: 10, padding: '0 6px', borderRadius: 999, background: color, color: '#FDFBF7', fontWeight: 600 }}>
+        {primaryLabel}
+      </span>
+    </a>
   );
 }
 
