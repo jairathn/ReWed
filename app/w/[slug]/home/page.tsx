@@ -15,6 +15,35 @@ export default function GuestHomePage() {
   const [showPasswordPrompt, setShowPasswordPrompt] = useState(false);
   const [passwordInput, setPasswordInput] = useState('');
   const [passwordError, setPasswordError] = useState(false);
+  const [rsvpToast, setRsvpToast] = useState<string | null>(null);
+
+  // Auto-dismiss the RSVP passcode toast after a few seconds.
+  useEffect(() => {
+    if (!rsvpToast) return;
+    const timeout = window.setTimeout(() => setRsvpToast(null), 3200);
+    return () => window.clearTimeout(timeout);
+  }, [rsvpToast]);
+
+  const handleRsvpClick = async (e: React.MouseEvent<HTMLAnchorElement>) => {
+    if (!config?.rsvp_url) return;
+    const passcode = config.rsvp_passcode?.trim();
+    if (!passcode) return; // plain link, let the <a> do its thing
+    // Intercept to copy the passcode before the browser navigates. We still
+    // open in a new tab so the copy action and the navigation both happen
+    // even if writeText fails silently on older mobile browsers.
+    e.preventDefault();
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(passcode);
+        setRsvpToast(`Passcode "${passcode}" copied — paste on the RSVP site.`);
+      } else {
+        setRsvpToast(`Passcode is "${passcode}" — copy it before you continue.`);
+      }
+    } catch {
+      setRsvpToast(`Passcode is "${passcode}" — copy it before you continue.`);
+    }
+    window.open(config.rsvp_url, '_blank', 'noopener,noreferrer');
+  };
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -166,30 +195,83 @@ export default function GuestHomePage() {
                   </div>
                 ))}
               </div>
-              {config.rsvp_url && (
-                <a
-                  href={config.rsvp_url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-2 rounded-full"
-                  style={{
-                    padding: '10px 18px',
-                    background: 'var(--color-terracotta-gradient)',
-                    color: '#FDFBF7',
-                    fontSize: 13,
-                    fontWeight: 600,
-                    fontFamily: 'var(--font-body)',
-                    textDecoration: 'none',
-                    boxShadow: '0 4px 20px rgba(196, 112, 75, 0.25)',
-                    letterSpacing: '0.02em',
-                  }}
-                >
-                  RSVP details
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M7 17L17 7" />
-                    <path d="M8 7h9v9" />
-                  </svg>
-                </a>
+              {(config.rsvp_url || config.invite_url) && (
+                <div className="flex flex-col items-end gap-2">
+                  {config.rsvp_url && (
+                    <a
+                      href={config.rsvp_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      onClick={handleRsvpClick}
+                      className="inline-flex flex-col items-center rounded-full"
+                      style={{
+                        padding: config.rsvp_passcode?.trim() ? '8px 18px' : '10px 18px',
+                        background: 'var(--color-terracotta-gradient)',
+                        color: '#FDFBF7',
+                        fontFamily: 'var(--font-body)',
+                        textDecoration: 'none',
+                        boxShadow: '0 4px 20px rgba(196, 112, 75, 0.25)',
+                        letterSpacing: '0.02em',
+                        lineHeight: 1.15,
+                      }}
+                      title={
+                        config.rsvp_passcode?.trim()
+                          ? 'Copies the passcode to your clipboard and opens the RSVP site.'
+                          : undefined
+                      }
+                    >
+                      <span className="inline-flex items-center gap-2" style={{ fontSize: 13, fontWeight: 600 }}>
+                        RSVP details
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M7 17L17 7" />
+                          <path d="M8 7h9v9" />
+                        </svg>
+                      </span>
+                      {config.rsvp_passcode?.trim() && (
+                        <span
+                          style={{
+                            fontSize: 10,
+                            opacity: 0.9,
+                            fontWeight: 500,
+                            letterSpacing: '0.04em',
+                            textTransform: 'uppercase',
+                            marginTop: 1,
+                          }}
+                        >
+                          passcode:&nbsp;
+                          <span style={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace', textTransform: 'none', letterSpacing: '0.02em' }}>
+                            {config.rsvp_passcode.trim()}
+                          </span>
+                        </span>
+                      )}
+                    </a>
+                  )}
+                  {config.invite_url && (
+                    <a
+                      href={config.invite_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-2 rounded-full"
+                      style={{
+                        padding: '8px 16px',
+                        background: 'var(--bg-pure-white)',
+                        color: 'var(--color-gold-dark)',
+                        border: '1px solid rgba(198, 163, 85, 0.35)',
+                        fontSize: 12,
+                        fontWeight: 600,
+                        fontFamily: 'var(--font-body)',
+                        textDecoration: 'none',
+                        letterSpacing: '0.02em',
+                      }}
+                    >
+                      View invite
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M7 17L17 7" />
+                        <path d="M8 7h9v9" />
+                      </svg>
+                    </a>
+                  )}
+                </div>
               )}
             </div>
           )}
@@ -655,6 +737,29 @@ export default function GuestHomePage() {
       )}
 
       <BottomNav />
+
+      {/* Passcode copy toast — sits above the BottomNav, auto-dismisses */}
+      {rsvpToast && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="fixed left-1/2 z-[60] rounded-full shadow-lg"
+          style={{
+            bottom: 'calc(env(safe-area-inset-bottom, 0px) + 96px)',
+            transform: 'translateX(-50%)',
+            padding: '10px 16px',
+            background: 'rgba(44, 40, 37, 0.92)',
+            color: '#FDFBF7',
+            fontFamily: 'var(--font-body)',
+            fontSize: 13,
+            maxWidth: 'calc(100vw - 32px)',
+            textAlign: 'center',
+            backdropFilter: 'blur(12px)',
+          }}
+        >
+          {rsvpToast}
+        </div>
+      )}
     </div>
   );
 }

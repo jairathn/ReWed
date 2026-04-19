@@ -84,6 +84,17 @@ export type WeddingConfig = {
    * couple's existing Zola / The Knot / standalone wedding website.
    */
   rsvp_url: string | null;
+  /**
+   * Optional passcode for the external wedding website. When set, clicking
+   * the RSVP button copies this to the clipboard and shows a toast before
+   * opening the link — so guests can just paste on the other side.
+   */
+  rsvp_passcode: string | null;
+  /**
+   * Optional invite link (Canva, Paperless Post, PDF in Drive, etc.).
+   * Surfaces next to the RSVP button on the guest home.
+   */
+  invite_url: string | null;
   events: EventConfig[];
   features: {
     social_feed: boolean;

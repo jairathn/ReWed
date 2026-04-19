@@ -71,6 +71,8 @@ describe('WeddingProvider', () => {
       enabled_filters: [],
       enabled_ai_styles: [],
       rsvp_url: null,
+      rsvp_passcode: null,
+      invite_url: null,
       events: [],
       venue_city: null,
       venue_country: null,
