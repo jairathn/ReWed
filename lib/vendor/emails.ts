@@ -123,7 +123,6 @@ export async function sendTimelineChangeEmail(
   const subject = `Timeline update — ${args.entryDescription}`;
   const { html, text } = buildGuestEmail({
     weddingName: args.weddingName,
-    guestName: args.vendorName,
     heading: 'A timeline entry you\'re on just changed',
     body: `${args.entryDescription}\n\nWhat changed:\n${args.changeSummary}`,
     ctaLabel: 'Open your vendor page',

@@ -49,6 +49,8 @@ export default function WeddingManageLayout({
     { href: `/dashboard/${weddingId}/knowledge`, label: 'Knowledge', icon: 'M4 19.5A2.5 2.5 0 016.5 17H20M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z' },
     { href: `/dashboard/${weddingId}/timeline`, label: 'Timeline', icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z' },
     { href: `/dashboard/${weddingId}/vendors`, label: 'Vendors', icon: 'M20 7h-9m9 5h-9m9 5h-9M5 7h.01M5 12h.01M5 17h.01' },
+    { href: `/dashboard/${weddingId}/meetings`, label: 'Meetings', icon: 'M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z' },
+    { href: `/dashboard/${weddingId}/todos`, label: 'To-dos', icon: 'M9 11l3 3L22 4M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11' },
     { href: `/dashboard/${weddingId}/feed`, label: 'Feed', icon: 'M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z' },
     { href: `/dashboard/${weddingId}/emails`, label: 'Emails', icon: 'M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2zm0 0l8 7 8-7' },
     { href: `/dashboard/${weddingId}/gallery-curation`, label: 'Gallery', icon: 'M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z' },
@@ -61,10 +63,14 @@ export default function WeddingManageLayout({
     return pathname.startsWith(href);
   };
 
-  // Planners only see Timeline + Vendors. Everything else is couple-only.
+  // Planners get the timeline-and-vendors workspace plus meetings/to-dos —
+  // they're the ones running planning syncs. Couple-only views (Guests,
+  // Emails, Gallery, etc.) stay hidden.
   const visibleNav =
     role === 'planner'
-      ? navItems.filter((n) => n.label === 'Timeline' || n.label === 'Vendors')
+      ? navItems.filter((n) =>
+          ['Timeline', 'Vendors', 'Meetings', 'To-dos'].includes(n.label)
+        )
       : navItems;
 
   return (

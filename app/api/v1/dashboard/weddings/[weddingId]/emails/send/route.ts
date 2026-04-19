@@ -117,10 +117,8 @@ export async function POST(
       const chunk = guests.slice(i, i + 2);
       const chunkResults = await Promise.all(
         chunk.map(async (g) => {
-          const guestFullName = [g.first_name, g.last_name].filter(Boolean).join(' ');
           const template = buildGuestEmail({
             weddingName,
-            guestName: g.first_name || guestFullName || null,
             heading: parsed.heading,
             body: parsed.body,
             ctaLabel: parsed.cta_label || undefined,

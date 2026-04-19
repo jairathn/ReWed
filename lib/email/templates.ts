@@ -1,10 +1,14 @@
 /**
  * Minimal branded email template. Returns { html, text } from a plain-text
  * message body. Keeps things simple — no external template engine required.
+ *
+ * Intentionally has NO "Hi <name>" greeting: guests imported from a CSV are
+ * stored individually without their plus-ones, so a personal greeting reads
+ * weird when only one member of a couple actually receives the email. The
+ * heading + body carry the message instead.
  */
 export interface BuildEmailArgs {
   weddingName: string;
-  guestName?: string | null;
   heading: string;
   body: string;
   ctaLabel?: string;
@@ -31,7 +35,6 @@ function bodyToHtml(body: string): string {
 export function buildGuestEmail(args: BuildEmailArgs): { html: string; text: string } {
   const {
     weddingName,
-    guestName,
     heading,
     body,
     ctaLabel,
@@ -39,7 +42,6 @@ export function buildGuestEmail(args: BuildEmailArgs): { html: string; text: str
     footerNote,
   } = args;
 
-  const greeting = guestName ? `Hi ${escapeHtml(guestName)},` : 'Hi there,';
   const bodyHtml = bodyToHtml(body);
   const ctaHtml =
     ctaLabel && ctaUrl
@@ -84,7 +86,6 @@ export function buildGuestEmail(args: BuildEmailArgs): { html: string; text: str
             </tr>
             <tr>
               <td style="padding:24px 36px 32px;font-family:Georgia,serif;font-size:15px;line-height:1.65;color:#3b3a36;">
-                <p style="margin:0 0 16px;">${greeting}</p>
                 ${bodyHtml}
                 ${ctaHtml}
                 ${footer}
@@ -104,11 +105,7 @@ export function buildGuestEmail(args: BuildEmailArgs): { html: string; text: str
   </body>
 </html>`;
 
-  const textLines = [
-    greeting.replace('&#39;', "'"),
-    '',
-    body,
-  ];
+  const textLines = [body];
   if (ctaLabel && ctaUrl) {
     textLines.push('', `${ctaLabel}: ${ctaUrl}`);
   }

@@ -51,7 +51,9 @@ describe('GET /api/v1/v/[slug]/[token]', () => {
         rows: [
           { id: 'e-1', event_date: '2026-09-09', event_name: 'HALDI', time_label: '3:00 PM', sort_order: 900, action: 'Music setup', location: 'Garden', notes: null, status: null, deadline: false, vendor_names: ['Jas Johal', 'Alex Permanyer'] },
         ],
-      });
+      })
+      // vendor to-dos
+      .mockResolvedValueOnce({ rows: [] });
 
     const req = new NextRequest('http://localhost:3000/api/v1/v/shriya-neil/' + 'a'.repeat(48));
     const res = await GET(req, makeParams());

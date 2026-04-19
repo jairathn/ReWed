@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { getPool } from '@/lib/db/client';
 import { authenticateVendor } from '@/lib/vendor/auth';
+import { annotate } from '@/lib/vendor/todo-urgency';
 import { handleApiError } from '@/lib/errors';
 
 /**
@@ -77,6 +78,34 @@ export async function GET(
       ? ctx.wedding.config.emergency_contacts
       : [];
 
+    // To-dos assigned to this vendor (from meeting digestion or manual create).
+    const todoResult = await pool.query(
+      `SELECT t.id, t.title, t.description, t.due_date, t.priority, t.status,
+              t.created_at, t.completed_at, t.completed_by_role,
+              m.title AS meeting_title, m.meeting_date
+       FROM todos t
+       LEFT JOIN meetings m ON m.id = t.meeting_id
+       WHERE t.wedding_id = $1 AND t.assigned_to_vendor_id = $2
+       ORDER BY (t.status = 'open') DESC, (t.priority = 'high') DESC,
+                t.due_date ASC NULLS LAST, t.created_at DESC`,
+      [ctx.wedding.id, ctx.vendor.id]
+    );
+
+    type TodoRow = {
+      id: string;
+      title: string;
+      description: string | null;
+      due_date: string | null;
+      priority: string;
+      status: string;
+      created_at: string;
+      completed_at: string | null;
+      completed_by_role: string | null;
+      meeting_title: string | null;
+      meeting_date: string | null;
+    };
+    const todos = (todoResult.rows as TodoRow[]).map(annotate);
+
     return Response.json({
       data: {
         vendor: ctx.vendor,
@@ -91,6 +120,7 @@ export async function GET(
         coordination_contacts: coordContacts,
         master_timeline: masterResult.rows,
         emergency_contacts: emergencyContacts,
+        todos,
       },
     });
   } catch (error) {

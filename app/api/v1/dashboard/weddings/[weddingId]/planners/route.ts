@@ -81,10 +81,8 @@ export async function POST(
 
     let emailSent = false;
     if (isResendConfigured()) {
-      const greetingName = parsed.data.name || 'there';
       const { html, text } = buildGuestEmail({
         weddingName,
-        guestName: greetingName,
         heading: 'You\'ve been added as a wedding planner',
         body: `The couple gave you edit access to their master timeline and vendor list on ReWed.\n\nClick the button below to open the planner dashboard. The link works on any device and stays signed in for 90 days.`,
         ctaLabel: 'Open the planner dashboard',

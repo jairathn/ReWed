@@ -50,6 +50,19 @@ interface EmergencyContact {
   whatsapp: boolean;
 }
 
+interface VendorTodo {
+  id: string;
+  title: string;
+  description: string | null;
+  due_date: string | null;
+  priority: 'high' | 'normal' | 'low';
+  status: 'open' | 'completed';
+  meeting_title: string | null;
+  meeting_date: string | null;
+  age_days: number;
+  urgency: 'fresh' | 'yellow' | 'orange' | 'red';
+}
+
 interface PortalData {
   vendor: Vendor;
   wedding: Wedding;
@@ -57,9 +70,10 @@ interface PortalData {
   coordination_contacts: CoordContact[];
   master_timeline: MasterEntry[];
   emergency_contacts: EmergencyContact[];
+  todos: VendorTodo[];
 }
 
-type Tab = 'mine' | 'master' | 'contacts' | 'ask';
+type Tab = 'mine' | 'todos' | 'master' | 'contacts' | 'ask';
 
 export default function VendorPortalPage({
   params,
@@ -235,6 +249,7 @@ export default function VendorPortalPage({
       >
         {([
           { id: 'mine' as const, label: `My timeline (${data.assigned.length})` },
+          { id: 'todos' as const, label: `To-dos (${data.todos.filter((t) => t.status === 'open').length})` },
           { id: 'master' as const, label: 'Master timeline' },
           { id: 'contacts' as const, label: `Contacts (${uniqueContacts.length + data.emergency_contacts.length})` },
           { id: 'ask' as const, label: 'Ask the FAQbot' },
@@ -323,6 +338,15 @@ export default function VendorPortalPage({
               </button>
             </div>
           </>
+        )}
+
+        {tab === 'todos' && (
+          <TodosTab
+            todos={data.todos}
+            slug={slug}
+            token={token}
+            onChanged={load}
+          />
         )}
 
         {tab === 'master' && (
@@ -453,6 +477,162 @@ export default function VendorPortalPage({
     </div>
   );
 }
+
+function TodosTab({
+  todos,
+  slug,
+  token,
+  onChanged,
+}: {
+  todos: VendorTodo[];
+  slug: string;
+  token: string;
+  onChanged: () => void;
+}) {
+  const [busy, setBusy] = useState<string | null>(null);
+
+  const setStatus = async (id: string, status: 'open' | 'completed') => {
+    setBusy(id);
+    try {
+      await fetch(`/api/v1/v/${slug}/${token}/todos/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status }),
+      });
+      onChanged();
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const open = todos.filter((t) => t.status === 'open');
+  const done = todos.filter((t) => t.status === 'completed');
+
+  return (
+    <>
+      <SectionHeader
+        title="Your to-dos"
+        subtitle="Action items from planning meetings. Tick them off as you go."
+      />
+      {open.length === 0 && done.length === 0 ? (
+        <Empty text="No to-dos for you yet." />
+      ) : (
+        <>
+          {open.length > 0 && (
+            <div style={cardStyle}>
+              {open.map((t, idx) => (
+                <TodoRow
+                  key={t.id}
+                  todo={t}
+                  busy={busy === t.id}
+                  last={idx === open.length - 1}
+                  onToggle={() => setStatus(t.id, 'completed')}
+                />
+              ))}
+            </div>
+          )}
+          {done.length > 0 && (
+            <>
+              <h3 style={{ ...sectionSubtitle }}>Done</h3>
+              <div style={cardStyle}>
+                {done.map((t, idx) => (
+                  <TodoRow
+                    key={t.id}
+                    todo={t}
+                    busy={busy === t.id}
+                    last={idx === done.length - 1}
+                    onToggle={() => setStatus(t.id, 'open')}
+                  />
+                ))}
+              </div>
+            </>
+          )}
+        </>
+      )}
+    </>
+  );
+}
+
+function TodoRow({
+  todo, busy, last, onToggle,
+}: {
+  todo: VendorTodo;
+  busy: boolean;
+  last: boolean;
+  onToggle: () => void;
+}) {
+  const urgencyColor =
+    todo.urgency === 'red' ? '#9B2222'
+    : todo.urgency === 'orange' ? '#9B5217'
+    : todo.urgency === 'yellow' ? '#7A5C0F'
+    : null;
+
+  return (
+    <div
+      style={{
+        padding: '12px 14px',
+        borderBottom: last ? 'none' : '1px solid var(--border-light)',
+        display: 'flex',
+        alignItems: 'flex-start',
+        gap: 10,
+      }}
+    >
+      <input
+        type="checkbox"
+        checked={todo.status === 'completed'}
+        disabled={busy}
+        onChange={onToggle}
+        style={{ marginTop: 3, accentColor: 'var(--color-gold-dark)', cursor: busy ? 'default' : 'pointer' }}
+      />
+      <div style={{ flex: 1 }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
+          <span style={{
+            fontSize: 14,
+            color: 'var(--text-primary)',
+            fontFamily: 'var(--font-body)',
+            fontWeight: 500,
+            textDecoration: todo.status === 'completed' ? 'line-through' : 'none',
+            opacity: todo.status === 'completed' ? 0.7 : 1,
+          }}>
+            {todo.title}
+          </span>
+          {todo.priority === 'high' && todo.status === 'open' && (
+            <span style={{ fontSize: 10, color: 'var(--color-terracotta)', textTransform: 'uppercase', letterSpacing: '0.5px', fontFamily: 'var(--font-body)', fontWeight: 600 }}>
+              High
+            </span>
+          )}
+          {urgencyColor && todo.status === 'open' && (
+            <span style={{ fontSize: 10, color: urgencyColor, textTransform: 'uppercase', letterSpacing: '0.5px', fontFamily: 'var(--font-body)', fontWeight: 600 }}>
+              {todo.age_days}d
+            </span>
+          )}
+        </div>
+        {(todo.description || todo.due_date || todo.meeting_title) && (
+          <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 4, fontFamily: 'var(--font-body)' }}>
+            {todo.due_date && `Due ${todo.due_date}`}
+            {todo.due_date && todo.meeting_title && ' · '}
+            {todo.meeting_title && `from "${todo.meeting_title}"`}
+          </div>
+        )}
+        {todo.description && (
+          <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: '6px 0 0', fontFamily: 'var(--font-body)', lineHeight: 1.5 }}>
+            {todo.description}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+const sectionSubtitle: React.CSSProperties = {
+  fontSize: 12,
+  textTransform: 'uppercase',
+  letterSpacing: '0.5px',
+  color: 'var(--text-tertiary)',
+  margin: '20px 0 10px',
+  fontFamily: 'var(--font-body)',
+  fontWeight: 500,
+};
 
 function FaqWidget({ slug, token }: { slug: string; token: string }) {
   const [question, setQuestion] = useState('');
