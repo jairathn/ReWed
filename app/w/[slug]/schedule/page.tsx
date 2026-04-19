@@ -458,9 +458,9 @@ export default async function SchedulePage({
                                 src={url}
                                 alt={`Style guide ${imgIdx + 1}`}
                                 style={{
-                                  width: event.style_guide_urls.length === 1 ? '100%' : 180,
-                                  height: event.style_guide_urls.length === 1 ? 'auto' : 240,
-                                  objectFit: 'cover',
+                                  maxHeight: 280,
+                                  width: event.style_guide_urls.length === 1 ? '100%' : 'auto',
+                                  objectFit: 'contain',
                                   borderRadius: 10,
                                   flexShrink: 0,
                                   border: '0.5px solid rgba(196, 112, 75, 0.1)',
