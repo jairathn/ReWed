@@ -493,7 +493,7 @@ RESEND_REPLY_TO=shriyaneilwedding@gmail.com`}
             style={{ ...inputStyle, resize: 'vertical', fontFamily: 'var(--font-body)', lineHeight: 1.6 }}
           />
           <p style={{ margin: '6px 0 0', fontSize: 11, color: 'var(--text-tertiary)', fontFamily: 'var(--font-body)' }}>
-            Each guest will see &quot;Hi [their first name],&quot; automatically at the top.
+            Each household will see a personalized greeting, e.g. &quot;Hello Rahul, Sonia &amp; Alina,&quot;
           </p>
         </div>
 
