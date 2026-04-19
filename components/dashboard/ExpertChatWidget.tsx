@@ -14,7 +14,7 @@ interface ExpertChatWidgetProps {
   weddingId: string;
 }
 
-const STORAGE_KEY_PREFIX = 'rewed-expert-chat-';
+const STORAGE_KEY_PREFIX = 'zari-expert-chat-';
 
 const SUGGESTED_PROMPTS = [
   'Is there anything I\'m forgetting to follow up on?',

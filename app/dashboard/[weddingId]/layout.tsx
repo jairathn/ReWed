@@ -112,7 +112,7 @@ export default function WeddingManageLayout({
                 letterSpacing: '0.02em',
               }}
             >
-              ReWed
+              Zari
             </h1>
           </Link>
         </div>

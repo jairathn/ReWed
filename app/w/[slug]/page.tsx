@@ -129,7 +129,7 @@ export default function GuestRegistrationPage() {
       style={{ background: 'var(--bg-warm-gradient)' }}
     >
       <div className="w-full max-w-md text-center">
-        {/* ReWed Branding */}
+        {/* Zari Branding */}
         <p
           className="text-2xl tracking-wide mb-8"
           style={{
@@ -138,7 +138,7 @@ export default function GuestRegistrationPage() {
             color: 'var(--color-gold-dark)',
           }}
         >
-          ReWed
+          Zari
         </p>
 
         {/* Wedding Name */}

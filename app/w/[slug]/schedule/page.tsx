@@ -181,7 +181,7 @@ export default async function SchedulePage({
             color: 'var(--color-gold-dark)',
           }}
         >
-          ReWed
+          Zari
         </h1>
         <div className="w-8" />
       </header>

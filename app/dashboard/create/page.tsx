@@ -125,7 +125,7 @@ export default function CreateWeddingPage() {
     <div className="max-w-2xl mx-auto px-6 py-12 pb-32">
       {/* Branding */}
       <h1 style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: 24, color: 'var(--color-gold-dark)', marginBottom: 16 }}>
-        ReWed
+        Zari
       </h1>
 
       {/* Back link */}
@@ -196,7 +196,7 @@ export default function CreateWeddingPage() {
                   className="px-3 py-3 text-sm shrink-0"
                   style={{ background: 'var(--bg-soft-cream)', color: 'var(--text-tertiary)', fontFamily: 'var(--font-body)' }}
                 >
-                  rewed.app/w/
+                  zari.app/w/
                 </span>
                 <input
                   type="text"

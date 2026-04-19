@@ -100,7 +100,7 @@ export async function createCheckoutSession(params: {
       price_data: {
         currency: 'usd',
         product_data: {
-          name: 'ReWed Wedding Package',
+          name: 'Zari Wedding Package',
           description: `${params.packageConfig.guest_count} guests, ${params.packageConfig.event_count} events`,
         },
         unit_amount: price.total_cents,

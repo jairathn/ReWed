@@ -3,7 +3,7 @@ import Link from "next/link";
 import GuestFinder from "@/components/GuestFinder";
 
 export const metadata: Metadata = {
-  title: "ReWed — Every Guest. Every Moment. Every Message.",
+  title: "Zari — Every Guest. Every Moment. Every Message.",
   description:
     "Your guests record heartfelt video toasts, take stunning photos with artistic filters, and create fun portraits. Days later, everyone receives a personalized video reel.",
 };
@@ -221,7 +221,7 @@ export default function LandingPage() {
           <Link href="#pricing" style={{ color: "var(--text-secondary)" }}>Pricing</Link>
           <Link href="/dashboard" style={{ color: "var(--text-secondary)" }}>Dashboard</Link>
           <Link href="#how-it-works" style={{ color: "var(--text-secondary)" }}>FAQ</Link>
-          <Link href="mailto:hello@rewed.app" style={{ color: "var(--text-secondary)" }}>Contact</Link>
+          <Link href="mailto:hello@zari.app" style={{ color: "var(--text-secondary)" }}>Contact</Link>
         </div>
         <p className="text-xs" style={{ color: "var(--text-tertiary)" }}>
           Made with love for couples who want to remember everything

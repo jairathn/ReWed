@@ -84,7 +84,7 @@ export async function POST(
       const { html, text } = buildGuestEmail({
         weddingName,
         heading: 'You\'ve been added as a wedding planner',
-        body: `The couple gave you edit access to their master timeline and vendor list on ReWed.\n\nClick the button below to open the planner dashboard. The link works on any device and stays signed in for 90 days.`,
+        body: `The couple gave you edit access to their master timeline and vendor list on Zari.\n\nClick the button below to open the planner dashboard. The link works on any device and stays signed in for 90 days.`,
         ctaLabel: 'Open the planner dashboard',
         ctaUrl: magicLink,
         footerNote: 'This link is private — please don\'t share it.',

@@ -205,7 +205,7 @@ export default function VendorPortalPage({
             letterSpacing: '0.02em',
           }}
         >
-          ReWed · Vendor portal
+          Zari · Vendor portal
         </p>
         <h1
           style={{

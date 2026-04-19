@@ -352,7 +352,7 @@ export default function GuestMemoirPage() {
             </p>
           )}
           <p className="text-[10px] mt-12" style={{ color: 'rgba(254, 252, 249, 0.2)' }}>
-            Made with ReWed
+            Made with Zari
           </p>
         </div>
       </div>
@@ -758,7 +758,7 @@ export default function GuestMemoirPage() {
               </Link>
             </div>
             <p className="text-[10px] mt-4" style={{ color: 'rgba(254, 252, 249, 0.25)' }}>
-              Made with ReWed
+              Made with Zari
             </p>
           </div>
         </div>

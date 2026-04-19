@@ -76,7 +76,7 @@ export async function sendVendorProposalEmail(
     weddingName: args.weddingName,
     heading: `New message from ${args.vendorName}`,
     body: bodyParts.join('\n\n'),
-    footerNote: 'This came through the ReWed vendor portal. Reply directly to respond to the vendor.',
+    footerNote: 'This came through the Zari vendor portal. Reply directly to respond to the vendor.',
   });
 
   const result = await sendEmail({
@@ -85,7 +85,7 @@ export async function sendVendorProposalEmail(
     html,
     text,
     replyTo: args.vendorEmail || undefined,
-    fromName: `${args.vendorName} via ReWed`,
+    fromName: `${args.vendorName} via Zari`,
   });
 
   await logEmail(pool, {
@@ -135,7 +135,7 @@ export async function sendTimelineChangeEmail(
     subject,
     html,
     text,
-    fromName: `${args.weddingName} via ReWed`,
+    fromName: `${args.weddingName} via Zari`,
   });
 
   await logEmail(pool, {

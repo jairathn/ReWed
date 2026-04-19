@@ -7,7 +7,7 @@ About 10 minutes of clicking. You only do it once per environment (dev / prod).
 ## 1. Create a Google Cloud project
 
 1. Open https://console.cloud.google.com/
-2. Top bar → project picker → **New project** (name it whatever, e.g. `rewed-prod`)
+2. Top bar → project picker → **New project** (name it whatever, e.g. `zari-prod`)
 3. Wait ~30 seconds for it to provision, then make sure it's selected in the project picker
 
 ## 2. Enable the Gmail and Drive APIs
@@ -22,10 +22,10 @@ In the search bar, type each one and click **Enable**:
 1. Left nav → **APIs & Services** → **OAuth consent screen**
 2. Choose **External** (so anyone with a Google account can use it). Click Create.
 3. Fill in:
-   - App name: `ReWed`
+   - App name: `Zari`
    - User support email: your email
    - App logo: optional
-   - Authorized domains: `<your-rewed-domain.com>` (skip in local dev)
+   - Authorized domains: `<your-zari-domain.com>` (skip in local dev)
    - Developer contact: your email
 4. **Scopes** → Add:
    - `.../auth/userinfo.email`
@@ -39,7 +39,7 @@ In the search bar, type each one and click **Enable**:
 1. Left nav → **APIs & Services** → **Credentials**
 2. **+ Create credentials** → **OAuth client ID**
 3. Application type: **Web application**
-4. Name: `ReWed web client`
+4. Name: `Zari web client`
 5. **Authorized redirect URIs** → add:
    - `http://localhost:3000/api/v1/dashboard/google/callback` (local dev)
    - `https://<your-prod-domain>/api/v1/dashboard/google/callback` (prod)
@@ -54,7 +54,7 @@ In your `.env.local` (dev) and your prod environment (Vercel/Railway/etc):
 ```
 GOOGLE_OAUTH_CLIENT_ID=<paste from step 4>
 GOOGLE_OAUTH_CLIENT_SECRET=<paste from step 4>
-NEXT_PUBLIC_APP_URL=https://your-rewed-domain.com   # or http://localhost:3000 in dev
+NEXT_PUBLIC_APP_URL=https://your-zari-domain.com   # or http://localhost:3000 in dev
 ```
 
 If `JWT_SECRET` isn't already set, add a strong random one — it's used to encrypt the OAuth refresh tokens at rest:

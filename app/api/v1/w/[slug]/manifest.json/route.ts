@@ -22,7 +22,7 @@ export async function GET(
     }
 
     const wedding = result.rows[0];
-    const displayName = wedding.display_name || 'ReWed';
+    const displayName = wedding.display_name || 'Zari';
     const config = wedding.config || {};
     const themeColor = config.theme?.colors?.primary || '#C4704B';
 

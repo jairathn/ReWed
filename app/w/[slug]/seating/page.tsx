@@ -96,7 +96,7 @@ function FixedHeader({ slug }: { slug: string }) {
           color: 'var(--color-gold-dark)',
         }}
       >
-        ReWed
+        Zari
       </h1>
       <div className="w-8" />
     </header>

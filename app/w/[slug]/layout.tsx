@@ -16,7 +16,7 @@ export async function generateMetadata({
   const displayName = slug.replace(/-/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
 
   return {
-    title: `${displayName} | ReWed`,
+    title: `${displayName} | Zari`,
     description: `Join ${displayName} and celebrate their special day. Share photos, record video messages, and create lasting memories.`,
     openGraph: {
       title: displayName,
