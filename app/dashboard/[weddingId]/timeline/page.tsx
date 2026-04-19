@@ -1,6 +1,28 @@
 'use client';
 
-import { useState, useEffect, useRef, use, useCallback } from 'react';
+import { useState, useEffect, useRef, use, useCallback, useMemo } from 'react';
+import { formatDayHeader, normalizeDate } from '@/lib/utils/date-format';
+
+const VENDOR_COLORS = [
+  '#C4704B', // terracotta
+  '#2B5F8A', // mediterranean blue
+  '#7A8B5C', // olive
+  '#D4A853', // golden
+  '#A8883F', // gold-dark
+  '#9B6B1F', // amber
+  '#8F4C6B', // plum
+  '#3F7A6B', // teal
+  '#8A5A2B', // walnut
+  '#5A6F8F', // slate blue
+];
+
+function vendorColor(id: string): string {
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) {
+    hash = (hash * 31 + id.charCodeAt(i)) | 0;
+  }
+  return VENDOR_COLORS[Math.abs(hash) % VENDOR_COLORS.length];
+}
 
 interface Vendor {
   id: string;
@@ -53,6 +75,9 @@ export default function TimelinePage({
   const [error, setError] = useState('');
   const [editing, setEditing] = useState<DraftEntry | null>(null);
   const [deleting, setDeleting] = useState(false);
+  // Responsibility filter — pick a vendor id, 'unassigned', or null (= all).
+  const [responsibleFilter, setResponsibleFilter] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const load = useCallback(async () => {
@@ -115,7 +140,7 @@ export default function TimelinePage({
   const openEdit = (entry: TimelineEntry) => {
     setEditing({
       id: entry.id,
-      event_date: entry.event_date || '',
+      event_date: normalizeDate(entry.event_date) ?? '',
       event_name: entry.event_name || '',
       time_label: entry.time_label || '',
       action: entry.action || '',
@@ -211,20 +236,79 @@ export default function TimelinePage({
     }
   };
 
-  // Group entries by (event_date, event_name)
-  const groups = new Map<string, { date: string; name: string; entries: TimelineEntry[] }>();
-  for (const e of entries) {
-    const key = `${e.event_date || 'unscheduled'}__${e.event_name || ''}`;
-    if (!groups.has(key)) {
-      groups.set(key, {
-        date: e.event_date || '',
-        name: e.event_name || 'Unscheduled',
-        entries: [],
-      });
+  // Vendors on the actual entries, with counts — this is what powers the filter bar
+  // so it only surfaces the vendors that currently own at least one entry.
+  const { vendorUsage, unassignedCount } = useMemo(() => {
+    const usage = new Map<string, { id: string; name: string; count: number }>();
+    let unassigned = 0;
+    for (const e of entries) {
+      if (e.vendors.length === 0) unassigned++;
+      for (const v of e.vendors) {
+        const existing = usage.get(v.id);
+        if (existing) existing.count++;
+        else usage.set(v.id, { id: v.id, name: v.name, count: 1 });
+      }
     }
-    groups.get(key)!.entries.push(e);
-  }
-  const groupList = Array.from(groups.values());
+    return {
+      vendorUsage: Array.from(usage.values()).sort((a, b) => b.count - a.count),
+      unassignedCount: unassigned,
+    };
+  }, [entries]);
+
+  const matchesFilter = useCallback(
+    (e: TimelineEntry) => {
+      if (responsibleFilter === 'unassigned') return e.vendors.length === 0;
+      if (responsibleFilter) return e.vendors.some((v) => v.id === responsibleFilter);
+      return true;
+    },
+    [responsibleFilter]
+  );
+
+  const matchesSearch = useCallback(
+    (e: TimelineEntry) => {
+      const q = search.trim().toLowerCase();
+      if (!q) return true;
+      const haystack = [
+        e.action,
+        e.event_name ?? '',
+        e.location ?? '',
+        e.notes ?? '',
+        e.time_label ?? '',
+        e.status ?? '',
+        e.vendors.map((v) => v.name).join(' '),
+      ]
+        .join(' ')
+        .toLowerCase();
+      return haystack.includes(q);
+    },
+    [search]
+  );
+
+  // Group entries by (event_date, event_name), filtered.
+  const groupList = useMemo(() => {
+    const groups = new Map<string, { date: string; name: string; entries: TimelineEntry[] }>();
+    for (const e of entries) {
+      if (!matchesFilter(e) || !matchesSearch(e)) continue;
+      const key = `${e.event_date || 'unscheduled'}__${e.event_name || ''}`;
+      if (!groups.has(key)) {
+        groups.set(key, {
+          date: e.event_date || '',
+          name: e.event_name || 'Unscheduled',
+          entries: [],
+        });
+      }
+      groups.get(key)!.entries.push(e);
+    }
+    return Array.from(groups.values());
+  }, [entries, matchesFilter, matchesSearch]);
+
+  const visibleCount = groupList.reduce((sum, g) => sum + g.entries.length, 0);
+  const activeFilterLabel =
+    responsibleFilter === 'unassigned'
+      ? 'Unassigned'
+      : responsibleFilter
+      ? vendorUsage.find((v) => v.id === responsibleFilter)?.name ?? null
+      : null;
 
   if (loading) {
     return (
@@ -324,10 +408,108 @@ export default function TimelinePage({
         )}
       </div>
 
+      {/* Responsibility filter + search */}
+      {entries.length > 0 && (
+        <div style={filterBarStyle}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 2, marginRight: 4 }}>
+              <span style={filterBarLabelStyle}>Who&apos;s responsible</span>
+              <span style={{ fontSize: 11, color: 'var(--text-tertiary)', fontFamily: 'var(--font-body)' }}>
+                {activeFilterLabel
+                  ? `${visibleCount} of ${entries.length} shown`
+                  : `${entries.length} total entries`}
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setResponsibleFilter(null)}
+              style={filterChipStyle(responsibleFilter === null)}
+            >
+              All
+            </button>
+            {unassignedCount > 0 && (
+              <button
+                type="button"
+                onClick={() =>
+                  setResponsibleFilter(responsibleFilter === 'unassigned' ? null : 'unassigned')
+                }
+                style={{
+                  ...filterChipStyle(responsibleFilter === 'unassigned'),
+                  borderColor:
+                    responsibleFilter === 'unassigned' ? 'transparent' : 'var(--color-terracotta)',
+                  color:
+                    responsibleFilter === 'unassigned' ? '#FDFBF7' : 'var(--color-terracotta)',
+                  background:
+                    responsibleFilter === 'unassigned'
+                      ? 'var(--color-terracotta)'
+                      : 'var(--bg-pure-white)',
+                }}
+              >
+                No owner · {unassignedCount}
+              </button>
+            )}
+            {vendorUsage.map((v) => {
+              const active = responsibleFilter === v.id;
+              const color = vendorColor(v.id);
+              return (
+                <button
+                  key={v.id}
+                  type="button"
+                  onClick={() => setResponsibleFilter(active ? null : v.id)}
+                  style={{
+                    ...filterChipStyle(active),
+                    background: active ? color : 'var(--bg-pure-white)',
+                    borderColor: active ? 'transparent' : 'var(--border-light)',
+                    color: active ? '#FDFBF7' : 'var(--text-primary)',
+                    paddingLeft: 10,
+                  }}
+                >
+                  <span
+                    style={{
+                      width: 8,
+                      height: 8,
+                      borderRadius: 999,
+                      background: active ? '#FDFBF7' : color,
+                      display: 'inline-block',
+                      marginRight: 6,
+                      verticalAlign: 'middle',
+                    }}
+                  />
+                  {v.name} · {v.count}
+                </button>
+              );
+            })}
+          </div>
+          <div style={{ marginTop: 12 }}>
+            <input
+              type="text"
+              placeholder="Search by action, location, notes, vendor…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              style={{ ...inputStyle, maxWidth: 400 }}
+            />
+          </div>
+        </div>
+      )}
+
       {/* Timeline groups */}
-      {groupList.length === 0 ? (
+      {entries.length === 0 ? (
         <div style={{ ...cardStyle, textAlign: 'center', color: 'var(--text-secondary)' }}>
           No timeline entries yet. Upload your spreadsheet to get started.
+        </div>
+      ) : groupList.length === 0 ? (
+        <div style={{ ...cardStyle, textAlign: 'center', color: 'var(--text-secondary)' }}>
+          No entries match that filter.
+          <button
+            type="button"
+            onClick={() => {
+              setResponsibleFilter(null);
+              setSearch('');
+            }}
+            style={{ ...secondaryButtonStyle, marginLeft: 12 }}
+          >
+            Clear filters
+          </button>
         </div>
       ) : (
         groupList.map((g) => (
@@ -359,19 +541,22 @@ export default function TimelinePage({
               </div>
             </div>
             <div style={{ ...cardStyle, padding: 0, overflow: 'hidden' }}>
-              {g.entries.map((e, idx) => (
+              {g.entries.map((e, idx) => {
+                const unowned = e.vendors.length === 0;
+                return (
                 <div
                   key={e.id}
                   onClick={() => openEdit(e)}
                   style={{
-                    padding: '14px 18px',
+                    padding: '14px 18px 14px 16px',
                     borderBottom: idx < g.entries.length - 1 ? '1px solid var(--border-light)' : 'none',
                     cursor: 'pointer',
                     display: 'grid',
-                    gridTemplateColumns: '90px 1fr auto',
+                    gridTemplateColumns: '74px 1fr 200px auto',
                     gap: 14,
                     alignItems: 'center',
                     transition: 'background 0.15s',
+                    borderLeft: unowned ? '3px solid var(--color-terracotta)' : '3px solid transparent',
                   }}
                   onMouseEnter={(ev) => (ev.currentTarget.style.background = 'var(--bg-soft-cream)')}
                   onMouseLeave={(ev) => (ev.currentTarget.style.background = 'transparent')}
@@ -390,26 +575,62 @@ export default function TimelinePage({
                     <div style={{ fontSize: 14, color: 'var(--text-primary)', fontFamily: 'var(--font-body)', lineHeight: 1.45 }}>
                       {e.action}
                     </div>
-                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 4 }}>
-                      {e.location && (
-                        <span style={chipStyle}>{e.location}</span>
-                      )}
-                      {e.vendors.map((v) => (
-                        <span key={v.id} style={{ ...chipStyle, background: 'rgba(198,163,85,0.08)', color: 'var(--color-gold-dark)' }}>
-                          {v.name}
-                        </span>
-                      ))}
+                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 4 }}>
+                      {e.location && <span style={chipStyle}>📍 {e.location}</span>}
                       {e.deadline && (
-                        <span style={{ ...chipStyle, background: 'rgba(196,112,75,0.1)', color: 'var(--color-terracotta)' }}>
+                        <span style={{ ...chipStyle, background: 'rgba(196,112,75,0.12)', color: 'var(--color-terracotta)' }}>
                           Deadline
                         </span>
                       )}
                       {e.status && !e.deadline && /to\s*do/i.test(e.status) && (
-                        <span style={{ ...chipStyle, background: 'rgba(255,180,60,0.12)', color: '#9B6B1F' }}>
+                        <span style={{ ...chipStyle, background: 'rgba(255,180,60,0.14)', color: '#9B6B1F' }}>
                           To do
                         </span>
                       )}
+                      {e.notes && (
+                        <span style={{ ...chipStyle, background: 'transparent', color: 'var(--text-tertiary)', fontStyle: 'italic', padding: '2px 0' }}>
+                          {e.notes.length > 60 ? e.notes.slice(0, 60) + '…' : e.notes}
+                        </span>
+                      )}
                     </div>
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, justifyContent: 'flex-end' }}>
+                    {unowned ? (
+                      <span style={noOwnerChipStyle}>⚠ No owner</span>
+                    ) : (
+                      e.vendors.map((v) => {
+                        const color = vendorColor(v.id);
+                        return (
+                          <span
+                            key={v.id}
+                            style={{
+                              fontSize: 11,
+                              padding: '3px 8px 3px 6px',
+                              borderRadius: 999,
+                              background: color + '18',
+                              color: color,
+                              fontFamily: 'var(--font-body)',
+                              fontWeight: 500,
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: 5,
+                              whiteSpace: 'nowrap',
+                            }}
+                          >
+                            <span
+                              style={{
+                                width: 6,
+                                height: 6,
+                                borderRadius: 999,
+                                background: color,
+                                display: 'inline-block',
+                              }}
+                            />
+                            {v.name}
+                          </span>
+                        );
+                      })
+                    )}
                   </div>
                   <button
                     onClick={(ev) => { ev.stopPropagation(); deleteEntry(e.id); }}
@@ -422,7 +643,8 @@ export default function TimelinePage({
                     </svg>
                   </button>
                 </div>
-              ))}
+              );
+              })}
             </div>
           </div>
         ))
@@ -491,7 +713,7 @@ function EditEntryModal({
             <label style={labelStyle}>Date</label>
             <input
               type="date"
-              value={entry.event_date}
+              value={normalizeDate(entry.event_date) ?? ''}
               onChange={(e) => onChange({ ...entry, event_date: e.target.value })}
               style={inputStyle}
             />
@@ -630,14 +852,7 @@ function EditEntryModal({
 }
 
 function formatDate(iso: string): string {
-  const d = new Date(iso + 'T12:00:00');
-  if (isNaN(d.getTime())) return iso;
-  return d.toLocaleDateString('en-US', {
-    weekday: 'long',
-    month: 'long',
-    day: 'numeric',
-    year: 'numeric',
-  });
+  return formatDayHeader(iso, { fallback: iso });
 }
 
 const headingStyle: React.CSSProperties = {
@@ -706,6 +921,55 @@ const chipStyle: React.CSSProperties = {
   color: 'var(--text-secondary)',
   fontFamily: 'var(--font-body)',
 };
+
+const noOwnerChipStyle: React.CSSProperties = {
+  fontSize: 11,
+  padding: '3px 9px',
+  borderRadius: 999,
+  background: 'rgba(196,112,75,0.12)',
+  color: 'var(--color-terracotta)',
+  fontFamily: 'var(--font-body)',
+  fontWeight: 600,
+  whiteSpace: 'nowrap',
+};
+
+const filterBarStyle: React.CSSProperties = {
+  padding: '14px 16px',
+  borderRadius: 14,
+  background: 'var(--bg-pure-white)',
+  border: '1px solid var(--border-light)',
+  boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
+  marginBottom: 18,
+  position: 'sticky',
+  top: 0,
+  zIndex: 10,
+  backdropFilter: 'saturate(180%) blur(6px)',
+};
+
+const filterBarLabelStyle: React.CSSProperties = {
+  fontSize: 11,
+  textTransform: 'uppercase',
+  letterSpacing: '0.5px',
+  color: 'var(--text-tertiary)',
+  fontFamily: 'var(--font-body)',
+  fontWeight: 500,
+};
+
+function filterChipStyle(active: boolean): React.CSSProperties {
+  return {
+    padding: '5px 11px',
+    borderRadius: 999,
+    border: active ? 'none' : '1px solid var(--border-light)',
+    background: active ? 'var(--color-gold-dark)' : 'var(--bg-pure-white)',
+    color: active ? '#FDFBF7' : 'var(--text-primary)',
+    fontSize: 12,
+    fontFamily: 'var(--font-body)',
+    fontWeight: 500,
+    cursor: 'pointer',
+    whiteSpace: 'nowrap',
+    transition: 'background 0.15s',
+  };
+}
 
 function iconWrap(bg: string): React.CSSProperties {
   return {

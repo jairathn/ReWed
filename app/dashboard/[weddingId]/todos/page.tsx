@@ -2,6 +2,7 @@
 
 import { useState, useEffect, use, useCallback } from 'react';
 import GoogleSuggestionsCard from '@/components/dashboard/GoogleSuggestionsCard';
+import { formatShortDate } from '@/lib/utils/date-format';
 
 type Urgency = 'fresh' | 'yellow' | 'orange' | 'red';
 
@@ -326,7 +327,7 @@ function Section({
                 </div>
                 <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 4, fontFamily: 'var(--font-body)' }}>
                   → {t.vendor_name || 'Bride & Groom'}
-                  {t.due_date && ` · due ${t.due_date}`}
+                  {t.due_date && ` · due ${formatShortDate(t.due_date)}`}
                   {t.meeting_title && ` · from "${t.meeting_title}"`}
                   {t.status === 'open' && ` · open ${t.age_days}d`}
                 </div>
