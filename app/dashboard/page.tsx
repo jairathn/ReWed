@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import { formatLongDate } from '@/lib/utils/date-format';
 
 interface Couple {
   id: string;
@@ -147,18 +148,8 @@ export default function DashboardHomePage() {
     setAuthState('unauthenticated');
   };
 
-  const formatDate = (dateStr: string | null) => {
-    if (!dateStr) return 'Date not set';
-    try {
-      return new Date(dateStr + 'T12:00:00').toLocaleDateString('en-US', {
-        month: 'long',
-        day: 'numeric',
-        year: 'numeric',
-      });
-    } catch {
-      return 'Date not set';
-    }
-  };
+  const formatDate = (dateStr: string | null) =>
+    formatLongDate(dateStr, { fallback: 'Date not set' });
 
   const statusLabel = (status: string) => {
     switch (status) {

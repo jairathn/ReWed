@@ -49,20 +49,21 @@ export function formatLongDate(
 
 export function formatShortDate(
   date: unknown,
-  opts: { timezone?: string; fallback?: string } = {}
+  opts: { timezone?: string; fallback?: string; includeYear?: boolean } = {}
 ): string {
   const d = toLocalNoon(date);
   if (!d) return opts.fallback ?? '';
   return d.toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric',
+    year: opts.includeYear ? 'numeric' : undefined,
     timeZone: opts.timezone,
   });
 }
 
 export function formatWeekdayShort(
   date: unknown,
-  opts: { timezone?: string; fallback?: string } = {}
+  opts: { timezone?: string; fallback?: string; includeYear?: boolean } = {}
 ): string {
   const d = toLocalNoon(date);
   if (!d) return opts.fallback ?? '';
@@ -70,6 +71,7 @@ export function formatWeekdayShort(
     weekday: 'short',
     month: 'short',
     day: 'numeric',
+    year: opts.includeYear ? 'numeric' : undefined,
     timeZone: opts.timezone,
   });
 }

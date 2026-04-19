@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, use, useCallback } from 'react';
+import { formatWeekdayShort } from '@/lib/utils/date-format';
 
 interface Vendor {
   id: string;
@@ -420,9 +421,7 @@ export default function MeetingsPage({
 }
 
 function formatDate(iso: string): string {
-  const d = new Date(iso + 'T12:00:00');
-  if (isNaN(d.getTime())) return iso;
-  return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+  return formatWeekdayShort(iso, { includeYear: true, fallback: iso });
 }
 
 const headingStyle: React.CSSProperties = {

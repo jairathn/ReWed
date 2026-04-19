@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, use } from 'react';
 import PasswordConfirmDialog from '@/components/ui/PasswordConfirmDialog';
+import { formatShortDate } from '@/lib/utils/date-format';
 
 interface StyleGuideImage {
   storage_key: string;
@@ -935,7 +936,7 @@ export default function SettingsPage({ params }: { params: Promise<{ weddingId: 
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, fontSize: 13, color: 'var(--text-secondary)' }}>
                       {ev.date && (
                         <span>
-                          {new Date(ev.date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: timezone })}
+                          {formatShortDate(ev.date, { timezone, includeYear: true })}
                         </span>
                       )}
                       {(ev.start_time || ev.end_time) && (

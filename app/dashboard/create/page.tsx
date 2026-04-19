@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import CityAutocomplete, { type CityResult } from '@/components/travel/CityAutocomplete';
+import { formatLongDate } from '@/lib/utils/date-format';
 
 const GUEST_COUNTS = ['25', '50', '100', '150', '200', '300', '500', '1000+'];
 const EVENT_COUNTS = ['1 event', '2-3 events', '4+ events'];
@@ -415,7 +416,7 @@ export default function CreateWeddingPage() {
                 <div className="flex justify-between py-2" style={{ borderBottom: '1px solid var(--border-light)' }}>
                   <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>Date</span>
                   <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
-                    {new Date(weddingDate + 'T12:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: timezone })}
+                    {formatLongDate(weddingDate, { timezone })}
                   </span>
                 </div>
               )}

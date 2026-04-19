@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, use } from 'react';
 import Link from 'next/link';
 import CityAutocomplete, { type CityResult } from '@/components/travel/CityAutocomplete';
+import { formatLongDate, daysUntil } from '@/lib/utils/date-format';
 
 // Map of city/country to IANA timezone
 const CITY_TIMEZONE_MAP: Record<string, string> = {
@@ -228,42 +229,81 @@ export default function WeddingOverviewPage({
     <div>
       {/* Page Header */}
       <div style={{ marginBottom: 32 }}>
-        <h1
-          style={{
-            fontFamily: 'var(--font-display)',
-            fontSize: 28,
-            fontWeight: 500,
-            color: 'var(--text-primary)',
-            margin: 0,
-          }}
-        >
-          {wedding.display_name}
-        </h1>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6 }}>
-          <p style={{ color: 'var(--text-secondary)', fontSize: 14, margin: 0, fontFamily: 'var(--font-body)' }}>
-            {wedding.wedding_date
-              ? new Date(wedding.wedding_date + 'T12:00:00').toLocaleDateString('en-US', {
-                  month: 'long', day: 'numeric', year: 'numeric',
-                  timeZone: wedding.timezone || 'America/New_York',
-                })
-              : 'Date not set'}
-            {venueCity && (
-              <> &middot; {venueCity}{venueCountry ? `, ${venueCountry}` : ''}</>
-            )}
-          </p>
-          <span
-            style={{
-              display: 'inline-block',
-              padding: '2px 10px',
-              borderRadius: 999,
-              fontSize: 11,
-              fontWeight: 600,
-              background: wedding.status === 'active' ? 'rgba(122, 139, 92, 0.1)' : 'rgba(198, 163, 85, 0.1)',
-              color: wedding.status === 'active' ? 'var(--color-olive)' : 'var(--color-gold-dark)',
-            }}
-          >
-            {wedding.status}
-          </span>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
+          <div>
+            <h1
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontSize: 32,
+                fontWeight: 500,
+                color: 'var(--text-primary)',
+                margin: 0,
+                lineHeight: 1.15,
+              }}
+            >
+              {wedding.display_name}
+            </h1>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 8, flexWrap: 'wrap' }}>
+              <p style={{ color: 'var(--text-secondary)', fontSize: 14, margin: 0, fontFamily: 'var(--font-body)' }}>
+                {wedding.wedding_date
+                  ? formatLongDate(wedding.wedding_date, { timezone: wedding.timezone || undefined })
+                  : 'Date not set'}
+                {venueCity && (
+                  <> &middot; {venueCity}{venueCountry ? `, ${venueCountry}` : ''}</>
+                )}
+              </p>
+              <span
+                style={{
+                  display: 'inline-block',
+                  padding: '2px 10px',
+                  borderRadius: 999,
+                  fontSize: 11,
+                  fontWeight: 600,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px',
+                  background: wedding.status === 'active' ? 'rgba(122, 139, 92, 0.12)' : 'rgba(198, 163, 85, 0.12)',
+                  color: wedding.status === 'active' ? 'var(--color-olive)' : 'var(--color-gold-dark)',
+                }}
+              >
+                {wedding.status}
+              </span>
+            </div>
+          </div>
+
+          {(() => {
+            const n = daysUntil(wedding.wedding_date);
+            if (n === null) return null;
+            const urgent = n >= 0 && n <= 30;
+            return (
+              <div
+                style={{
+                  padding: '14px 20px',
+                  borderRadius: 16,
+                  background: urgent
+                    ? 'linear-gradient(135deg, var(--color-terracotta), var(--color-sunset-orange, #E8865A))'
+                    : 'linear-gradient(135deg, var(--color-gold-dark), var(--color-gold))',
+                  color: '#FDFBF7',
+                  minWidth: 150,
+                  textAlign: 'center',
+                  boxShadow: urgent
+                    ? '0 4px 20px rgba(196,112,75,0.25)'
+                    : '0 2px 12px rgba(198,163,85,0.18)',
+                }}
+              >
+                <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.6px', opacity: 0.85, fontFamily: 'var(--font-body)', fontWeight: 500 }}>
+                  {n < 0 ? 'Celebrated' : n === 0 ? 'Today' : 'Countdown'}
+                </div>
+                <div style={{ fontFamily: 'var(--font-display)', fontSize: n < 0 ? 22 : 32, fontWeight: 500, lineHeight: 1.1, marginTop: 2 }}>
+                  {n < 0 ? '🎉' : n === 0 ? "Today's the day" : n}
+                </div>
+                {n > 0 && (
+                  <div style={{ fontSize: 12, opacity: 0.9, fontFamily: 'var(--font-body)', marginTop: 2 }}>
+                    {n === 1 ? 'day to go' : 'days to go'}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
         </div>
       </div>
 
