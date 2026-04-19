@@ -25,6 +25,8 @@ export default function FaqPage({ params }: { params: Promise<{ weddingId: strin
   const [view, setView] = useState<View>('list');
   const [error, setError] = useState('');
   const [formLoading, setFormLoading] = useState(false);
+  const [search, setSearch] = useState('');
+  const [sourceFilter, setSourceFilter] = useState<FaqEntry['source'] | null>(null);
 
   // Form state
   const [editEntry, setEditEntry] = useState<FaqEntry | null>(null);
@@ -464,38 +466,166 @@ export default function FaqPage({ params }: { params: Promise<{ weddingId: strin
         </div>
       )}
 
-      {!loading && entries.length > 0 && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          {entries.map((entry) => (
-            <div key={entry.id} style={{ padding: 20, background: 'var(--bg-pure-white)', borderRadius: 16, border: '1px solid var(--border-light)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                <div style={{ flex: 1 }}>
-                  <p style={{ fontSize: 14, fontWeight: 500, color: 'var(--text-primary)', margin: '0 0 6px' }}>
-                    {entry.question}
-                  </p>
-                  <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5, whiteSpace: 'pre-line' }}>
-                    {entry.answer}
-                  </p>
-                  <span style={{ fontSize: 10, color: 'var(--text-tertiary)', marginTop: 6, display: 'inline-block', background: 'var(--bg-soft-cream)', padding: '1px 6px', borderRadius: 999 }}>
-                    {entry.source}
-                  </span>
-                </div>
-                <div style={{ display: 'flex', gap: 8, flexShrink: 0, marginLeft: 16 }}>
-                  <button onClick={() => startEdit(entry)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: 'var(--color-terracotta)' }}>
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => setConfirmDelete({ id: entry.id, question: entry.question })}
-                    style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: 'var(--text-tertiary)' }}
-                  >
-                    Delete
-                  </button>
-                </div>
+      {!loading && entries.length > 0 && (() => {
+        const sourceCounts = {
+          manual: entries.filter((e) => e.source === 'manual').length,
+          zola_import: entries.filter((e) => e.source === 'zola_import').length,
+          generated: entries.filter((e) => e.source === 'generated').length,
+        };
+        const sourcePalette: Record<FaqEntry['source'], { label: string; color: string; tint: string }> = {
+          manual: { label: 'Manual', color: 'var(--color-olive)', tint: 'rgba(122,139,92,0.12)' },
+          zola_import: { label: 'Imported', color: 'var(--color-mediterranean-blue)', tint: 'rgba(43,95,138,0.10)' },
+          generated: { label: 'AI-generated', color: 'var(--color-gold-dark)', tint: 'rgba(198,163,85,0.12)' },
+        };
+        const q = search.trim().toLowerCase();
+        const visibleEntries = entries.filter((e) => {
+          if (sourceFilter && e.source !== sourceFilter) return false;
+          if (!q) return true;
+          return (
+            e.question.toLowerCase().includes(q) ||
+            e.answer.toLowerCase().includes(q)
+          );
+        });
+        return (
+          <>
+            {/* Search + source filter */}
+            <div
+              style={{
+                padding: '12px 14px',
+                borderRadius: 14,
+                background: 'var(--bg-pure-white)',
+                border: '1px solid var(--border-light)',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
+                marginBottom: 14,
+              }}
+            >
+              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+                <input
+                  type="text"
+                  placeholder="Search questions & answers…"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  style={{
+                    flex: '1 1 220px',
+                    minWidth: 200,
+                    padding: '8px 12px',
+                    borderRadius: 10,
+                    border: '1px solid var(--border-light)',
+                    background: 'var(--bg-pure-white)',
+                    fontSize: 13,
+                    fontFamily: 'var(--font-body)',
+                    color: 'var(--text-primary)',
+                    outline: 'none',
+                  }}
+                />
+                <span style={{ fontSize: 12, color: 'var(--text-tertiary)', fontFamily: 'var(--font-body)' }}>
+                  {visibleEntries.length} of {entries.length}
+                </span>
+              </div>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 10 }}>
+                <button
+                  type="button"
+                  onClick={() => setSourceFilter(null)}
+                  style={faqChip(sourceFilter === null, 'var(--color-terracotta)')}
+                >
+                  All
+                </button>
+                {(Object.keys(sourcePalette) as Array<FaqEntry['source']>).map((src) => {
+                  const c = sourcePalette[src];
+                  const count = sourceCounts[src];
+                  if (count === 0) return null;
+                  const active = sourceFilter === src;
+                  return (
+                    <button
+                      key={src}
+                      type="button"
+                      onClick={() => setSourceFilter(active ? null : src)}
+                      style={{
+                        ...faqChip(active, c.color),
+                        background: active ? c.color : 'var(--bg-pure-white)',
+                      }}
+                    >
+                      {c.label} · {count}
+                    </button>
+                  );
+                })}
               </div>
             </div>
-          ))}
-        </div>
-      )}
+
+            {visibleEntries.length === 0 ? (
+              <div
+                style={{
+                  padding: 32,
+                  textAlign: 'center',
+                  background: 'var(--bg-pure-white)',
+                  borderRadius: 16,
+                  border: '1px solid var(--border-light)',
+                  color: 'var(--text-secondary)',
+                  fontFamily: 'var(--font-body)',
+                  fontSize: 14,
+                }}
+              >
+                No entries match that filter.
+                <button
+                  type="button"
+                  onClick={() => { setSearch(''); setSourceFilter(null); }}
+                  style={{ marginLeft: 12, padding: '6px 14px', borderRadius: 10, border: '1px solid var(--border-light)', background: 'var(--bg-pure-white)', color: 'var(--text-secondary)', fontSize: 13, fontFamily: 'var(--font-body)', cursor: 'pointer' }}
+                >
+                  Clear
+                </button>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {visibleEntries.map((entry) => {
+                  const c = sourcePalette[entry.source];
+                  return (
+                    <div key={entry.id} style={{ padding: 20, background: 'var(--bg-pure-white)', borderRadius: 16, border: '1px solid var(--border-light)' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        <div style={{ flex: 1 }}>
+                          <p style={{ fontSize: 14, fontWeight: 500, color: 'var(--text-primary)', margin: '0 0 6px' }}>
+                            {entry.question}
+                          </p>
+                          <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5, whiteSpace: 'pre-line' }}>
+                            {entry.answer}
+                          </p>
+                          <span
+                            style={{
+                              fontSize: 10,
+                              color: c.color,
+                              marginTop: 8,
+                              display: 'inline-block',
+                              background: c.tint,
+                              padding: '2px 8px',
+                              borderRadius: 999,
+                              fontWeight: 600,
+                              textTransform: 'uppercase',
+                              letterSpacing: '0.5px',
+                              fontFamily: 'var(--font-body)',
+                            }}
+                          >
+                            {c.label}
+                          </span>
+                        </div>
+                        <div style={{ display: 'flex', gap: 8, flexShrink: 0, marginLeft: 16 }}>
+                          <button onClick={() => startEdit(entry)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: 'var(--color-terracotta)' }}>
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => setConfirmDelete({ id: entry.id, question: entry.question })}
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: 'var(--text-tertiary)' }}
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </>
+        );
+      })()}
 
       <PasswordConfirmDialog
         open={confirmDelete !== null}
@@ -518,4 +648,20 @@ export default function FaqPage({ params }: { params: Promise<{ weddingId: strin
       />
     </div>
   );
+}
+
+function faqChip(active: boolean, color: string): React.CSSProperties {
+  return {
+    padding: '5px 11px',
+    borderRadius: 999,
+    border: active ? 'none' : '1px solid var(--border-light)',
+    background: active ? color : 'var(--bg-pure-white)',
+    color: active ? '#FDFBF7' : 'var(--text-primary)',
+    fontSize: 12,
+    fontFamily: 'var(--font-body)',
+    fontWeight: active ? 600 : 500,
+    cursor: 'pointer',
+    whiteSpace: 'nowrap',
+    transition: 'background 0.15s',
+  };
 }
