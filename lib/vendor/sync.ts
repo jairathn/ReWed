@@ -109,6 +109,27 @@ export async function syncTimelineFromParsedExcel(
   const unmatched = new Set<string>();
 
   for (const entry of parsed.timeline) {
+    // Resolve vendor references before inserting so unmatched names can be
+    // preserved in the notes field rather than silently discarded.
+    const matchedVendorIds: string[] = [];
+    const unmatchedNames: string[] = [];
+    for (const vendorName of entry.vendor_names) {
+      const vendorId = matchVendor(vendorName, vendorMap);
+      if (vendorId) {
+        matchedVendorIds.push(vendorId);
+      } else {
+        unmatchedNames.push(vendorName);
+        unmatched.add(vendorName);
+      }
+    }
+
+    // Append unmatched vendor-column text to notes so it isn't lost.
+    let notes = entry.notes || '';
+    if (unmatchedNames.length > 0) {
+      const label = `Vendor notes: ${unmatchedNames.join(', ')}`;
+      notes = notes ? `${notes}\n${label}` : label;
+    }
+
     const ins = await pool.query(
       `INSERT INTO timeline_entries (
          wedding_id, event_date, event_name, time_label, sort_order,
@@ -124,25 +145,20 @@ export async function syncTimelineFromParsedExcel(
         entry.sort_order,
         entry.action,
         entry.location,
-        entry.notes,
+        notes || null,
         entry.status,
         entry.deadline,
       ]
     );
     const entryId = ins.rows[0].id;
 
-    for (const vendorName of entry.vendor_names) {
-      const vendorId = matchVendor(vendorName, vendorMap);
-      if (vendorId) {
-        await pool.query(
-          `INSERT INTO timeline_entry_vendors (timeline_entry_id, vendor_id, role)
-           VALUES ($1, $2, 'owner')
-           ON CONFLICT DO NOTHING`,
-          [entryId, vendorId]
-        );
-      } else {
-        unmatched.add(vendorName);
-      }
+    for (const vendorId of matchedVendorIds) {
+      await pool.query(
+        `INSERT INTO timeline_entry_vendors (timeline_entry_id, vendor_id, role)
+         VALUES ($1, $2, 'owner')
+         ON CONFLICT DO NOTHING`,
+        [entryId, vendorId]
+      );
     }
   }
 

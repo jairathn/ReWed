@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { z } from 'zod';
 import { handleApiError, AppError } from '@/lib/errors';
 import { getPool } from '@/lib/db/client';
+import { toDateString } from '@/lib/db/format';
 import { requireWeddingAccess } from '@/lib/dashboard-auth';
 
 const createSchema = z.object({
@@ -53,6 +54,7 @@ export async function GET(
 
     const entries = entriesResult.rows.map((e) => ({
       ...e,
+      event_date: toDateString(e.event_date),
       vendors: linksByEntry.get(e.id) || [],
     }));
 

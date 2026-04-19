@@ -107,6 +107,15 @@ describe('syncTimelineFromParsedExcel', () => {
       .map((c) => c[0] as string)
       .filter((sql) => sql.includes('INSERT INTO vendors'));
     expect(inserts).toHaveLength(2);
+
+    // Unmatched vendor name should be preserved in the timeline entry's notes
+    const timelineInserts = pool.query.mock.calls.filter(
+      (c) => (c[0] as string).includes('INSERT INTO timeline_entries')
+    );
+    // Third entry ("Mystery vendor") had unmatched vendor "Some Random Person"
+    const thirdEntryParams = timelineInserts[2][1] as unknown[];
+    const notes = thirdEntryParams[7] as string;
+    expect(notes).toContain('Some Random Person');
   });
 
   it('preserves existing vendor rows on re-sync (UPDATE not INSERT)', async () => {

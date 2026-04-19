@@ -32,9 +32,11 @@ function buildFixtureWorkbook(): Buffer {
     ['10:00 AM', 'Decor setup begins', 'Hotel Estela garden', 'Flors Bertran', 'Yellow florals', ''],
     ['2:00 PM', 'DECOR HARD STOP', 'Hotel Estela', 'Flors Bertran', 'Deadline before guests', 'DEADLINE'],
     ['3:00 PM', 'Music setup', 'Hotel Estela', 'Jas Johal', 'Background then upbeat', ''],
+    ['', 'Sound check', 'Hotel Estela', '', '', ''],
     ['', '', '', '', '', ''],
     ['📅 SEPTEMBER 11, 2026 — WEDDING — Castell de Sant Marçal', '', '', '', '', ''],
     ['3:30 PM', 'Baraat', 'Parking lot → Lawn', 'Jas Johal, Ruben Larruy', 'Maximum energy', ''],
+    ['', 'Neil gets on horse', '', '', '', ''],
     ['Late', 'Cellar afterparty', 'Cellar', 'Jas Johal', 'Slow build', 'TO DO'],
   ]);
   XLSX.utils.book_append_sheet(wb, masterTimeline, 'Master Timeline');
@@ -69,8 +71,8 @@ describe('parseWeddingExcel', () => {
     expect(parsed.timeline.length).toBeGreaterThan(0);
     const haldiEntries = parsed.timeline.filter((e) => e.event_date === '2026-09-09');
     const weddingEntries = parsed.timeline.filter((e) => e.event_date === '2026-09-11');
-    expect(haldiEntries).toHaveLength(3);
-    expect(weddingEntries).toHaveLength(2);
+    expect(haldiEntries).toHaveLength(4);
+    expect(weddingEntries).toHaveLength(3);
     expect(haldiEntries[0].event_name).toBe('HALDI');
   });
 
@@ -97,5 +99,22 @@ describe('parseWeddingExcel', () => {
     const late = parsed.timeline.find((e) => e.action === 'Cellar afterparty');
     expect(late).toBeDefined();
     expect(late!.time_label).toBe('Late');
+  });
+
+  it('sorts blank-time entries after their preceding timed entry, not at end of day', () => {
+    // "Sound check" has blank time, follows "Music setup" at 3:00 PM
+    const musicSetup = parsed.timeline.find((e) => e.action === 'Music setup')!;
+    const soundCheck = parsed.timeline.find((e) => e.action === 'Sound check')!;
+    expect(soundCheck.time_label).toBeNull();
+    expect(soundCheck.sort_order).toBeGreaterThan(musicSetup.sort_order);
+    // Should be close to musicSetup's sort_order (same time bucket), not at 99999xxx
+    expect(soundCheck.sort_order).toBeLessThan(90000000);
+
+    // "Neil gets on horse" follows "Baraat" at 3:30 PM on wedding day
+    const baraat = parsed.timeline.find((e) => e.action === 'Baraat')!;
+    const neilHorse = parsed.timeline.find((e) => e.action === 'Neil gets on horse')!;
+    expect(neilHorse.time_label).toBeNull();
+    expect(neilHorse.sort_order).toBeGreaterThan(baraat.sort_order);
+    expect(neilHorse.sort_order).toBeLessThan(90000000);
   });
 });
