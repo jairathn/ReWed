@@ -96,6 +96,7 @@ export default function GuestsPage({ params }: { params: Promise<{ weddingId: st
   const [view, setView] = useState<View>('list');
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
+  const [rsvpFilter, setRsvpFilter] = useState<'all' | 'attending' | 'pending' | 'declined'>('all');
 
   // Add/Edit form
   const [editGuest, setEditGuest] = useState<Guest | null>(null);
@@ -259,10 +260,23 @@ export default function GuestsPage({ params }: { params: Promise<{ weddingId: st
   };
 
   const toggleSelectAll = () => {
-    if (selectedIds.size === guests.length) {
-      setSelectedIds(new Set());
+    // "Select all" operates on whatever's currently visible so filtered views
+    // don't silently scoop up hidden rows.
+    const pool =
+      rsvpFilter === 'all' ? guests : guests.filter((g) => g.rsvp_status === rsvpFilter);
+    const allSelected = pool.length > 0 && pool.every((g) => selectedIds.has(g.id));
+    if (allSelected) {
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        for (const g of pool) next.delete(g.id);
+        return next;
+      });
     } else {
-      setSelectedIds(new Set(guests.map((g) => g.id)));
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        for (const g of pool) next.add(g.id);
+        return next;
+      });
     }
   };
 
@@ -742,6 +756,14 @@ export default function GuestsPage({ params }: { params: Promise<{ weddingId: st
   }
 
   // ─── Guest List ───
+  const rsvpCounts = {
+    attending: guests.filter((g) => g.rsvp_status === 'attending').length,
+    pending: guests.filter((g) => g.rsvp_status === 'pending').length,
+    declined: guests.filter((g) => g.rsvp_status === 'declined').length,
+  };
+  const visibleGuests =
+    rsvpFilter === 'all' ? guests : guests.filter((g) => g.rsvp_status === rsvpFilter);
+
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
@@ -767,14 +789,60 @@ export default function GuestsPage({ params }: { params: Promise<{ weddingId: st
         </div>
       </div>
 
+      {/* RSVP stats (clickable = filter) */}
+      {guests.length > 0 && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 10, marginBottom: 16 }}>
+          <RsvpStatTile
+            label="All"
+            count={guests.length}
+            tone="neutral"
+            active={rsvpFilter === 'all'}
+            onClick={() => setRsvpFilter('all')}
+          />
+          <RsvpStatTile
+            label="Attending"
+            count={rsvpCounts.attending}
+            tone="olive"
+            active={rsvpFilter === 'attending'}
+            onClick={() => setRsvpFilter('attending')}
+          />
+          <RsvpStatTile
+            label="Pending"
+            count={rsvpCounts.pending}
+            tone="gold"
+            active={rsvpFilter === 'pending'}
+            onClick={() => setRsvpFilter('pending')}
+          />
+          <RsvpStatTile
+            label="Declined"
+            count={rsvpCounts.declined}
+            tone="terracotta"
+            active={rsvpFilter === 'declined'}
+            onClick={() => setRsvpFilter('declined')}
+          />
+        </div>
+      )}
+
       {/* Search */}
-      <div style={{ marginBottom: 16 }}>
+      <div style={{ marginBottom: 16, display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
         <input
-          style={{ ...inputStyle, maxWidth: 320 }}
+          style={{ ...inputStyle, maxWidth: 320, flex: '1 1 220px' }}
           placeholder="Search guests..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
+        {rsvpFilter !== 'all' && (
+          <span style={{ fontSize: 12, color: 'var(--text-tertiary)', fontFamily: 'var(--font-body)' }}>
+            Showing {visibleGuests.length} {rsvpFilter}
+            <button
+              type="button"
+              onClick={() => setRsvpFilter('all')}
+              style={{ marginLeft: 8, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-terracotta)', fontSize: 12, fontFamily: 'var(--font-body)', fontWeight: 500 }}
+            >
+              Clear
+            </button>
+          </span>
+        )}
       </div>
 
       {loading && (
@@ -844,7 +912,20 @@ export default function GuestsPage({ params }: { params: Promise<{ weddingId: st
         </div>
       )}
 
-      {!loading && guests.length > 0 && (
+      {!loading && guests.length > 0 && visibleGuests.length === 0 && (
+        <div style={{ padding: 32, textAlign: 'center', background: 'var(--bg-pure-white)', borderRadius: 16, border: '1px solid var(--border-light)', color: 'var(--text-secondary)', fontFamily: 'var(--font-body)', fontSize: 14 }}>
+          No guests match that filter.
+          <button
+            type="button"
+            onClick={() => { setRsvpFilter('all'); setSearch(''); }}
+            style={{ marginLeft: 12, padding: '6px 14px', borderRadius: 10, border: '1px solid var(--border-light)', background: 'var(--bg-pure-white)', color: 'var(--text-secondary)', fontSize: 13, fontFamily: 'var(--font-body)', cursor: 'pointer' }}
+          >
+            Clear filters
+          </button>
+        </div>
+      )}
+
+      {!loading && visibleGuests.length > 0 && (
         <div style={{ background: 'var(--bg-pure-white)', overflow: 'hidden', borderRadius: 16, border: '1px solid var(--border-light)', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
@@ -852,7 +933,7 @@ export default function GuestsPage({ params }: { params: Promise<{ weddingId: st
                 <th style={{ width: 40, padding: '12px 0 12px 16px', borderBottom: '1px solid var(--border-light)' }}>
                   <input
                     type="checkbox"
-                    checked={guests.length > 0 && selectedIds.size === guests.length}
+                    checked={visibleGuests.length > 0 && visibleGuests.every((g) => selectedIds.has(g.id))}
                     onChange={toggleSelectAll}
                     style={{ cursor: 'pointer', accentColor: 'var(--color-terracotta)' }}
                   />
@@ -877,7 +958,7 @@ export default function GuestsPage({ params }: { params: Promise<{ weddingId: st
               </tr>
             </thead>
             <tbody>
-              {groupByParty(guests).map((party) =>
+              {groupByParty(visibleGuests).map((party) =>
                 party.members.map((guest, memberIdx) => {
                   const isPrimary = memberIdx === 0;
                   const isLastInGroup = memberIdx === party.members.length - 1;
@@ -991,5 +1072,49 @@ export default function GuestsPage({ params }: { params: Promise<{ weddingId: st
         onCancel={() => setConfirmDelete(null)}
       />
     </div>
+  );
+}
+
+function RsvpStatTile({
+  label,
+  count,
+  tone,
+  active,
+  onClick,
+}: {
+  label: string;
+  count: number;
+  tone: 'neutral' | 'olive' | 'gold' | 'terracotta';
+  active: boolean;
+  onClick: () => void;
+}) {
+  const palette = {
+    neutral: { color: 'var(--text-primary)', accent: 'var(--text-secondary)', bg: 'var(--bg-pure-white)', activeBg: 'rgba(44,40,37,0.06)' },
+    olive: { color: 'var(--color-olive)', accent: 'var(--color-olive)', bg: 'var(--bg-pure-white)', activeBg: 'rgba(122,139,92,0.10)' },
+    gold: { color: 'var(--color-gold-dark)', accent: 'var(--color-gold-dark)', bg: 'var(--bg-pure-white)', activeBg: 'rgba(198,163,85,0.10)' },
+    terracotta: { color: 'var(--color-terracotta)', accent: 'var(--color-terracotta)', bg: 'var(--bg-pure-white)', activeBg: 'rgba(196,112,75,0.10)' },
+  }[tone];
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      style={{
+        textAlign: 'left',
+        padding: '12px 16px',
+        borderRadius: 14,
+        background: active ? palette.activeBg : palette.bg,
+        border: `1px solid ${active ? palette.accent : 'var(--border-light)'}`,
+        cursor: 'pointer',
+        transition: 'background 0.15s, border-color 0.15s',
+      }}
+    >
+      <div style={{ fontSize: 11, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.5px', fontFamily: 'var(--font-body)', fontWeight: 500 }}>
+        {label}
+      </div>
+      <div style={{ fontFamily: 'var(--font-display)', fontSize: 26, fontWeight: 600, color: palette.color, lineHeight: 1.1, marginTop: 2 }}>
+        {count}
+      </div>
+    </button>
   );
 }

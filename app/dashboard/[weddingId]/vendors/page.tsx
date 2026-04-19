@@ -1,6 +1,8 @@
 'use client';
 
-import { useState, useEffect, use, useCallback } from 'react';
+import { useState, useEffect, use, useCallback, useMemo } from 'react';
+import Link from 'next/link';
+import { vendorColor } from '@/lib/utils/vendor-color';
 
 interface Vendor {
   id: string;
@@ -50,6 +52,8 @@ export default function VendorsPage({
   const [plannerForm, setPlannerForm] = useState({ name: '', email: '' });
   const [plannerSaving, setPlannerSaving] = useState(false);
   const [plannerLastLink, setPlannerLastLink] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -188,6 +192,45 @@ export default function VendorsPage({
     });
     await load();
   };
+
+  // Category usage (deduped + counted) for the filter chips.
+  const categoryUsage = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const v of vendors) {
+      const cat = (v.category || 'Uncategorized').trim() || 'Uncategorized';
+      map.set(cat, (map.get(cat) || 0) + 1);
+    }
+    return Array.from(map.entries())
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count);
+  }, [vendors]);
+
+  const filteredVendors = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return vendors.filter((v) => {
+      if (categoryFilter) {
+        const cat = (v.category || 'Uncategorized').trim() || 'Uncategorized';
+        if (cat !== categoryFilter) return false;
+      }
+      if (!q) return true;
+      const haystack = [
+        v.name,
+        v.company ?? '',
+        v.category ?? '',
+        v.email ?? '',
+        v.phone ?? '',
+        v.notes ?? '',
+      ]
+        .join(' ')
+        .toLowerCase();
+      return haystack.includes(q);
+    });
+  }, [vendors, categoryFilter, search]);
+
+  const unassignedVendors = useMemo(
+    () => filteredVendors.filter((v) => v.entry_count === 0),
+    [filteredVendors]
+  );
 
   const copyLink = async (vendor: Vendor) => {
     const url = vendorUrl(vendor.access_token);
@@ -362,85 +405,210 @@ export default function VendorsPage({
         )}
       </div>
 
+      {/* Search + category filter */}
+      {vendors.length > 0 && (
+        <div style={{ ...cardStyle, padding: '14px 16px' }}>
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+            <input
+              type="text"
+              placeholder="Search vendors by name, email, category…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              style={{ ...inputStyle, flex: '1 1 240px', minWidth: 220 }}
+            />
+            <div style={{ fontSize: 12, color: 'var(--text-tertiary)', fontFamily: 'var(--font-body)' }}>
+              {filteredVendors.length} of {vendors.length}
+              {unassignedVendors.length > 0 && (
+                <>
+                  {' · '}
+                  <span style={{ color: 'var(--color-terracotta)', fontWeight: 600 }}>
+                    {unassignedVendors.length} with no timeline
+                  </span>
+                </>
+              )}
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 10 }}>
+            <button
+              type="button"
+              onClick={() => setCategoryFilter(null)}
+              style={vendorFilterChipStyle(categoryFilter === null)}
+            >
+              All
+            </button>
+            {categoryUsage.map((c) => (
+              <button
+                key={c.name}
+                type="button"
+                onClick={() =>
+                  setCategoryFilter(categoryFilter === c.name ? null : c.name)
+                }
+                style={vendorFilterChipStyle(categoryFilter === c.name)}
+              >
+                {c.name} · {c.count}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Vendor list */}
       {vendors.length === 0 ? (
         <div style={{ ...cardStyle, textAlign: 'center', color: 'var(--text-secondary)' }}>
           No vendors yet. Upload your spreadsheet from the Timeline page, or add one manually.
         </div>
+      ) : filteredVendors.length === 0 ? (
+        <div style={{ ...cardStyle, textAlign: 'center', color: 'var(--text-secondary)' }}>
+          No vendors match that filter.
+          <button
+            type="button"
+            onClick={() => { setSearch(''); setCategoryFilter(null); }}
+            style={{ ...secondaryButtonStyle, marginLeft: 12 }}
+          >
+            Clear filters
+          </button>
+        </div>
       ) : (
         <div style={{ ...cardStyle, padding: 0, overflow: 'hidden' }}>
-          {vendors.map((v, idx) => (
-            <div
-              key={v.id}
-              style={{
-                padding: 18,
-                borderBottom: idx < vendors.length - 1 ? '1px solid var(--border-light)' : 'none',
-                display: 'grid',
-                gridTemplateColumns: '1fr auto',
-                gap: 14,
-              }}
-            >
-              <div>
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 4 }}>
-                  <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 18, margin: 0, color: 'var(--text-primary)', fontWeight: 500 }}>
-                    {v.name}
-                  </h3>
-                  {v.category && (
-                    <span style={{ fontSize: 11, color: 'var(--color-gold-dark)', textTransform: 'uppercase', letterSpacing: '0.5px', fontFamily: 'var(--font-body)' }}>
-                      {v.category}
-                    </span>
+          {filteredVendors.map((v, idx) => {
+            const color = vendorColor(v.id);
+            const initials = v.name
+              .split(/\s+/)
+              .filter(Boolean)
+              .slice(0, 2)
+              .map((p) => p[0]?.toUpperCase() ?? '')
+              .join('') || '·';
+            return (
+              <div
+                key={v.id}
+                style={{
+                  padding: '16px 18px',
+                  borderBottom: idx < filteredVendors.length - 1 ? '1px solid var(--border-light)' : 'none',
+                  display: 'grid',
+                  gridTemplateColumns: '44px 1fr auto',
+                  gap: 14,
+                  alignItems: 'flex-start',
+                }}
+              >
+                <div
+                  aria-hidden
+                  style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 12,
+                    background: color + '22',
+                    color: color,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontFamily: 'var(--font-body)',
+                    fontWeight: 600,
+                    fontSize: 14,
+                    flexShrink: 0,
+                  }}
+                >
+                  {initials}
+                </div>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 4, flexWrap: 'wrap' }}>
+                    <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 18, margin: 0, color: 'var(--text-primary)', fontWeight: 500 }}>
+                      {v.name}
+                    </h3>
+                    {v.category && (
+                      <span
+                        style={{
+                          fontSize: 11,
+                          color: color,
+                          background: color + '18',
+                          padding: '2px 8px',
+                          borderRadius: 999,
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.5px',
+                          fontFamily: 'var(--font-body)',
+                          fontWeight: 600,
+                        }}
+                      >
+                        {v.category}
+                      </span>
+                    )}
+                    {v.entry_count === 0 ? (
+                      <Link
+                        href={`/dashboard/${weddingId}/timeline`}
+                        style={{
+                          fontSize: 11,
+                          color: 'var(--color-terracotta)',
+                          background: 'rgba(196,112,75,0.10)',
+                          padding: '2px 8px',
+                          borderRadius: 999,
+                          fontFamily: 'var(--font-body)',
+                          fontWeight: 600,
+                          textDecoration: 'none',
+                        }}
+                      >
+                        No timeline yet →
+                      </Link>
+                    ) : (
+                      <span
+                        style={{
+                          fontSize: 11,
+                          color: 'var(--text-tertiary)',
+                          fontFamily: 'var(--font-body)',
+                        }}
+                      >
+                        {v.entry_count} timeline {v.entry_count === 1 ? 'entry' : 'entries'}
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, fontSize: 12, color: 'var(--text-secondary)', fontFamily: 'var(--font-body)' }}>
+                    {v.email && <span>✉ {v.email}</span>}
+                    {v.phone && <span>☎ {v.phone}{v.whatsapp && ' · WhatsApp'}</span>}
+                  </div>
+                  {wedding?.slug && (
+                    <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginTop: 10, flexWrap: 'wrap' }}>
+                      <code
+                        style={{
+                          fontSize: 11,
+                          padding: '4px 8px',
+                          borderRadius: 6,
+                          background: 'var(--bg-soft-cream)',
+                          color: 'var(--text-secondary)',
+                          maxWidth: 420,
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        {vendorUrl(v.access_token)}
+                      </code>
+                      <button
+                        onClick={() => copyLink(v)}
+                        style={{ ...secondaryButtonStyle, padding: '4px 10px', fontSize: 11 }}
+                      >
+                        {copiedId === v.id ? 'Copied ✓' : 'Copy'}
+                      </button>
+                      <button
+                        onClick={() => rotateToken(v.id)}
+                        style={{ ...secondaryButtonStyle, padding: '4px 10px', fontSize: 11, color: 'var(--color-terracotta)' }}
+                      >
+                        Rotate
+                      </button>
+                    </div>
                   )}
                 </div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, fontSize: 12, color: 'var(--text-secondary)', fontFamily: 'var(--font-body)' }}>
-                  {v.email && <span>✉ {v.email}</span>}
-                  {v.phone && <span>☎ {v.phone}{v.whatsapp && ' · WhatsApp'}</span>}
-                  <span>{v.entry_count} timeline {v.entry_count === 1 ? 'entry' : 'entries'}</span>
+                <div style={{ display: 'flex', gap: 6, alignItems: 'flex-start' }}>
+                  <button onClick={() => setEditing(v)} style={secondaryButtonStyle}>
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => deleteVendor(v.id)}
+                    style={{ ...secondaryButtonStyle, color: 'var(--color-terracotta)' }}
+                  >
+                    Delete
+                  </button>
                 </div>
-                {wedding?.slug && (
-                  <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginTop: 10 }}>
-                    <code
-                      style={{
-                        fontSize: 11,
-                        padding: '4px 8px',
-                        borderRadius: 6,
-                        background: 'var(--bg-soft-cream)',
-                        color: 'var(--text-secondary)',
-                        maxWidth: 420,
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap',
-                      }}
-                    >
-                      {vendorUrl(v.access_token)}
-                    </code>
-                    <button
-                      onClick={() => copyLink(v)}
-                      style={{ ...secondaryButtonStyle, padding: '4px 10px', fontSize: 11 }}
-                    >
-                      {copiedId === v.id ? 'Copied ✓' : 'Copy'}
-                    </button>
-                    <button
-                      onClick={() => rotateToken(v.id)}
-                      style={{ ...secondaryButtonStyle, padding: '4px 10px', fontSize: 11, color: 'var(--color-terracotta)' }}
-                    >
-                      Rotate
-                    </button>
-                  </div>
-                )}
               </div>
-              <div style={{ display: 'flex', gap: 6, alignItems: 'flex-start' }}>
-                <button onClick={() => setEditing(v)} style={secondaryButtonStyle}>
-                  Edit
-                </button>
-                <button
-                  onClick={() => deleteVendor(v.id)}
-                  style={{ ...secondaryButtonStyle, color: 'var(--color-terracotta)' }}
-                >
-                  Delete
-                </button>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
@@ -696,3 +864,19 @@ const secondaryButtonStyle: React.CSSProperties = {
   fontFamily: 'var(--font-body)',
   cursor: 'pointer',
 };
+
+function vendorFilterChipStyle(active: boolean): React.CSSProperties {
+  return {
+    padding: '5px 11px',
+    borderRadius: 999,
+    border: active ? 'none' : '1px solid var(--border-light)',
+    background: active ? 'var(--color-terracotta)' : 'var(--bg-pure-white)',
+    color: active ? '#FDFBF7' : 'var(--text-primary)',
+    fontSize: 12,
+    fontFamily: 'var(--font-body)',
+    fontWeight: 500,
+    cursor: 'pointer',
+    whiteSpace: 'nowrap',
+    transition: 'background 0.15s',
+  };
+}

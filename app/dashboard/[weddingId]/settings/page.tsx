@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useCallback, use } from 'react';
 import PasswordConfirmDialog from '@/components/ui/PasswordConfirmDialog';
+import { formatShortDate } from '@/lib/utils/date-format';
+import { eventColorByName } from '@/lib/utils/vendor-color';
 
 interface StyleGuideImage {
   storage_key: string;
@@ -918,8 +920,20 @@ export default function SettingsPage({ params }: { params: Promise<{ weddingId: 
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          {events.map((ev) => (
-            <div key={ev.id} style={{ padding: 20, background: 'var(--bg-pure-white)', borderRadius: 16, border: selectedEventIds.has(ev.id) ? '1.5px solid rgba(196, 112, 75, 0.4)' : '1px solid var(--border-light)' }}>
+          {events.map((ev) => {
+            const evColor = eventColorByName(ev.name);
+            return (
+            <div
+              key={ev.id}
+              style={{
+                padding: 20,
+                paddingLeft: 24,
+                background: 'var(--bg-pure-white)',
+                borderRadius: 16,
+                border: selectedEventIds.has(ev.id) ? '1.5px solid rgba(196, 112, 75, 0.4)' : '1px solid var(--border-light)',
+                borderLeft: `4px solid ${evColor}`,
+              }}
+            >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, flex: 1 }}>
                   <input
@@ -929,13 +943,15 @@ export default function SettingsPage({ params }: { params: Promise<{ weddingId: 
                     style={{ cursor: 'pointer', accentColor: 'var(--color-terracotta)', marginTop: 4, flexShrink: 0 }}
                   />
                   <div style={{ flex: 1 }}>
-                    <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 500, color: 'var(--text-primary)', margin: '0 0 6px' }}>
-                      {ev.name}
-                    </h3>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, margin: '0 0 6px', flexWrap: 'wrap' }}>
+                      <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 500, color: 'var(--text-primary)', margin: 0 }}>
+                        {ev.name}
+                      </h3>
+                    </div>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, fontSize: 13, color: 'var(--text-secondary)' }}>
                       {ev.date && (
                         <span>
-                          {new Date(ev.date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: timezone })}
+                          {formatShortDate(ev.date, { timezone, includeYear: true })}
                         </span>
                       )}
                       {(ev.start_time || ev.end_time) && (
@@ -1055,7 +1071,8 @@ export default function SettingsPage({ params }: { params: Promise<{ weddingId: 
                 </div>
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
         </>
       )}

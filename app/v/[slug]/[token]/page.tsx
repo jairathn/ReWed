@@ -1,6 +1,15 @@
 'use client';
 
 import { useState, useEffect, use, useCallback } from 'react';
+import {
+  formatLongDate,
+  formatWeekdayShort,
+  formatShortDate,
+  daysUntil,
+  normalizeDate,
+} from '@/lib/utils/date-format';
+import { vendorColorByName, eventColorByName } from '@/lib/utils/vendor-color';
+import VendorChatWidget from '@/components/vendor/VendorChatWidget';
 
 interface Vendor {
   id: string;
@@ -73,7 +82,7 @@ interface PortalData {
   todos: VendorTodo[];
 }
 
-type Tab = 'mine' | 'todos' | 'master' | 'contacts' | 'ask';
+type Tab = 'mine' | 'todos' | 'master' | 'contacts';
 
 export default function VendorPortalPage({
   params,
@@ -89,6 +98,8 @@ export default function VendorPortalPage({
   const [commentBox, setCommentBox] = useState({ comment: '', proposed_change: '' });
   const [submitting, setSubmitting] = useState(false);
   const [commentSentAt, setCommentSentAt] = useState<Date | null>(null);
+  // Day filter — applies to both "My timeline" and "Master timeline" tabs.
+  const [dayFilter, setDayFilter] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -162,9 +173,47 @@ export default function VendorPortalPage({
     );
   }
 
-  // Group assigned by event_date
+  const matchesDay = (eventDate: string | null) => {
+    if (!dayFilter) return true;
+    const ds = normalizeDate(eventDate);
+    return ds === dayFilter;
+  };
+
+  // Compute the "focus list": what this vendor should care about right now.
+  // We parse time_label loosely (the spreadsheet has a lot of formats —
+  // "10:00 AM", "6-8 PM", "14:00" — take the first H:MM token we find).
+  // Anything that started within the last 90 minutes counts as "happening now"
+  // so a vendor who refreshes mid-task still sees it. Otherwise we surface
+  // the next three assigned items, day-filter included if set.
+  const focus = (() => {
+    const now = new Date();
+    const windowStart = new Date(now.getTime() - 90 * 60 * 1000);
+    const dated: Array<{ entry: TimelineEntry; start: Date; status: 'now' | 'next' }> = [];
+    for (const e of data.assigned) {
+      if (!matchesDay(e.event_date)) continue;
+      const start = entryStartDate(e);
+      if (!start) continue;
+      if (start < windowStart) continue;
+      dated.push({ entry: e, start, status: start <= now ? 'now' : 'next' });
+    }
+    dated.sort((a, b) => a.start.getTime() - b.start.getTime());
+    return dated.slice(0, 3);
+  })();
+
+  // Distinct days present across *either* my assignments or the master timeline
+  // — so the day pills stay consistent whichever tab you're on.
+  const allDays = Array.from(
+    new Set(
+      [...data.assigned, ...data.master_timeline]
+        .map((e) => normalizeDate(e.event_date))
+        .filter((d): d is string => !!d)
+    )
+  ).sort();
+
+  // Group assigned by event_date, after filter
   const groups = new Map<string, { date: string; name: string; entries: TimelineEntry[] }>();
   for (const e of data.assigned) {
+    if (!matchesDay(e.event_date)) continue;
     const key = `${e.event_date || 'unscheduled'}__${e.event_name || ''}`;
     if (!groups.has(key)) {
       groups.set(key, {
@@ -177,12 +226,23 @@ export default function VendorPortalPage({
   }
   const groupList = Array.from(groups.values());
 
-  // Build coordination contacts list (deduped by id)
+  // Build coordination contacts list (deduped by id) — used by the Contacts tab.
   const contactMap = new Map<string, CoordContact>();
   for (const c of data.coordination_contacts) {
     if (!contactMap.has(c.id)) contactMap.set(c.id, c);
   }
   const uniqueContacts = Array.from(contactMap.values());
+
+  // Per-entry coordination contacts so each timeline row can surface who to
+  // talk to for that specific item without a tab switch.
+  const contactsByEntry = new Map<string, CoordContact[]>();
+  for (const c of data.coordination_contacts) {
+    const list = contactsByEntry.get(c.entry_id) || [];
+    list.push(c);
+    contactsByEntry.set(c.entry_id, list);
+  }
+
+  const daysToGo = daysUntil(data.wedding.wedding_date);
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg-warm-gradient)' }}>
@@ -219,17 +279,64 @@ export default function VendorPortalPage({
           {data.wedding.display_name}
         </h1>
         <p style={{ fontSize: 13, color: 'var(--text-tertiary)', margin: '4px 0 0', fontFamily: 'var(--font-body)' }}>
-          {data.wedding.wedding_date && new Date(data.wedding.wedding_date + 'T12:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+          {formatLongDate(data.wedding.wedding_date)}
           {data.wedding.venue_city && ` · ${data.wedding.venue_city}${data.wedding.venue_country ? ', ' + data.wedding.venue_country : ''}`}
         </p>
 
-        <div style={{ marginTop: 16, display: 'inline-flex', alignItems: 'center', gap: 8, padding: '6px 14px', borderRadius: 999, background: 'var(--bg-soft-cream)', border: '1px solid var(--border-light)' }}>
-          <span style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'var(--text-primary)', fontWeight: 500 }}>
-            {data.vendor.name}
+        <div style={{ marginTop: 16, display: 'inline-flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
+          <span
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 8,
+              padding: '6px 14px',
+              borderRadius: 999,
+              background: 'var(--bg-soft-cream)',
+              border: '1px solid var(--border-light)',
+            }}
+          >
+            <span style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'var(--text-primary)', fontWeight: 500 }}>
+              {data.vendor.name}
+            </span>
+            {data.vendor.category && (
+              <span style={{ fontSize: 11, color: 'var(--color-gold-dark)', textTransform: 'uppercase', letterSpacing: '0.5px', fontFamily: 'var(--font-body)' }}>
+                {data.vendor.category}
+              </span>
+            )}
           </span>
-          {data.vendor.category && (
-            <span style={{ fontSize: 11, color: 'var(--color-gold-dark)', textTransform: 'uppercase', letterSpacing: '0.5px', fontFamily: 'var(--font-body)' }}>
-              {data.vendor.category}
+          {daysToGo !== null && daysToGo > 0 && (
+            <span
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                padding: '6px 12px',
+                borderRadius: 999,
+                background: 'linear-gradient(135deg, var(--color-gold-dark), var(--color-gold))',
+                color: '#FDFBF7',
+                fontFamily: 'var(--font-body)',
+                fontSize: 12,
+                fontWeight: 600,
+              }}
+            >
+              {daysToGo} {daysToGo === 1 ? 'day' : 'days'} to go
+            </span>
+          )}
+          {daysToGo !== null && daysToGo === 0 && (
+            <span
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                padding: '6px 12px',
+                borderRadius: 999,
+                background: 'var(--color-terracotta)',
+                color: '#FDFBF7',
+                fontFamily: 'var(--font-body)',
+                fontSize: 12,
+                fontWeight: 600,
+              }}
+            >
+              Today&apos;s the day
             </span>
           )}
         </div>
@@ -252,7 +359,6 @@ export default function VendorPortalPage({
           { id: 'todos' as const, label: `To-dos (${data.todos.filter((t) => t.status === 'open').length})` },
           { id: 'master' as const, label: 'Master timeline' },
           { id: 'contacts' as const, label: `Contacts (${uniqueContacts.length + data.emergency_contacts.length})` },
-          { id: 'ask' as const, label: 'Ask the FAQbot' },
         ]).map((t) => (
           <button
             key={t.id}
@@ -278,51 +384,33 @@ export default function VendorPortalPage({
       <main style={{ maxWidth: 720, margin: '0 auto', padding: '24px 16px 80px' }}>
         {tab === 'mine' && (
           <>
+            <FocusCard items={focus} contactsByEntry={contactsByEntry} />
             <SectionHeader
               title="Your assigned timeline"
-              subtitle="Tap any entry to leave a note for the couple. They'll get an email immediately."
+              subtitle="Everything you need for each item is on its row — time, where, notes, who to coordinate with."
             />
+            <DayFilter days={allDays} value={dayFilter} onChange={setDayFilter} />
             {groupList.length === 0 ? (
-              <Empty text="No entries assigned to you yet." />
+              <Empty
+                text={
+                  dayFilter
+                    ? 'Nothing assigned to you on this day.'
+                    : 'No entries assigned to you yet.'
+                }
+              />
             ) : (
               groupList.map((g) => (
                 <div key={`${g.date}__${g.name}`} style={{ marginBottom: 20 }}>
                   <DayHeading date={g.date} name={g.name} />
                   <div style={cardStyle}>
                     {g.entries.map((e, idx) => (
-                      <div
+                      <MyEntryCard
                         key={e.id}
-                        onClick={() => { setCommentEntry(e); setCommentSentAt(null); }}
-                        style={{
-                          padding: '14px 16px',
-                          borderBottom: idx < g.entries.length - 1 ? '1px solid var(--border-light)' : 'none',
-                          cursor: 'pointer',
-                          display: 'grid',
-                          gridTemplateColumns: '90px 1fr',
-                          gap: 12,
-                        }}
-                      >
-                        <div style={{ fontSize: 12, color: 'var(--text-secondary)', fontFamily: 'ui-monospace, monospace', fontVariantNumeric: 'tabular-nums' }}>
-                          {e.time_label || '—'}
-                        </div>
-                        <div>
-                          <div style={{ fontSize: 14, color: 'var(--text-primary)', fontFamily: 'var(--font-body)', lineHeight: 1.45 }}>
-                            {e.action}
-                          </div>
-                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 4 }}>
-                            {e.location && <span style={chip}>{e.location}</span>}
-                            {e.deadline && <span style={chipDeadline}>Deadline</span>}
-                            {e.status && !e.deadline && /to\s*do/i.test(e.status) && (
-                              <span style={chipTodo}>To do</span>
-                            )}
-                          </div>
-                          {e.notes && (
-                            <p style={{ marginTop: 6, fontSize: 12, color: 'var(--text-secondary)', fontFamily: 'var(--font-body)', lineHeight: 1.5 }}>
-                              {e.notes}
-                            </p>
-                          )}
-                        </div>
-                      </div>
+                        entry={e}
+                        contacts={contactsByEntry.get(e.id) || []}
+                        isLast={idx === g.entries.length - 1}
+                        onLeaveNote={() => { setCommentEntry(e); setCommentSentAt(null); }}
+                      />
                     ))}
                   </div>
                 </div>
@@ -355,10 +443,15 @@ export default function VendorPortalPage({
               title="Master timeline (read-only)"
               subtitle="Everything happening across all vendors and events."
             />
+            <DayFilter days={allDays} value={dayFilter} onChange={setDayFilter} />
             {data.master_timeline.length === 0 ? (
               <Empty text="No master timeline yet." />
             ) : (
-              <MasterTimeline entries={data.master_timeline} myVendorName={data.vendor.name} />
+              <MasterTimeline
+                entries={data.master_timeline.filter((e) => matchesDay(e.event_date))}
+                myVendorName={data.vendor.name}
+                emptyText={dayFilter ? 'Nothing scheduled for this day.' : 'No master timeline yet.'}
+              />
             )}
           </>
         )}
@@ -412,8 +505,10 @@ export default function VendorPortalPage({
           </>
         )}
 
-        {tab === 'ask' && <FaqWidget slug={slug} token={token} />}
       </main>
+
+      {/* Floating chat widget — vendors can ask questions without tab-switching */}
+      <VendorChatWidget slug={slug} token={token} />
 
       {/* Comment modal */}
       {commentEntry && (
@@ -609,7 +704,7 @@ function TodoRow({
         </div>
         {(todo.description || todo.due_date || todo.meeting_title) && (
           <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 4, fontFamily: 'var(--font-body)' }}>
-            {todo.due_date && `Due ${todo.due_date}`}
+            {todo.due_date && `Due ${formatShortDate(todo.due_date)}`}
             {todo.due_date && todo.meeting_title && ' · '}
             {todo.meeting_title && `from "${todo.meeting_title}"`}
           </div>
@@ -634,72 +729,18 @@ const sectionSubtitle: React.CSSProperties = {
   fontWeight: 500,
 };
 
-function FaqWidget({ slug, token }: { slug: string; token: string }) {
-  const [question, setQuestion] = useState('');
-  const [answer, setAnswer] = useState<string | null>(null);
-  const [remaining, setRemaining] = useState<number | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-
-  const ask = async () => {
-    if (!question.trim()) return;
-    setLoading(true);
-    setError('');
-    try {
-      const res = await fetch(`/api/v1/v/${slug}/${token}/faq`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.error?.message || 'Could not get an answer');
-      setAnswer(data.data.answer);
-      setRemaining(data.data.remaining);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not get an answer');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <>
-      <SectionHeader
-        title="Ask about your role"
-        subtitle="Quick answers about your timeline, who to coordinate with, and emergency contacts. 20 questions per day."
-      />
-      <div style={cardStyle}>
-        <textarea
-          rows={2}
-          value={question}
-          onChange={(e) => setQuestion(e.target.value)}
-          placeholder="What time should I arrive on Sept 11?"
-          style={{ ...input, resize: 'vertical' }}
-        />
-        <div style={{ display: 'flex', gap: 8, marginTop: 10, alignItems: 'center', justifyContent: 'space-between' }}>
-          <span style={{ fontSize: 11, color: 'var(--text-tertiary)', fontFamily: 'var(--font-body)' }}>
-            {remaining !== null ? `${remaining} questions left today` : ''}
-          </span>
-          <button onClick={ask} disabled={loading || !question.trim()} style={primaryBtn}>
-            {loading ? 'Thinking…' : 'Ask'}
-          </button>
-        </div>
-        {error && (
-          <p style={{ marginTop: 10, fontSize: 13, color: 'var(--color-terracotta)', fontFamily: 'var(--font-body)' }}>
-            {error}
-          </p>
-        )}
-        {answer && !error && (
-          <div style={{ marginTop: 14, padding: 14, borderRadius: 12, background: 'var(--bg-soft-cream)', fontSize: 14, color: 'var(--text-primary)', fontFamily: 'var(--font-body)', lineHeight: 1.55, whiteSpace: 'pre-wrap' }}>
-            {answer}
-          </div>
-        )}
-      </div>
-    </>
-  );
-}
-
-function MasterTimeline({ entries, myVendorName }: { entries: MasterEntry[]; myVendorName: string }) {
+function MasterTimeline({
+  entries,
+  myVendorName,
+  emptyText,
+}: {
+  entries: MasterEntry[];
+  myVendorName: string;
+  emptyText?: string;
+}) {
+  if (entries.length === 0) {
+    return <Empty text={emptyText || 'Nothing scheduled.'} />;
+  }
   const groups = new Map<string, MasterEntry[]>();
   for (const e of entries) {
     const key = `${e.event_date || 'unscheduled'}__${e.event_name || ''}`;
@@ -738,12 +779,47 @@ function MasterTimeline({ entries, myVendorName }: { entries: MasterEntry[]; myV
                         {e.action}
                       </div>
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginTop: 4 }}>
-                        {e.location && <span style={chip}>{e.location}</span>}
-                        {e.vendor_names.map((n) => (
-                          <span key={n} style={n === myVendorName ? chipMine : chipVendor}>
-                            {n}
-                          </span>
-                        ))}
+                        {e.location && <span style={chip}>📍 {e.location}</span>}
+                        {e.vendor_names.length === 0 && (
+                          <span style={chipNoOwner}>⚠ No owner</span>
+                        )}
+                        {e.vendor_names.map((n) => {
+                          const isMe = n === myVendorName;
+                          const color = isMe ? '#A8883F' : vendorColorByName(n);
+                          return (
+                            <span
+                              key={n}
+                              style={{
+                                fontSize: 11,
+                                padding: '2px 9px 2px 7px',
+                                borderRadius: 999,
+                                background: isMe
+                                  ? 'linear-gradient(135deg, var(--color-gold-dark), var(--color-gold))'
+                                  : color + '18',
+                                color: isMe ? '#FDFBF7' : color,
+                                fontFamily: 'var(--font-body)',
+                                fontWeight: isMe ? 600 : 500,
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 5,
+                                whiteSpace: 'nowrap',
+                              }}
+                            >
+                              {!isMe && (
+                                <span
+                                  style={{
+                                    width: 6,
+                                    height: 6,
+                                    borderRadius: 999,
+                                    background: color,
+                                    display: 'inline-block',
+                                  }}
+                                />
+                              )}
+                              {isMe ? 'You' : n}
+                            </span>
+                          );
+                        })}
                       </div>
                     </div>
                   </div>
@@ -754,6 +830,463 @@ function MasterTimeline({ entries, myVendorName }: { entries: MasterEntry[]; myV
         );
       })}
     </>
+  );
+}
+
+function DayFilter({
+  days,
+  value,
+  onChange,
+}: {
+  days: string[];
+  value: string | null;
+  onChange: (v: string | null) => void;
+}) {
+  if (days.length <= 1) return null;
+  return (
+    <div
+      style={{
+        display: 'flex',
+        gap: 6,
+        flexWrap: 'wrap',
+        marginBottom: 16,
+        padding: '8px 10px',
+        borderRadius: 12,
+        background: 'var(--bg-pure-white)',
+        border: '1px solid var(--border-light)',
+      }}
+    >
+      <button
+        type="button"
+        onClick={() => onChange(null)}
+        style={{
+          padding: '6px 12px',
+          borderRadius: 999,
+          border: value === null ? 'none' : '1px solid var(--border-light)',
+          background: value === null ? 'var(--color-gold-dark)' : 'transparent',
+          color: value === null ? '#FDFBF7' : 'var(--text-secondary)',
+          fontSize: 12,
+          fontFamily: 'var(--font-body)',
+          fontWeight: value === null ? 600 : 500,
+          cursor: 'pointer',
+          whiteSpace: 'nowrap',
+        }}
+      >
+        All days
+      </button>
+      {days.map((d) => {
+        const active = value === d;
+        return (
+          <button
+            key={d}
+            type="button"
+            onClick={() => onChange(active ? null : d)}
+            style={{
+              padding: '6px 12px',
+              borderRadius: 999,
+              border: active ? 'none' : '1px solid var(--border-light)',
+              background: active ? 'var(--color-gold-dark)' : 'transparent',
+              color: active ? '#FDFBF7' : 'var(--text-primary)',
+              fontSize: 12,
+              fontFamily: 'var(--font-body)',
+              fontWeight: active ? 600 : 500,
+              cursor: 'pointer',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {formatWeekdayShort(d, { fallback: d })}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+/**
+ * Parse common spreadsheet time_label formats into {hours, minutes}. Takes the
+ * first time token it finds and applies any AM/PM marker found anywhere in
+ * the label (so "6-8 PM" → 6 PM, not 6 AM, and "10:00-10:30 AM" → 10 AM).
+ * Returns null if nothing parseable.
+ */
+function parseTimeLabel(label: string | null): { hours: number; minutes: number } | null {
+  if (!label) return null;
+  const m = label.match(/(\d{1,2})(?::(\d{2}))?/);
+  if (!m) return null;
+  let h = parseInt(m[1], 10);
+  if (Number.isNaN(h) || h < 0 || h > 23) return null;
+  const mins = m[2] ? parseInt(m[2], 10) : 0;
+  if (mins < 0 || mins > 59) return null;
+  const ampm = label.match(/(am|pm)/i)?.[1].toLowerCase();
+  if (ampm === 'pm' && h < 12) h += 12;
+  if (ampm === 'am' && h === 12) h = 0;
+  return { hours: h, minutes: mins };
+}
+
+function entryStartDate(entry: TimelineEntry): Date | null {
+  const date = normalizeDate(entry.event_date);
+  if (!date) return null;
+  const t = parseTimeLabel(entry.time_label);
+  if (!t) return null;
+  return new Date(
+    `${date}T${String(t.hours).padStart(2, '0')}:${String(t.minutes).padStart(2, '0')}:00`
+  );
+}
+
+function FocusCard({
+  items,
+  contactsByEntry,
+}: {
+  items: Array<{ entry: TimelineEntry; start: Date; status: 'now' | 'next' }>;
+  contactsByEntry: Map<string, CoordContact[]>;
+}) {
+  if (items.length === 0) return null;
+  const hasNow = items.some((i) => i.status === 'now');
+
+  return (
+    <div
+      style={{
+        marginBottom: 18,
+        borderRadius: 16,
+        background: hasNow
+          ? 'linear-gradient(135deg, rgba(196,112,75,0.08), rgba(232,134,90,0.04))'
+          : 'var(--bg-pure-white)',
+        border: `1px solid ${hasNow ? 'rgba(196,112,75,0.25)' : 'var(--border-light)'}`,
+        boxShadow: hasNow ? '0 4px 20px rgba(196,112,75,0.10)' : '0 2px 8px rgba(0,0,0,0.02)',
+        overflow: 'hidden',
+      }}
+    >
+      <div
+        style={{
+          padding: '10px 16px',
+          borderBottom: '1px solid var(--border-light)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+        }}
+      >
+        <span
+          style={{
+            fontSize: 10,
+            textTransform: 'uppercase',
+            letterSpacing: '0.6px',
+            color: hasNow ? 'var(--color-terracotta)' : 'var(--color-gold-dark)',
+            fontWeight: 700,
+            fontFamily: 'var(--font-body)',
+          }}
+        >
+          {hasNow ? 'Focus — happening now' : 'Up next for you'}
+        </span>
+      </div>
+      <div>
+        {items.map((it, idx) => (
+          <FocusRow
+            key={it.entry.id}
+            entry={it.entry}
+            start={it.start}
+            status={it.status}
+            contacts={contactsByEntry.get(it.entry.id) || []}
+            isLast={idx === items.length - 1}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function FocusRow({
+  entry,
+  start,
+  status,
+  contacts,
+  isLast,
+}: {
+  entry: TimelineEntry;
+  start: Date;
+  status: 'now' | 'next';
+  contacts: CoordContact[];
+  isLast: boolean;
+}) {
+  const now = new Date();
+  const diffMin = Math.round((start.getTime() - now.getTime()) / 60000);
+  const whenLabel =
+    status === 'now'
+      ? diffMin >= -5
+        ? 'Now'
+        : `Started ${Math.abs(diffMin)}m ago`
+      : diffMin < 60
+      ? `In ${Math.max(diffMin, 1)} min`
+      : diffMin < 60 * 24
+      ? `In ${Math.round(diffMin / 60)}h`
+      : `${Math.round(diffMin / (60 * 24))}d away`;
+
+  const primaryContact = contacts[0];
+
+  return (
+    <div
+      style={{
+        padding: '12px 16px',
+        borderBottom: isLast ? 'none' : '1px solid var(--border-light)',
+        display: 'grid',
+        gridTemplateColumns: '92px 1fr',
+        gap: 14,
+        alignItems: 'flex-start',
+      }}
+    >
+      <div>
+        <div
+          style={{
+            fontSize: 13,
+            fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
+            fontVariantNumeric: 'tabular-nums',
+            fontWeight: 600,
+            color: 'var(--text-primary)',
+          }}
+        >
+          {entry.time_label || '—'}
+        </div>
+        <div
+          style={{
+            fontSize: 10,
+            textTransform: 'uppercase',
+            letterSpacing: '0.5px',
+            fontWeight: 600,
+            color: status === 'now' ? 'var(--color-terracotta)' : 'var(--color-gold-dark)',
+            fontFamily: 'var(--font-body)',
+            marginTop: 2,
+          }}
+        >
+          {whenLabel}
+        </div>
+      </div>
+      <div style={{ minWidth: 0 }}>
+        <div
+          style={{
+            fontSize: 14,
+            fontFamily: 'var(--font-body)',
+            color: 'var(--text-primary)',
+            fontWeight: 500,
+            lineHeight: 1.4,
+          }}
+        >
+          {entry.action}
+        </div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 6 }}>
+          {entry.location && <span style={chip}>📍 {entry.location}</span>}
+          {entry.deadline && <span style={chipDeadline}>⏰ Deadline</span>}
+          {primaryContact && <ContactPill contact={primaryContact} />}
+          {contacts.length > 1 && (
+            <span
+              style={{
+                fontSize: 11,
+                color: 'var(--text-tertiary)',
+                fontFamily: 'var(--font-body)',
+                padding: '4px 6px',
+              }}
+            >
+              +{contacts.length - 1} more
+            </span>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MyEntryCard({
+  entry,
+  contacts,
+  isLast,
+  onLeaveNote,
+}: {
+  entry: TimelineEntry;
+  contacts: CoordContact[];
+  isLast: boolean;
+  onLeaveNote: () => void;
+}) {
+  return (
+    <div
+      style={{
+        padding: '14px 16px 12px',
+        borderBottom: isLast ? 'none' : '1px solid var(--border-light)',
+        display: 'grid',
+        gridTemplateColumns: '78px 1fr',
+        gap: 14,
+        borderLeft: entry.deadline ? '3px solid var(--color-terracotta)' : '3px solid transparent',
+      }}
+    >
+      <div
+        style={{
+          fontSize: 13,
+          color: 'var(--text-primary)',
+          fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
+          fontVariantNumeric: 'tabular-nums',
+          fontWeight: 500,
+          paddingTop: 2,
+        }}
+      >
+        {entry.time_label || '—'}
+      </div>
+      <div style={{ minWidth: 0 }}>
+        <div
+          style={{
+            fontSize: 15,
+            color: 'var(--text-primary)',
+            fontFamily: 'var(--font-body)',
+            lineHeight: 1.35,
+            fontWeight: 500,
+          }}
+        >
+          {entry.action}
+        </div>
+
+        {/* Where / status chips */}
+        {(entry.location || entry.deadline || (entry.status && /to\s*do/i.test(entry.status))) && (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 6 }}>
+            {entry.location && <span style={chip}>📍 {entry.location}</span>}
+            {entry.deadline && <span style={chipDeadline}>⏰ Deadline</span>}
+            {entry.status && !entry.deadline && /to\s*do/i.test(entry.status) && (
+              <span style={chipTodo}>To do</span>
+            )}
+          </div>
+        )}
+
+        {/* Notes — pulled out with a note marker so it doesn't blend in */}
+        {entry.notes && (
+          <div
+            style={{
+              marginTop: 10,
+              padding: '8px 10px',
+              borderRadius: 8,
+              background: 'var(--bg-soft-cream)',
+              borderLeft: '2px solid var(--color-gold-dark)',
+              fontSize: 13,
+              color: 'var(--text-primary)',
+              fontFamily: 'var(--font-body)',
+              lineHeight: 1.55,
+              whiteSpace: 'pre-line',
+            }}
+          >
+            <span style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--color-gold-dark)', fontWeight: 600, display: 'block', marginBottom: 2 }}>
+              Note
+            </span>
+            {entry.notes}
+          </div>
+        )}
+
+        {/* Coordination contacts — tap to call / WhatsApp / email */}
+        {contacts.length > 0 && (
+          <div style={{ marginTop: 10 }}>
+            <span style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--text-tertiary)', fontFamily: 'var(--font-body)', fontWeight: 600, display: 'block', marginBottom: 6 }}>
+              Coordinate with
+            </span>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+              {contacts.map((c) => (
+                <ContactPill key={c.id} contact={c} />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Explicit action affordance — replaces the old row-is-clickable behavior */}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 10 }}>
+          <button
+            type="button"
+            onClick={onLeaveNote}
+            style={{
+              padding: '5px 11px',
+              borderRadius: 8,
+              border: '1px solid var(--border-light)',
+              background: 'var(--bg-pure-white)',
+              color: 'var(--text-secondary)',
+              fontSize: 11,
+              fontFamily: 'var(--font-body)',
+              fontWeight: 500,
+              cursor: 'pointer',
+            }}
+          >
+            Leave a note for the couple
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ContactPill({ contact }: { contact: CoordContact }) {
+  const color = vendorColorByName(contact.name);
+  const phoneDigits = contact.phone ? contact.phone.replace(/[^\d+]/g, '') : '';
+  // Prefer WhatsApp (same phone, but opens chat) when the contact supports it,
+  // otherwise straight tel:, then mailto: as a last resort. One primary tap.
+  const primaryHref = contact.whatsapp && phoneDigits
+    ? `https://wa.me/${phoneDigits.replace(/^\+/, '')}`
+    : phoneDigits
+    ? `tel:${phoneDigits}`
+    : contact.email
+    ? `mailto:${contact.email}`
+    : null;
+  const primaryLabel = contact.whatsapp && phoneDigits
+    ? 'WhatsApp'
+    : phoneDigits
+    ? 'Call'
+    : contact.email
+    ? 'Email'
+    : null;
+
+  if (!primaryHref) {
+    return (
+      <span
+        style={{
+          fontSize: 12,
+          padding: '4px 10px 4px 8px',
+          borderRadius: 999,
+          background: color + '18',
+          color,
+          fontFamily: 'var(--font-body)',
+          fontWeight: 500,
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 6,
+        }}
+      >
+        <span style={{ width: 6, height: 6, borderRadius: 999, background: color, display: 'inline-block' }} />
+        {contact.name}
+      </span>
+    );
+  }
+
+  return (
+    <a
+      href={primaryHref}
+      target={contact.whatsapp && phoneDigits ? '_blank' : undefined}
+      rel={contact.whatsapp && phoneDigits ? 'noreferrer' : undefined}
+      onClick={(e) => e.stopPropagation()}
+      style={{
+        fontSize: 12,
+        padding: '4px 10px 4px 8px',
+        borderRadius: 999,
+        background: color + '18',
+        color,
+        fontFamily: 'var(--font-body)',
+        fontWeight: 500,
+        textDecoration: 'none',
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 6,
+        whiteSpace: 'nowrap',
+      }}
+      title={`${primaryLabel} ${contact.name}${contact.category ? ' · ' + contact.category : ''}`}
+    >
+      <span style={{ width: 6, height: 6, borderRadius: 999, background: color, display: 'inline-block' }} />
+      <span>
+        {contact.name}
+        {contact.category && (
+          <span style={{ opacity: 0.7, fontWeight: 400 }}> · {contact.category}</span>
+        )}
+      </span>
+      <span style={{ fontSize: 10, padding: '0 6px', borderRadius: 999, background: color, color: '#FDFBF7', fontWeight: 600 }}>
+        {primaryLabel}
+      </span>
+    </a>
   );
 }
 
@@ -773,17 +1306,27 @@ function SectionHeader({ title, subtitle, top }: { title: string; subtitle?: str
 }
 
 function DayHeading({ date, name }: { date: string; name: string }) {
-  const formatted = date
-    ? new Date(date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
-    : '';
+  const formatted = formatWeekdayShort(date);
+  const color = eventColorByName(name);
   return (
-    <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 8 }}>
+    <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 8, flexWrap: 'wrap' }}>
       {formatted && (
-        <span style={{ fontSize: 11, color: 'var(--color-gold-dark)', textTransform: 'uppercase', letterSpacing: '0.5px', fontFamily: 'var(--font-body)' }}>
+        <span style={{ fontSize: 11, color, textTransform: 'uppercase', letterSpacing: '0.5px', fontFamily: 'var(--font-body)', fontWeight: 600 }}>
           {formatted}
         </span>
       )}
-      <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 17, fontWeight: 500, color: 'var(--text-primary)', margin: 0 }}>
+      <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 17, fontWeight: 500, color: 'var(--text-primary)', margin: 0, display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+        <span
+          aria-hidden
+          style={{
+            width: 8,
+            height: 8,
+            borderRadius: 999,
+            background: color,
+            display: 'inline-block',
+            flexShrink: 0,
+          }}
+        />
         {name}
       </h3>
     </div>
@@ -869,16 +1412,11 @@ const chipTodo: React.CSSProperties = {
   color: '#9B6B1F',
 };
 
-const chipMine: React.CSSProperties = {
+const chipNoOwner: React.CSSProperties = {
   ...chip,
-  background: 'linear-gradient(135deg, var(--color-gold-dark), var(--color-gold))',
-  color: '#FDFBF7',
-};
-
-const chipVendor: React.CSSProperties = {
-  ...chip,
-  background: 'rgba(198,163,85,0.08)',
-  color: 'var(--color-gold-dark)',
+  background: 'rgba(196,112,75,0.12)',
+  color: 'var(--color-terracotta)',
+  fontWeight: 600,
 };
 
 const contactLink: React.CSSProperties = {

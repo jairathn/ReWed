@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, use } from 'react';
 import PasswordConfirmDialog from '@/components/ui/PasswordConfirmDialog';
+import { vendorColorByName } from '@/lib/utils/vendor-color';
 
 interface FeedPost {
   id: string;
@@ -100,11 +101,7 @@ export default function FeedModerationPage({ params }: { params: Promise<{ weddi
   const getInitials = (name: string) =>
     name.split(' ').map((w) => w[0]).join('').toUpperCase().slice(0, 2);
 
-  const getAvatarColor = (name: string) => {
-    const colors = ['#C4704B', '#2B5F8A', '#7A8B5C', '#D4A853', '#E8865A'];
-    const index = name.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0) % colors.length;
-    return colors[index];
-  };
+  const getAvatarColor = (name: string) => vendorColorByName(name);
 
   const filtered = posts.filter((p) => {
     if (filter === 'visible') return !p.is_hidden;

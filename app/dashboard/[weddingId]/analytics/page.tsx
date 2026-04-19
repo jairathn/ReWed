@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, use } from 'react';
+import Link from 'next/link';
 
 interface Stats {
   guests: { total: number; attending: number; declined: number; pending: number };
@@ -78,7 +79,7 @@ export default function AnalyticsPage({ params }: { params: Promise<{ weddingId:
               <p style={{ fontSize: 11, color: 'var(--text-tertiary)', fontFamily: 'var(--font-body)' }}>declined</p>
             </div>
             <div>
-              <p style={{ fontSize: 20, fontWeight: 600, color: 'var(--text-tertiary)', margin: 0, fontFamily: 'var(--font-display)' }}>{stats.guests.pending}</p>
+              <p style={{ fontSize: 20, fontWeight: 600, color: 'var(--color-gold-dark)', margin: 0, fontFamily: 'var(--font-display)' }}>{stats.guests.pending}</p>
               <p style={{ fontSize: 11, color: 'var(--text-tertiary)', fontFamily: 'var(--font-body)' }}>pending</p>
             </div>
           </div>
@@ -150,12 +151,23 @@ export default function AnalyticsPage({ params }: { params: Promise<{ weddingId:
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {[
-              { label: 'Guests added', done: stats.guests.total > 0 },
-              { label: 'Events configured', done: stats.events > 0 },
-              { label: 'FAQ entries added', done: stats.faq_entries > 0 },
-              { label: 'Media uploaded', done: stats.uploads.total > 0 },
+              { label: 'Guests added', done: stats.guests.total > 0, href: `/dashboard/${weddingId}/guests` },
+              { label: 'Events configured', done: stats.events > 0, href: `/dashboard/${weddingId}/settings` },
+              { label: 'FAQ entries added', done: stats.faq_entries > 0, href: `/dashboard/${weddingId}/faq` },
+              { label: 'Media uploaded', done: stats.uploads.total > 0, href: `/dashboard/${weddingId}/gallery-curation` },
             ].map((item) => (
-              <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <Link
+                key={item.label}
+                href={item.href}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 10,
+                  textDecoration: 'none',
+                  padding: '2px 0',
+                  cursor: 'pointer',
+                }}
+              >
                 <div style={{
                   width: 20,
                   height: 20,
@@ -173,8 +185,13 @@ export default function AnalyticsPage({ params }: { params: Promise<{ weddingId:
                     </svg>
                   )}
                 </div>
-                <span style={{ fontSize: 13, color: item.done ? 'var(--text-primary)' : 'var(--text-tertiary)', fontFamily: 'var(--font-body)' }}>{item.label}</span>
-              </div>
+                <span style={{ fontSize: 13, color: item.done ? 'var(--text-primary)' : 'var(--text-tertiary)', fontFamily: 'var(--font-body)', flex: 1 }}>{item.label}</span>
+                {!item.done && (
+                  <span style={{ fontSize: 11, color: 'var(--color-terracotta)', fontFamily: 'var(--font-body)', fontWeight: 500 }}>
+                    Set up →
+                  </span>
+                )}
+              </Link>
             ))}
           </div>
         </div>

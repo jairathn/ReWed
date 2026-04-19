@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, use } from 'react';
 import Link from 'next/link';
 import CityAutocomplete, { type CityResult } from '@/components/travel/CityAutocomplete';
+import { formatLongDate, daysUntil } from '@/lib/utils/date-format';
 
 // Map of city/country to IANA timezone
 const CITY_TIMEZONE_MAP: Record<string, string> = {
@@ -65,6 +66,56 @@ export default function WeddingOverviewPage({
   const [guestUrl, setGuestUrl] = useState<string | null>(null);
   const [qrLoading, setQrLoading] = useState(false);
   const [qrRegenerating, setQrRegenerating] = useState(false);
+
+  // Aggregate "needs attention" signal — runs after the overview loads.
+  const [attention, setAttention] = useState<{
+    urgentTodos: number;
+    agingTodos: number;
+    unownedTimeline: number;
+    vendorsWithoutTimeline: number;
+  } | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadAttention() {
+      try {
+        const [tRes, timelineRes, vRes] = await Promise.all([
+          fetch(`/api/v1/dashboard/weddings/${weddingId}/todos?status=open`),
+          fetch(`/api/v1/dashboard/weddings/${weddingId}/timeline`),
+          fetch(`/api/v1/dashboard/weddings/${weddingId}/vendors`),
+        ]);
+        if (cancelled) return;
+        const tJson = tRes.ok ? await tRes.json() : null;
+        const timelineJson = timelineRes.ok ? await timelineRes.json() : null;
+        const vJson = vRes.ok ? await vRes.json() : null;
+
+        const urgencyCounts = tJson?.data?.urgency_counts ?? {};
+        const urgent = (urgencyCounts.red || 0) + (urgencyCounts.orange || 0);
+        const aging = urgencyCounts.yellow || 0;
+
+        const entries: Array<{ vendors: unknown[] }> = timelineJson?.data?.entries || [];
+        const unowned = entries.filter(
+          (e) => !Array.isArray(e.vendors) || e.vendors.length === 0
+        ).length;
+
+        const vendorList: Array<{ entry_count: number }> = vJson?.data?.vendors || [];
+        const vendorsNoTimeline = vendorList.filter((v) => v.entry_count === 0).length;
+
+        setAttention({
+          urgentTodos: urgent,
+          agingTodos: aging,
+          unownedTimeline: unowned,
+          vendorsWithoutTimeline: vendorsNoTimeline,
+        });
+      } catch {
+        // leave attention as null; the panel just won't render
+      }
+    }
+    loadAttention();
+    return () => {
+      cancelled = true;
+    };
+  }, [weddingId]);
 
   useEffect(() => {
     fetch(`/api/v1/dashboard/weddings/${weddingId}/overview`)
@@ -228,44 +279,136 @@ export default function WeddingOverviewPage({
     <div>
       {/* Page Header */}
       <div style={{ marginBottom: 32 }}>
-        <h1
-          style={{
-            fontFamily: 'var(--font-display)',
-            fontSize: 28,
-            fontWeight: 500,
-            color: 'var(--text-primary)',
-            margin: 0,
-          }}
-        >
-          {wedding.display_name}
-        </h1>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6 }}>
-          <p style={{ color: 'var(--text-secondary)', fontSize: 14, margin: 0, fontFamily: 'var(--font-body)' }}>
-            {wedding.wedding_date
-              ? new Date(wedding.wedding_date + 'T12:00:00').toLocaleDateString('en-US', {
-                  month: 'long', day: 'numeric', year: 'numeric',
-                  timeZone: wedding.timezone || 'America/New_York',
-                })
-              : 'Date not set'}
-            {venueCity && (
-              <> &middot; {venueCity}{venueCountry ? `, ${venueCountry}` : ''}</>
-            )}
-          </p>
-          <span
-            style={{
-              display: 'inline-block',
-              padding: '2px 10px',
-              borderRadius: 999,
-              fontSize: 11,
-              fontWeight: 600,
-              background: wedding.status === 'active' ? 'rgba(122, 139, 92, 0.1)' : 'rgba(198, 163, 85, 0.1)',
-              color: wedding.status === 'active' ? 'var(--color-olive)' : 'var(--color-gold-dark)',
-            }}
-          >
-            {wedding.status}
-          </span>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
+          <div>
+            <h1
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontSize: 32,
+                fontWeight: 500,
+                color: 'var(--text-primary)',
+                margin: 0,
+                lineHeight: 1.15,
+              }}
+            >
+              {wedding.display_name}
+            </h1>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 8, flexWrap: 'wrap' }}>
+              <p style={{ color: 'var(--text-secondary)', fontSize: 14, margin: 0, fontFamily: 'var(--font-body)' }}>
+                {wedding.wedding_date
+                  ? formatLongDate(wedding.wedding_date, { timezone: wedding.timezone || undefined })
+                  : 'Date not set'}
+                {venueCity && (
+                  <> &middot; {venueCity}{venueCountry ? `, ${venueCountry}` : ''}</>
+                )}
+              </p>
+              <span
+                style={{
+                  display: 'inline-block',
+                  padding: '2px 10px',
+                  borderRadius: 999,
+                  fontSize: 11,
+                  fontWeight: 600,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px',
+                  background: wedding.status === 'active' ? 'rgba(122, 139, 92, 0.12)' : 'rgba(198, 163, 85, 0.12)',
+                  color: wedding.status === 'active' ? 'var(--color-olive)' : 'var(--color-gold-dark)',
+                }}
+              >
+                {wedding.status}
+              </span>
+            </div>
+          </div>
+
+          {(() => {
+            const n = daysUntil(wedding.wedding_date);
+            if (n === null) return null;
+            const urgent = n >= 0 && n <= 30;
+            return (
+              <div
+                style={{
+                  padding: '14px 20px',
+                  borderRadius: 16,
+                  background: urgent
+                    ? 'linear-gradient(135deg, var(--color-terracotta), var(--color-sunset-orange, #E8865A))'
+                    : 'linear-gradient(135deg, var(--color-gold-dark), var(--color-gold))',
+                  color: '#FDFBF7',
+                  minWidth: 150,
+                  textAlign: 'center',
+                  boxShadow: urgent
+                    ? '0 4px 20px rgba(196,112,75,0.25)'
+                    : '0 2px 12px rgba(198,163,85,0.18)',
+                }}
+              >
+                <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.6px', opacity: 0.85, fontFamily: 'var(--font-body)', fontWeight: 500 }}>
+                  {n < 0 ? 'Celebrated' : n === 0 ? 'Today' : 'Countdown'}
+                </div>
+                <div style={{ fontFamily: 'var(--font-display)', fontSize: n < 0 ? 22 : 32, fontWeight: 500, lineHeight: 1.1, marginTop: 2 }}>
+                  {n < 0 ? '🎉' : n === 0 ? "Today's the day" : n}
+                </div>
+                {n > 0 && (
+                  <div style={{ fontSize: 12, opacity: 0.9, fontFamily: 'var(--font-body)', marginTop: 2 }}>
+                    {n === 1 ? 'day to go' : 'days to go'}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
         </div>
       </div>
+
+      {/* Needs attention — what the couple should do next */}
+      {attention && (attention.urgentTodos + attention.agingTodos + attention.unownedTimeline + attention.vendorsWithoutTimeline) > 0 && (
+        <div style={{ marginBottom: 24 }}>
+          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 500, color: 'var(--text-primary)', margin: '0 0 12px' }}>
+            Needs attention
+          </h2>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+              gap: 12,
+            }}
+          >
+            {attention.urgentTodos > 0 && (
+              <AttentionTile
+                count={attention.urgentTodos}
+                label="urgent to-dos"
+                sub="Open 45+ days"
+                href={`/dashboard/${weddingId}/todos`}
+                tone="red"
+              />
+            )}
+            {attention.agingTodos > 0 && (
+              <AttentionTile
+                count={attention.agingTodos}
+                label="aging to-dos"
+                sub="Open 30+ days"
+                href={`/dashboard/${weddingId}/todos`}
+                tone="yellow"
+              />
+            )}
+            {attention.unownedTimeline > 0 && (
+              <AttentionTile
+                count={attention.unownedTimeline}
+                label="timeline items with no owner"
+                sub="Assign a vendor so it shows up on their portal"
+                href={`/dashboard/${weddingId}/timeline`}
+                tone="terracotta"
+              />
+            )}
+            {attention.vendorsWithoutTimeline > 0 && (
+              <AttentionTile
+                count={attention.vendorsWithoutTimeline}
+                label="vendors with no timeline"
+                sub="They'll have nothing on their portal until you assign entries"
+                href={`/dashboard/${weddingId}/vendors`}
+                tone="gold"
+              />
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Quick action banner if no guests */}
       {stats.guests.total === 0 && (
@@ -592,5 +735,53 @@ export default function WeddingOverviewPage({
         </div>
       </div>
     </div>
+  );
+}
+
+function AttentionTile({
+  count,
+  label,
+  sub,
+  href,
+  tone,
+}: {
+  count: number;
+  label: string;
+  sub: string;
+  href: string;
+  tone: 'red' | 'yellow' | 'terracotta' | 'gold';
+}) {
+  const palette = {
+    red: { color: '#9B2222', bg: 'rgba(196,67,67,0.08)', border: 'rgba(196,67,67,0.25)' },
+    yellow: { color: '#7A5C0F', bg: 'rgba(218,175,53,0.10)', border: 'rgba(218,175,53,0.30)' },
+    terracotta: { color: 'var(--color-terracotta)', bg: 'rgba(196,112,75,0.08)', border: 'rgba(196,112,75,0.25)' },
+    gold: { color: 'var(--color-gold-dark)', bg: 'rgba(198,163,85,0.08)', border: 'rgba(198,163,85,0.25)' },
+  }[tone];
+
+  return (
+    <Link
+      href={href}
+      style={{
+        display: 'block',
+        padding: '14px 16px',
+        borderRadius: 14,
+        background: palette.bg,
+        border: `1px solid ${palette.border}`,
+        textDecoration: 'none',
+        transition: 'transform 0.15s, box-shadow 0.15s',
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 4 }}>
+        <span style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 600, color: palette.color, lineHeight: 1 }}>
+          {count}
+        </span>
+        <span style={{ fontSize: 13, color: 'var(--text-primary)', fontFamily: 'var(--font-body)', fontWeight: 500 }}>
+          {label}
+        </span>
+      </div>
+      <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: 0, fontFamily: 'var(--font-body)', lineHeight: 1.4 }}>
+        {sub}
+      </p>
+    </Link>
   );
 }

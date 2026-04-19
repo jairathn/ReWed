@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect, use, useCallback } from 'react';
+import { formatWeekdayShort, formatShortDate } from '@/lib/utils/date-format';
+import { vendorColor } from '@/lib/utils/vendor-color';
 
 interface Vendor {
   id: string;
@@ -271,6 +273,8 @@ export default function MeetingsPage({
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
               {[{ id: COUPLE_OPTION_ID, name: 'Bride & Groom', category: null }, ...vendors].map((v) => {
                 const selected = draft.stakeholder_ids.includes(v.id);
+                const isCouple = v.id === COUPLE_OPTION_ID;
+                const color = isCouple ? '#A8883F' : vendorColor(v.id);
                 return (
                   <button
                     key={v.id}
@@ -282,18 +286,31 @@ export default function MeetingsPage({
                       setDraft({ ...draft, stakeholder_ids: next });
                     }}
                     style={{
-                      padding: '5px 11px',
-                      borderRadius: 20,
+                      padding: '5px 11px 5px 8px',
+                      borderRadius: 999,
                       border: selected ? 'none' : '1px solid var(--border-light)',
-                      background: selected
-                        ? 'linear-gradient(135deg, var(--color-gold-dark), var(--color-gold))'
-                        : 'var(--bg-pure-white)',
-                      color: selected ? '#FDFBF7' : 'var(--text-secondary)',
+                      background: selected ? color : 'var(--bg-pure-white)',
+                      color: selected ? '#FDFBF7' : 'var(--text-primary)',
                       fontSize: 12,
                       fontFamily: 'var(--font-body)',
+                      fontWeight: selected ? 600 : 500,
                       cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      transition: 'background 0.15s',
                     }}
                   >
+                    <span
+                      aria-hidden
+                      style={{
+                        width: 7,
+                        height: 7,
+                        borderRadius: 999,
+                        background: selected ? '#FDFBF7' : color,
+                        display: 'inline-block',
+                      }}
+                    />
                     {v.name}
                   </button>
                 );
@@ -344,12 +361,49 @@ export default function MeetingsPage({
                 Delete
               </button>
             </div>
-            <p style={{ fontSize: 12, color: 'var(--text-tertiary)', margin: '0 0 16px', fontFamily: 'var(--font-body)' }}>
-              {openMeeting.meeting.meeting_date && formatDate(openMeeting.meeting.meeting_date)}
-              {openMeeting.stakeholders.length > 0 && (
-                <> · with {openMeeting.stakeholders.map((s) => s.name).join(', ')}</>
+            <div style={{ fontSize: 12, color: 'var(--text-tertiary)', margin: '0 0 16px', fontFamily: 'var(--font-body)', display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+              {openMeeting.meeting.meeting_date && (
+                <span>{formatDate(openMeeting.meeting.meeting_date)}</span>
               )}
-            </p>
+              {openMeeting.stakeholders.length > 0 && (
+                <>
+                  <span>·</span>
+                  <span>with</span>
+                  {openMeeting.stakeholders.map((s) => {
+                    const color = vendorColor(s.id);
+                    return (
+                      <span
+                        key={s.id}
+                        style={{
+                          fontSize: 11,
+                          padding: '2px 8px 2px 6px',
+                          borderRadius: 999,
+                          background: color + '18',
+                          color: color,
+                          fontWeight: 500,
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 5,
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        <span
+                          aria-hidden
+                          style={{
+                            width: 6,
+                            height: 6,
+                            borderRadius: 999,
+                            background: color,
+                            display: 'inline-block',
+                          }}
+                        />
+                        {s.name}
+                      </span>
+                    );
+                  })}
+                </>
+              )}
+            </div>
 
             <h3 style={{ ...sectionTitle, marginTop: 0 }}>To-dos generated</h3>
             {openMeeting.todos.length === 0 ? (
@@ -379,9 +433,44 @@ export default function MeetingsPage({
                         </span>
                       )}
                     </div>
-                    <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 4, fontFamily: 'var(--font-body)' }}>
-                      → {t.vendor_name || 'Bride & Groom'}
-                      {t.due_date && ` · due ${t.due_date}`}
+                    <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 6, fontFamily: 'var(--font-body)', display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                      {(() => {
+                        const ownerId = t.assigned_to_vendor_id || 'couple';
+                        const ownerName = t.vendor_name || 'Bride & Groom';
+                        const color = t.assigned_to_vendor_id
+                          ? vendorColor(t.assigned_to_vendor_id)
+                          : '#A8883F';
+                        return (
+                          <span
+                            key={ownerId}
+                            style={{
+                              fontSize: 11,
+                              padding: '2px 8px 2px 6px',
+                              borderRadius: 999,
+                              background: color + '18',
+                              color,
+                              fontWeight: 600,
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: 5,
+                              whiteSpace: 'nowrap',
+                            }}
+                          >
+                            <span
+                              aria-hidden
+                              style={{
+                                width: 6,
+                                height: 6,
+                                borderRadius: 999,
+                                background: color,
+                                display: 'inline-block',
+                              }}
+                            />
+                            {ownerName}
+                          </span>
+                        );
+                      })()}
+                      {t.due_date && <span>· due {formatShortDate(t.due_date)}</span>}
                     </div>
                     {t.description && (
                       <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: '6px 0 0', fontFamily: 'var(--font-body)', lineHeight: 1.5 }}>
@@ -420,9 +509,7 @@ export default function MeetingsPage({
 }
 
 function formatDate(iso: string): string {
-  const d = new Date(iso + 'T12:00:00');
-  if (isNaN(d.getTime())) return iso;
-  return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+  return formatWeekdayShort(iso, { includeYear: true, fallback: iso });
 }
 
 const headingStyle: React.CSSProperties = {

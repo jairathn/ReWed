@@ -383,11 +383,11 @@ RESEND_REPLY_TO=shriyaneilwedding@gmail.com`}
           <label style={labelStyle}>Audience</label>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 8 }}>
             {([
-              { id: 'all', label: 'Everyone', count: status?.counts.with_email ?? 0 },
-              { id: 'attending', label: 'Attending', count: status?.counts.attending ?? 0 },
-              { id: 'pending', label: 'Pending', count: status?.counts.pending ?? 0 },
-              { id: 'declined', label: 'Declined', count: status?.counts.declined ?? 0 },
-              { id: 'custom', label: 'Custom', count: selectedGuestIds.size },
+              { id: 'all', label: 'Everyone', count: status?.counts.with_email ?? 0, color: 'var(--text-primary)', accent: 'var(--text-secondary)', tint: 'rgba(44,40,37,0.06)' },
+              { id: 'attending', label: 'Attending', count: status?.counts.attending ?? 0, color: 'var(--color-olive)', accent: 'var(--color-olive)', tint: 'rgba(122,139,92,0.10)' },
+              { id: 'pending', label: 'Pending', count: status?.counts.pending ?? 0, color: 'var(--color-gold-dark)', accent: 'var(--color-gold-dark)', tint: 'rgba(198,163,85,0.10)' },
+              { id: 'declined', label: 'Declined', count: status?.counts.declined ?? 0, color: 'var(--color-terracotta)', accent: 'var(--color-terracotta)', tint: 'rgba(196,112,75,0.10)' },
+              { id: 'custom', label: 'Custom', count: selectedGuestIds.size, color: 'var(--color-mediterranean-blue)', accent: 'var(--color-mediterranean-blue)', tint: 'rgba(43,95,138,0.10)' },
             ] as const).map((opt) => {
               const active = audience === opt.id;
               const isCustom = opt.id === 'custom';
@@ -401,26 +401,27 @@ RESEND_REPLY_TO=shriyaneilwedding@gmail.com`}
                   style={{
                     padding: '10px 16px',
                     borderRadius: 12,
-                    border: '1px solid ' + (active ? 'var(--color-gold-dark)' : 'var(--border-light)'),
-                    background: active ? 'rgba(198,163,85,0.08)' : 'var(--bg-pure-white)',
-                    color: active ? 'var(--color-gold-dark)' : 'var(--text-secondary)',
+                    border: `1px solid ${active ? opt.accent : 'var(--border-light)'}`,
+                    background: active ? opt.tint : 'var(--bg-pure-white)',
+                    color: active ? opt.color : 'var(--text-secondary)',
                     fontSize: 13,
-                    fontWeight: active ? 500 : 400,
+                    fontWeight: active ? 600 : 400,
                     fontFamily: 'var(--font-body)',
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
                     gap: 8,
+                    transition: 'background 0.15s, border-color 0.15s, color 0.15s',
                   }}
                 >
                   {opt.label}
                   <span
                     style={{
                       fontSize: 11,
-                      padding: '2px 7px',
+                      padding: '2px 8px',
                       borderRadius: 999,
-                      background: active ? 'rgba(198,163,85,0.15)' : 'var(--bg-soft-cream)',
-                      color: active ? 'var(--color-gold-dark)' : 'var(--text-tertiary)',
+                      background: active ? opt.color : 'var(--bg-soft-cream)',
+                      color: active ? '#FDFBF7' : 'var(--text-tertiary)',
                       fontWeight: 600,
                     }}
                   >

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { vendorColorByName } from '@/lib/utils/vendor-color';
 
 interface GuestOption {
   id: string;
@@ -242,9 +243,71 @@ export default function HighlightsPage({
       >
         Highlight Reels & Memoir Messages
       </h1>
-      <p style={{ fontSize: 13, color: 'var(--text-secondary)', fontFamily: 'var(--font-body)', marginBottom: 32 }}>
+      <p style={{ fontSize: 13, color: 'var(--text-secondary)', fontFamily: 'var(--font-body)', marginBottom: 20 }}>
         Upload personalized highlight reels and write thank-you messages for each guest&apos;s memoir page.
       </p>
+
+      {/* Progress stats */}
+      {guests.length > 0 && (() => {
+        const publishedCount = guests.filter((g) => g.memoir_published).length;
+        const withReelsCount = new Set(reels.map((r) => r.guest_id)).size;
+        const withMsgCount = new Set(messages.map((m) => m.guest_id)).size;
+        const pct = guests.length > 0 ? Math.round((publishedCount / guests.length) * 100) : 0;
+        return (
+          <div
+            style={{
+              padding: '14px 16px',
+              borderRadius: 14,
+              background: 'var(--bg-pure-white)',
+              border: '1px solid var(--border-light)',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
+              marginBottom: 24,
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 10, flexWrap: 'wrap' }}>
+              <span style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--text-tertiary)', fontFamily: 'var(--font-body)', fontWeight: 600 }}>
+                Memoir rollout
+              </span>
+              <span style={{ fontSize: 12, color: 'var(--text-secondary)', fontFamily: 'var(--font-body)' }}>
+                {publishedCount} of {guests.length} published · {pct}%
+              </span>
+            </div>
+            <div
+              style={{
+                height: 6,
+                borderRadius: 999,
+                background: 'var(--bg-soft-cream)',
+                overflow: 'hidden',
+              }}
+            >
+              <div
+                style={{
+                  width: `${pct}%`,
+                  height: '100%',
+                  background: 'linear-gradient(90deg, var(--color-olive), var(--color-gold))',
+                  transition: 'width 0.3s',
+                }}
+              />
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, marginTop: 12, fontSize: 12, color: 'var(--text-secondary)', fontFamily: 'var(--font-body)' }}>
+              <span>
+                <strong style={{ color: 'var(--color-olive)' }}>{withReelsCount}</strong>
+                {' '}with reels
+              </span>
+              <span>
+                <strong style={{ color: 'var(--color-gold-dark)' }}>{withMsgCount}</strong>
+                {' '}with messages
+              </span>
+              <span>
+                <strong style={{ color: 'var(--color-terracotta)' }}>
+                  {guests.length - withReelsCount}
+                </strong>
+                {' '}still missing reels
+              </span>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* ── Gallery Approval Gate ── */}
       <div
@@ -475,16 +538,69 @@ export default function HighlightsPage({
             const guestInfo = guests.find((g) => g.id === guestId);
             const isPublished = guestInfo?.memoir_published ?? false;
             const isPublishing = publishingGuest === guestId;
+            const name = String(data.name || 'Guest');
+            const color = vendorColorByName(name);
+            const initials = name
+              .split(/\s+/)
+              .filter(Boolean)
+              .slice(0, 2)
+              .map((p) => p[0]?.toUpperCase() ?? '')
+              .join('') || '·';
             return (
               <div
                 key={guestId}
-                style={{ borderRadius: 16, background: 'var(--bg-pure-white)', border: '1px solid var(--border-light)', padding: 16, display: 'flex', alignItems: 'center', gap: 16 }}
+                style={{
+                  borderRadius: 16,
+                  background: 'var(--bg-pure-white)',
+                  border: isPublished ? '1.5px solid rgba(122,139,92,0.35)' : '1px solid var(--border-light)',
+                  padding: 16,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 14,
+                }}
               >
+                <div
+                  aria-hidden
+                  style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 12,
+                    background: color + '22',
+                    color,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontFamily: 'var(--font-body)',
+                    fontWeight: 600,
+                    fontSize: 14,
+                    flexShrink: 0,
+                  }}
+                >
+                  {initials}
+                </div>
                 <div style={{ flex: 1 }}>
-                  <p style={{ fontWeight: 500, fontSize: 15, color: 'var(--text-primary)' }}>
-                    {data.name}
-                  </p>
-                  <div style={{ display: 'flex', gap: 12, marginTop: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
+                    <p style={{ fontWeight: 500, fontSize: 15, color: 'var(--text-primary)', margin: 0 }}>
+                      {name}
+                    </p>
+                    {isPublished && (
+                      <span
+                        style={{
+                          fontSize: 10,
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.5px',
+                          color: 'var(--color-olive)',
+                          background: 'rgba(122,139,92,0.12)',
+                          padding: '2px 7px',
+                          borderRadius: 999,
+                          fontWeight: 600,
+                        }}
+                      >
+                        Published
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ display: 'flex', gap: 8, marginTop: 6, flexWrap: 'wrap', alignItems: 'center' }}>
                     <StatusBadge label="Full Edit" status={data.keeper?.status} />
                     <StatusBadge label="Social Reel" status={data.reel?.status} />
                     <StatusBadge
@@ -503,9 +619,12 @@ export default function HighlightsPage({
                     fontWeight: 600,
                     fontFamily: 'var(--font-body)',
                     cursor: isPublishing ? 'wait' : 'pointer',
-                    border: '1px solid var(--border-light)',
-                    background: 'transparent',
-                    color: 'var(--text-secondary)',
+                    border: isPublished ? '1px solid var(--border-light)' : 'none',
+                    background: isPublished
+                      ? 'var(--bg-pure-white)'
+                      : 'linear-gradient(135deg, var(--color-olive), #6A7A4E)',
+                    color: isPublished ? 'var(--text-secondary)' : '#FDFBF7',
+                    boxShadow: isPublished ? 'none' : '0 2px 8px rgba(122,139,92,0.25)',
                     opacity: isPublishing ? 0.5 : 1,
                     flexShrink: 0,
                   }}
@@ -525,21 +644,38 @@ export default function HighlightsPage({
             {guestsWithoutReels.length} guest{guestsWithoutReels.length !== 1 ? 's' : ''} still need highlight reels:
           </p>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 24 }}>
-            {guestsWithoutReels.map((g) => (
-              <span
-                key={g.id}
-                style={{
-                  fontSize: 12,
-                  padding: '4px 10px',
-                  borderRadius: 6,
-                  background: 'var(--bg-soft-cream)',
-                  color: 'var(--text-secondary)',
-                  border: '0.5px solid var(--border-light)',
-                }}
-              >
-                {g.name}
-              </span>
-            ))}
+            {guestsWithoutReels.map((g) => {
+              const color = vendorColorByName(g.name);
+              return (
+                <span
+                  key={g.id}
+                  style={{
+                    fontSize: 12,
+                    padding: '3px 10px 3px 8px',
+                    borderRadius: 999,
+                    background: color + '14',
+                    color,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    fontFamily: 'var(--font-body)',
+                    fontWeight: 500,
+                  }}
+                >
+                  <span
+                    aria-hidden
+                    style={{
+                      width: 6,
+                      height: 6,
+                      borderRadius: 999,
+                      background: color,
+                      display: 'inline-block',
+                    }}
+                  />
+                  {g.name}
+                </span>
+              );
+            })}
           </div>
         </>
       )}
