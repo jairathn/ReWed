@@ -76,19 +76,31 @@ export async function PATCH(
     }
 
     // These three all live inside the wedding config JSONB. Empty string and
-    // explicit null both clear the field.
-    const configFields: Array<{ key: string; value: string | null | undefined }> = [
-      { key: 'rsvp_url', value: parsed.rsvp_url },
-      { key: 'rsvp_passcode', value: parsed.rsvp_passcode },
-      { key: 'invite_url', value: parsed.invite_url },
-    ];
-    for (const f of configFields) {
-      if (f.value === undefined) continue;
-      const next = typeof f.value === 'string' && f.value.trim() ? f.value.trim() : null;
-      sets.push(
-        `config = jsonb_set(COALESCE(config, '{}'::jsonb), '{${f.key}}', $${idx++}::jsonb, true)`
-      );
-      values.push(JSON.stringify(next));
+    // explicit null both clear the field. We build a single merge object and
+    // use one `config = config || $N::jsonb` assignment — Postgres rejects
+    // assigning the same column multiple times in a single UPDATE.
+    const configPatch: Record<string, string | null> = {};
+    if (parsed.rsvp_url !== undefined) {
+      configPatch.rsvp_url =
+        typeof parsed.rsvp_url === 'string' && parsed.rsvp_url.trim()
+          ? parsed.rsvp_url.trim()
+          : null;
+    }
+    if (parsed.rsvp_passcode !== undefined) {
+      configPatch.rsvp_passcode =
+        typeof parsed.rsvp_passcode === 'string' && parsed.rsvp_passcode.trim()
+          ? parsed.rsvp_passcode.trim()
+          : null;
+    }
+    if (parsed.invite_url !== undefined) {
+      configPatch.invite_url =
+        typeof parsed.invite_url === 'string' && parsed.invite_url.trim()
+          ? parsed.invite_url.trim()
+          : null;
+    }
+    if (Object.keys(configPatch).length > 0) {
+      sets.push(`config = COALESCE(config, '{}'::jsonb) || $${idx++}::jsonb`);
+      values.push(JSON.stringify(configPatch));
     }
 
     if (sets.length === 0) {
