@@ -111,9 +111,20 @@ function timeLabelToSortOrder(label: string): number {
     return h * 60 + m;
   }
 
-  // Ranges like "6:00-8:00 PM"
-  const range = clean.match(/^(\d{1,2}):(\d{2})/);
-  if (range) return parseInt(range[1], 10) * 60 + parseInt(range[2], 10);
+  // Ranges like "6:00-8:00 PM" or "6:00–8:00 PM" — check trailing AM/PM
+  const range = clean.match(/^(\d{1,2}):(\d{2}).*?(AM|PM)\s*$/i);
+  if (range) {
+    let h = parseInt(range[1], 10);
+    const m = parseInt(range[2], 10);
+    const isPM = range[3].toUpperCase() === 'PM';
+    if (isPM && h !== 12) h += 12;
+    if (!isPM && h === 12) h = 0;
+    if (h < 6 && !isPM) h += 24;
+    return h * 60 + m;
+  }
+  // Bare time like "6:00" without AM/PM — treat as-is
+  const bare = clean.match(/^(\d{1,2}):(\d{2})/);
+  if (bare) return parseInt(bare[1], 10) * 60 + parseInt(bare[2], 10);
 
   // "Late" / "Late PM"
   if (/late/i.test(clean)) return 1500;
