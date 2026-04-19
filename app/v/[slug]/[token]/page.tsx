@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, use, useCallback } from 'react';
+import { formatLongDate, formatWeekdayShort, formatShortDate } from '@/lib/utils/date-format';
 
 interface Vendor {
   id: string;
@@ -219,7 +220,7 @@ export default function VendorPortalPage({
           {data.wedding.display_name}
         </h1>
         <p style={{ fontSize: 13, color: 'var(--text-tertiary)', margin: '4px 0 0', fontFamily: 'var(--font-body)' }}>
-          {data.wedding.wedding_date && new Date(data.wedding.wedding_date + 'T12:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+          {formatLongDate(data.wedding.wedding_date)}
           {data.wedding.venue_city && ` · ${data.wedding.venue_city}${data.wedding.venue_country ? ', ' + data.wedding.venue_country : ''}`}
         </p>
 
@@ -609,7 +610,7 @@ function TodoRow({
         </div>
         {(todo.description || todo.due_date || todo.meeting_title) && (
           <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 4, fontFamily: 'var(--font-body)' }}>
-            {todo.due_date && `Due ${todo.due_date}`}
+            {todo.due_date && `Due ${formatShortDate(todo.due_date)}`}
             {todo.due_date && todo.meeting_title && ' · '}
             {todo.meeting_title && `from "${todo.meeting_title}"`}
           </div>
@@ -773,9 +774,7 @@ function SectionHeader({ title, subtitle, top }: { title: string; subtitle?: str
 }
 
 function DayHeading({ date, name }: { date: string; name: string }) {
-  const formatted = date
-    ? new Date(date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
-    : '';
+  const formatted = formatWeekdayShort(date);
   return (
     <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 8 }}>
       {formatted && (
