@@ -8,7 +8,7 @@ import {
   daysUntil,
   normalizeDate,
 } from '@/lib/utils/date-format';
-import { vendorColorByName } from '@/lib/utils/vendor-color';
+import { vendorColorByName, eventColorByName } from '@/lib/utils/vendor-color';
 
 interface Vendor {
   id: string;
@@ -977,14 +977,26 @@ function SectionHeader({ title, subtitle, top }: { title: string; subtitle?: str
 
 function DayHeading({ date, name }: { date: string; name: string }) {
   const formatted = formatWeekdayShort(date);
+  const color = eventColorByName(name);
   return (
-    <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 8 }}>
+    <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 8, flexWrap: 'wrap' }}>
       {formatted && (
-        <span style={{ fontSize: 11, color: 'var(--color-gold-dark)', textTransform: 'uppercase', letterSpacing: '0.5px', fontFamily: 'var(--font-body)' }}>
+        <span style={{ fontSize: 11, color, textTransform: 'uppercase', letterSpacing: '0.5px', fontFamily: 'var(--font-body)', fontWeight: 600 }}>
           {formatted}
         </span>
       )}
-      <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 17, fontWeight: 500, color: 'var(--text-primary)', margin: 0 }}>
+      <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 17, fontWeight: 500, color: 'var(--text-primary)', margin: 0, display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+        <span
+          aria-hidden
+          style={{
+            width: 8,
+            height: 8,
+            borderRadius: 999,
+            background: color,
+            display: 'inline-block',
+            flexShrink: 0,
+          }}
+        />
         {name}
       </h3>
     </div>

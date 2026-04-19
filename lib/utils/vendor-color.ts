@@ -34,3 +34,32 @@ export function vendorColor(id: string): string {
 export function vendorColorByName(name: string): string {
   return vendorColor(name.toLowerCase().trim());
 }
+
+/**
+ * Event colors tied to the --event-* tokens in globals.css so the dashboard
+ * schedule reads the same way as the guest schedule. Common Indian wedding
+ * event names match by keyword; everything else falls back to the stable
+ * hashed palette so no event card is ever colorless.
+ */
+const EVENT_KEYWORD_COLORS: Array<[RegExp, string]> = [
+  [/\bhaldi\b/i, '#D4A853'],
+  [/\bmehndi\b/i, '#D4A853'],
+  [/\bsangeet\b/i, '#E8865A'],
+  [/\bbaraat\b/i, '#E8865A'],
+  [/\bwelcome\b/i, '#E8865A'],
+  [/\bceremony\b/i, '#2B5F8A'],
+  [/\bwedding\b/i, '#2B5F8A'],
+  [/\bpheras?\b/i, '#2B5F8A'],
+  [/\bnikah\b/i, '#2B5F8A'],
+  [/\breception\b/i, '#7A8B5C'],
+  [/\bafter[- ]?party\b/i, '#7A8B5C'],
+  [/\bbrunch\b/i, '#7A8B5C'],
+];
+
+export function eventColorByName(name: string | null | undefined): string {
+  if (!name) return vendorColor('event');
+  for (const [re, color] of EVENT_KEYWORD_COLORS) {
+    if (re.test(name)) return color;
+  }
+  return vendorColorByName(name);
+}

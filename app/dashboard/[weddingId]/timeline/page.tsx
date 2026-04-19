@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, use, useCallback, useMemo } from 'react';
 import { formatDayHeader, normalizeDate } from '@/lib/utils/date-format';
-import { vendorColor } from '@/lib/utils/vendor-color';
+import { vendorColor, eventColorByName } from '@/lib/utils/vendor-color';
 
 interface Vendor {
   id: string;
@@ -492,14 +492,27 @@ export default function TimelinePage({
           </button>
         </div>
       ) : (
-        groupList.map((g) => (
+        groupList.map((g) => {
+          const groupColor = eventColorByName(g.name);
+          return (
           <div key={`${g.date}__${g.name}`} style={{ marginBottom: 20 }}>
             <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 10 }}>
               <div>
-                <h3 style={{ ...cardLabelStyle, fontSize: 13, color: 'var(--color-gold-dark)' }}>
+                <h3 style={{ ...cardLabelStyle, fontSize: 13, color: groupColor }}>
                   {g.date && formatDate(g.date)}
                 </h3>
-                <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 500, margin: '2px 0 0', color: 'var(--text-primary)' }}>
+                <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 500, margin: '2px 0 0', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span
+                    aria-hidden
+                    style={{
+                      width: 10,
+                      height: 10,
+                      borderRadius: 999,
+                      background: groupColor,
+                      display: 'inline-block',
+                      flexShrink: 0,
+                    }}
+                  />
                   {g.name}
                 </h2>
               </div>
@@ -627,7 +640,8 @@ export default function TimelinePage({
               })}
             </div>
           </div>
-        ))
+          );
+        })
       )}
 
       {/* Edit modal */}
