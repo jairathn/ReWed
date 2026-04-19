@@ -1,4 +1,5 @@
 import { getPool } from '@/lib/db/client';
+import { getMediaUrl } from '@/lib/storage/r2';
 import BottomNav from '@/components/guest/BottomNav';
 import BackButton from '@/components/guest/BackButton';
 
@@ -17,6 +18,7 @@ interface EventRow {
   description: string | null;
   logistics: string | null;
   accent_color: string | null;
+  style_guide_urls: string[];
 }
 
 async function getScheduleData(slug: string) {
@@ -33,15 +35,24 @@ async function getScheduleData(slug: string) {
 
   const eventsResult = await pool.query(
     `SELECT id, name, date, start_time, end_time, end_date, venue_name, venue_address,
-            dress_code, description, logistics, accent_color
+            dress_code, description, logistics, accent_color,
+            COALESCE(style_guide_images, '[]'::jsonb) AS style_guide_images
      FROM events WHERE wedding_id = $1
      ORDER BY sort_order ASC, date ASC, start_time ASC`,
     [wedding.id]
   );
 
+  const events: EventRow[] = await Promise.all(
+    eventsResult.rows.map(async (row) => {
+      const keys: string[] = Array.isArray(row.style_guide_images) ? row.style_guide_images : [];
+      const urls = await Promise.all(keys.map((k: string) => getMediaUrl(k).catch(() => '')));
+      return { ...row, style_guide_urls: urls.filter(Boolean) };
+    })
+  );
+
   return {
     wedding,
-    events: eventsResult.rows as EventRow[],
+    events,
     timezone: wedding.timezone || 'America/New_York',
     venueCity: wedding.venue_city || null,
     venueCountry: wedding.venue_country || null,
@@ -195,7 +206,7 @@ export default async function SchedulePage({
               color: 'var(--text-primary)',
             }}
           >
-            Schedule
+            Schedule &amp; Style Guide
           </h2>
           <div className="flex items-center justify-center gap-3">
             <span className="h-px w-8" style={{ background: 'var(--border-light)' }} />
@@ -392,8 +403,8 @@ export default async function SchedulePage({
                       </p>
                     )}
 
-                    {/* What to Wear card */}
-                    {event.dress_code && (
+                    {/* What to Wear / Style Guide card */}
+                    {(event.dress_code || event.style_guide_urls.length > 0) && (
                       <div
                         className="relative"
                         style={{
@@ -420,11 +431,44 @@ export default async function SchedulePage({
                             marginBottom: 10,
                           }}
                         >
-                          What to wear
+                          {event.style_guide_urls.length > 0 ? 'Style guide' : 'What to wear'}
                         </p>
-                        <p style={{ fontSize: 13, color: 'var(--text-primary)', lineHeight: 1.6, whiteSpace: 'pre-line' }}>
-                          {event.dress_code}
-                        </p>
+                        {event.dress_code && (
+                          <p style={{ fontSize: 13, color: 'var(--text-primary)', lineHeight: 1.6, whiteSpace: 'pre-line' }}>
+                            {event.dress_code}
+                          </p>
+                        )}
+
+                        {/* Style guide photos */}
+                        {event.style_guide_urls.length > 0 && (
+                          <div
+                            style={{
+                              display: 'flex',
+                              gap: 10,
+                              overflowX: 'auto',
+                              marginTop: event.dress_code ? 14 : 0,
+                              paddingBottom: 4,
+                              WebkitOverflowScrolling: 'touch',
+                            }}
+                          >
+                            {event.style_guide_urls.map((url, imgIdx) => (
+                              /* eslint-disable-next-line @next/next/no-img-element */
+                              <img
+                                key={imgIdx}
+                                src={url}
+                                alt={`Style guide ${imgIdx + 1}`}
+                                style={{
+                                  width: event.style_guide_urls.length === 1 ? '100%' : 180,
+                                  height: event.style_guide_urls.length === 1 ? 'auto' : 240,
+                                  objectFit: 'cover',
+                                  borderRadius: 10,
+                                  flexShrink: 0,
+                                  border: '0.5px solid rgba(196, 112, 75, 0.1)',
+                                }}
+                              />
+                            ))}
+                          </div>
+                        )}
 
                         {/* Venue address — clickable to Google Maps */}
                         {event.venue_address && (

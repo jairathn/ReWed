@@ -3,6 +3,11 @@
 import { useState, useEffect, useCallback, use } from 'react';
 import PasswordConfirmDialog from '@/components/ui/PasswordConfirmDialog';
 
+interface StyleGuideImage {
+  storage_key: string;
+  url: string;
+}
+
 interface WeddingEvent {
   id: string;
   name: string;
@@ -16,6 +21,7 @@ interface WeddingEvent {
   logistics: string | null;
   accent_color: string | null;
   sort_order: number;
+  style_guide_images: string[];
 }
 
 interface ParsedEvent {
@@ -51,6 +57,10 @@ export default function SettingsPage({ params }: { params: Promise<{ weddingId: 
   const [dressCode, setDressCode] = useState('');
   const [description, setDescription] = useState('');
   const [logistics, setLogistics] = useState('');
+
+  // Style guide images for current edit
+  const [styleGuideImages, setStyleGuideImages] = useState<StyleGuideImage[]>([]);
+  const [styleGuideUploading, setStyleGuideUploading] = useState(false);
 
   // Wedding timezone
   const [timezone, setTimezone] = useState('America/New_York');
@@ -174,6 +184,51 @@ export default function SettingsPage({ params }: { params: Promise<{ weddingId: 
     setDescription('');
     setLogistics('');
     setError('');
+    setStyleGuideImages([]);
+  };
+
+  const uploadStyleGuideImage = async (file: File) => {
+    if (!editEvent) return;
+    setStyleGuideUploading(true);
+    setError('');
+    try {
+      const form = new FormData();
+      form.append('file', file);
+      const res = await fetch(
+        `/api/v1/dashboard/weddings/${weddingId}/events/${editEvent.id}/style-guide`,
+        { method: 'POST', body: form }
+      );
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data?.error?.message || 'Upload failed');
+        return;
+      }
+      setStyleGuideImages((prev) => [
+        ...prev,
+        { storage_key: data.data.storage_key, url: data.data.url },
+      ]);
+    } catch {
+      setError('Upload failed');
+    } finally {
+      setStyleGuideUploading(false);
+    }
+  };
+
+  const deleteStyleGuideImage = async (storageKey: string) => {
+    if (!editEvent) return;
+    try {
+      const res = await fetch(
+        `/api/v1/dashboard/weddings/${weddingId}/events/${editEvent.id}/style-guide`,
+        {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ storage_key: storageKey }),
+        }
+      );
+      if (res.ok) {
+        setStyleGuideImages((prev) => prev.filter((img) => img.storage_key !== storageKey));
+      }
+    } catch { /* non-fatal */ }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -245,6 +300,16 @@ export default function SettingsPage({ params }: { params: Promise<{ weddingId: 
     setDescription(ev.description || '');
     setLogistics(ev.logistics || '');
     setView('edit');
+    // Load style guide images with resolved URLs
+    setStyleGuideImages([]);
+    if (ev.style_guide_images && ev.style_guide_images.length > 0) {
+      fetch(`/api/v1/dashboard/weddings/${weddingId}/events/${ev.id}/style-guide`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.data?.images) setStyleGuideImages(data.data.images);
+        })
+        .catch(() => {});
+    }
   };
 
   const toggleEventSelect = (id: string) => {
@@ -521,6 +586,98 @@ export default function SettingsPage({ params }: { params: Promise<{ weddingId: 
             />
           </div>
 
+          {/* Style Guide Images — only shown when editing an existing event */}
+          {view === 'edit' && editEvent && (
+            <div style={{ marginBottom: 20 }}>
+              <label style={labelStyle}>Style Guide Photos</label>
+              <p style={{ fontSize: 12, color: 'var(--text-tertiary)', margin: '0 0 10px', fontFamily: 'var(--font-body)' }}>
+                Upload outfit inspiration photos for guests (max 5 per event, 10MB each)
+              </p>
+
+              {/* Current images */}
+              {styleGuideImages.length > 0 && (
+                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 12 }}>
+                  {styleGuideImages.map((img) => (
+                    <div key={img.storage_key} style={{ position: 'relative' }}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={img.url}
+                        alt="Style guide"
+                        style={{
+                          width: 100,
+                          height: 130,
+                          objectFit: 'cover',
+                          borderRadius: 10,
+                          border: '1px solid var(--border-light)',
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => deleteStyleGuideImage(img.storage_key)}
+                        style={{
+                          position: 'absolute',
+                          top: -6,
+                          right: -6,
+                          width: 20,
+                          height: 20,
+                          borderRadius: '50%',
+                          border: 'none',
+                          background: 'var(--color-terracotta)',
+                          color: '#fff',
+                          fontSize: 12,
+                          lineHeight: '20px',
+                          textAlign: 'center',
+                          cursor: 'pointer',
+                          padding: 0,
+                        }}
+                        aria-label="Remove image"
+                      >
+                        &times;
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Upload button */}
+              {styleGuideImages.length < 5 && (
+                <label
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    padding: '8px 14px',
+                    borderRadius: 10,
+                    border: '1.5px dashed var(--border-medium)',
+                    background: 'var(--bg-soft-cream)',
+                    fontSize: 13,
+                    color: 'var(--text-secondary)',
+                    cursor: styleGuideUploading ? 'wait' : 'pointer',
+                    fontFamily: 'var(--font-body)',
+                  }}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+                    <polyline points="17 8 12 3 7 8" />
+                    <line x1="12" y1="3" x2="12" y2="15" />
+                  </svg>
+                  {styleGuideUploading ? 'Uploading...' : 'Upload photo'}
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,image/heic"
+                    style={{ display: 'none' }}
+                    disabled={styleGuideUploading}
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) uploadStyleGuideImage(f);
+                      e.target.value = '';
+                    }}
+                  />
+                </label>
+              )}
+            </div>
+          )}
+
           {error && <p style={{ color: 'var(--color-terracotta)', fontSize: 13, marginBottom: 12 }}>{error}</p>}
 
           <div style={{ display: 'flex', gap: 12 }}>
@@ -708,6 +865,11 @@ export default function SettingsPage({ params }: { params: Promise<{ weddingId: 
                       {ev.dress_code && (
                         <span style={{ background: 'var(--bg-soft-cream)', padding: '1px 8px', borderRadius: 999, fontSize: 11 }}>
                           {ev.dress_code}
+                        </span>
+                      )}
+                      {ev.style_guide_images && ev.style_guide_images.length > 0 && (
+                        <span style={{ background: 'rgba(198,163,85,0.08)', color: 'var(--color-gold-dark)', padding: '1px 8px', borderRadius: 999, fontSize: 11 }}>
+                          {ev.style_guide_images.length} style photo{ev.style_guide_images.length !== 1 ? 's' : ''}
                         </span>
                       )}
                     </div>

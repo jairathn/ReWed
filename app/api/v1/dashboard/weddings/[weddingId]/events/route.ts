@@ -36,7 +36,8 @@ export async function GET(
     const pool = getPool();
     const result = await pool.query(
       `SELECT id, name, date, start_time, end_time, end_date, venue_name, venue_address,
-              dress_code, description, logistics, accent_color, sort_order, created_at
+              dress_code, description, logistics, accent_color, sort_order,
+              COALESCE(style_guide_images, '[]'::jsonb) AS style_guide_images, created_at
        FROM events WHERE wedding_id = $1
        ORDER BY sort_order, date, start_time`,
       [weddingId]

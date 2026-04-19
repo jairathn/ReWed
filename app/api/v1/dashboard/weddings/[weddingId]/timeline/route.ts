@@ -62,6 +62,59 @@ export async function GET(
   }
 }
 
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ weddingId: string }> }
+) {
+  try {
+    const { weddingId } = await params;
+    await requireWeddingAccess(request, weddingId);
+
+    const pool = getPool();
+    const url = new URL(request.url);
+    const eventDate = url.searchParams.get('event_date');
+    const eventName = url.searchParams.get('event_name');
+
+    let deleted: number;
+
+    if (eventDate || eventName) {
+      const conditions = ['wedding_id = $1'];
+      const values: unknown[] = [weddingId];
+      let i = 2;
+
+      if (eventDate) {
+        conditions.push(`event_date = $${i++}`);
+        values.push(eventDate);
+      } else {
+        conditions.push(`event_date IS NULL`);
+      }
+
+      if (eventName) {
+        conditions.push(`event_name = $${i++}`);
+        values.push(eventName);
+      } else {
+        conditions.push(`event_name IS NULL`);
+      }
+
+      const result = await pool.query(
+        `DELETE FROM timeline_entries WHERE ${conditions.join(' AND ')}`,
+        values
+      );
+      deleted = result.rowCount ?? 0;
+    } else {
+      const result = await pool.query(
+        `DELETE FROM timeline_entries WHERE wedding_id = $1`,
+        [weddingId]
+      );
+      deleted = result.rowCount ?? 0;
+    }
+
+    return Response.json({ data: { deleted } });
+  } catch (error) {
+    return handleApiError(error);
+  }
+}
+
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ weddingId: string }> }

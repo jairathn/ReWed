@@ -52,6 +52,7 @@ export default function TimelinePage({
   } | null>(null);
   const [error, setError] = useState('');
   const [editing, setEditing] = useState<DraftEntry | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const load = useCallback(async () => {
@@ -170,6 +171,46 @@ export default function TimelinePage({
     await load();
   };
 
+  const deleteAll = async () => {
+    if (!confirm('Delete ALL timeline entries? This cannot be undone.')) return;
+    if (!confirm('Are you sure? Every entry across all days will be permanently removed.')) return;
+    setDeleting(true);
+    try {
+      const res = await fetch(
+        `/api/v1/dashboard/weddings/${weddingId}/timeline`,
+        { method: 'DELETE' }
+      );
+      if (!res.ok) {
+        setError('Delete failed');
+        return;
+      }
+      await load();
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const deleteSection = async (date: string, name: string) => {
+    if (!confirm(`Delete all entries for "${name}"${date ? ` on ${formatDate(date)}` : ''}?`)) return;
+    setDeleting(true);
+    try {
+      const qs = new URLSearchParams();
+      if (date) qs.set('event_date', date);
+      if (name && name !== 'Unscheduled') qs.set('event_name', name);
+      const res = await fetch(
+        `/api/v1/dashboard/weddings/${weddingId}/timeline?${qs.toString()}`,
+        { method: 'DELETE' }
+      );
+      if (!res.ok) {
+        setError('Delete failed');
+        return;
+      }
+      await load();
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   // Group entries by (event_date, event_name)
   const groups = new Map<string, { date: string; name: string; entries: TimelineEntry[] }>();
   for (const e of entries) {
@@ -243,6 +284,15 @@ export default function TimelinePage({
           >
             Download current as .xlsx
           </a>
+          {entries.length > 0 && (
+            <button
+              onClick={deleteAll}
+              disabled={deleting}
+              style={dangerButtonStyle(deleting)}
+            >
+              {deleting ? 'Deleting...' : 'Delete all entries'}
+            </button>
+          )}
         </div>
         {uploadResult && (
           <div
@@ -291,12 +341,22 @@ export default function TimelinePage({
                   {g.name}
                 </h2>
               </div>
-              <button
-                onClick={() => openNewEntry(g.date, g.name)}
-                style={secondaryButtonStyle}
-              >
-                + Add entry
-              </button>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button
+                  onClick={() => deleteSection(g.date, g.name)}
+                  disabled={deleting}
+                  style={dangerSecondaryButtonStyle(deleting)}
+                  title={`Delete all entries in this section`}
+                >
+                  Delete section
+                </button>
+                <button
+                  onClick={() => openNewEntry(g.date, g.name)}
+                  style={secondaryButtonStyle}
+                >
+                  + Add entry
+                </button>
+              </div>
             </div>
             <div style={{ ...cardStyle, padding: 0, overflow: 'hidden' }}>
               {g.entries.map((e, idx) => (
@@ -695,3 +755,31 @@ const iconButtonStyle: React.CSSProperties = {
   color: 'var(--text-tertiary)',
   cursor: 'pointer',
 };
+
+function dangerButtonStyle(disabled: boolean): React.CSSProperties {
+  return {
+    padding: '10px 18px',
+    borderRadius: 10,
+    border: 'none',
+    background: disabled ? 'var(--border-light)' : 'var(--color-terracotta)',
+    color: disabled ? 'var(--text-tertiary)' : '#FDFBF7',
+    fontSize: 13,
+    fontWeight: 500,
+    fontFamily: 'var(--font-body)',
+    cursor: disabled ? 'default' : 'pointer',
+  };
+}
+
+function dangerSecondaryButtonStyle(disabled: boolean): React.CSSProperties {
+  return {
+    padding: '8px 14px',
+    borderRadius: 10,
+    border: '1px solid var(--color-terracotta)',
+    background: disabled ? 'var(--border-light)' : 'transparent',
+    color: disabled ? 'var(--text-tertiary)' : 'var(--color-terracotta)',
+    fontSize: 12,
+    fontWeight: 500,
+    fontFamily: 'var(--font-body)',
+    cursor: disabled ? 'default' : 'pointer',
+  };
+}
