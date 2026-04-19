@@ -12,7 +12,45 @@ interface Guest {
   phone: string | null;
   group_label: string | null;
   rsvp_status: 'pending' | 'attending' | 'declined';
+  party_id: string | null;
+  party_role: string | null;
   created_at: string;
+}
+
+interface PartyGroup {
+  partyId: string | null;
+  members: Guest[];
+}
+
+function groupByParty(guests: Guest[]): PartyGroup[] {
+  const groups = new Map<string, Guest[]>();
+  const solos: PartyGroup[] = [];
+
+  for (const g of guests) {
+    if (g.party_id) {
+      const list = groups.get(g.party_id) || [];
+      list.push(g);
+      groups.set(g.party_id, list);
+    } else {
+      solos.push({ partyId: null, members: [g] });
+    }
+  }
+
+  const result: PartyGroup[] = [];
+  for (const [partyId, members] of groups) {
+    const roleOrder: Record<string, number> = { primary: 0, partner: 1, child: 2 };
+    members.sort((a, b) => (roleOrder[a.party_role || ''] ?? 3) - (roleOrder[b.party_role || ''] ?? 3));
+    result.push({ partyId, members });
+  }
+
+  result.push(...solos);
+  result.sort((a, b) => {
+    const aName = a.members[0]?.last_name || '';
+    const bName = b.members[0]?.last_name || '';
+    return aName.localeCompare(bName) || (a.members[0]?.first_name || '').localeCompare(b.members[0]?.first_name || '');
+  });
+
+  return result;
 }
 
 interface ColumnMapping {
@@ -713,6 +751,10 @@ export default function GuestsPage({ params }: { params: Promise<{ weddingId: st
           </h1>
           <p style={{ fontSize: 13, color: 'var(--text-secondary)', fontFamily: 'var(--font-body)', marginTop: 4 }}>
             {guests.length} guest{guests.length !== 1 ? 's' : ''}
+            {guests.length > 0 && (() => {
+              const parties = groupByParty(guests);
+              return ` in ${parties.length} household${parties.length !== 1 ? 's' : ''}`;
+            })()}
           </p>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
@@ -835,49 +877,84 @@ export default function GuestsPage({ params }: { params: Promise<{ weddingId: st
               </tr>
             </thead>
             <tbody>
-              {guests.map((guest) => (
-                <tr key={guest.id} style={{ borderBottom: '1px solid var(--border-light)', background: selectedIds.has(guest.id) ? 'rgba(196, 112, 75, 0.04)' : undefined }}>
-                  <td style={{ width: 40, padding: '12px 0 12px 16px' }}>
-                    <input
-                      type="checkbox"
-                      checked={selectedIds.has(guest.id)}
-                      onChange={() => toggleSelect(guest.id)}
-                      style={{ cursor: 'pointer', accentColor: 'var(--color-terracotta)' }}
-                    />
-                  </td>
-                  <td style={{ padding: '12px 16px', fontSize: 14, fontWeight: 500, color: 'var(--text-primary)' }}>
-                    {guest.display_name}
-                  </td>
-                  <td style={{ padding: '12px 16px', fontSize: 13, color: 'var(--text-secondary)' }}>
-                    {guest.email || '—'}
-                  </td>
-                  <td style={{ padding: '12px 16px', fontSize: 13, color: 'var(--text-secondary)' }}>
-                    {guest.phone || '—'}
-                  </td>
-                  <td style={{ padding: '12px 16px', fontSize: 13, color: 'var(--text-secondary)' }}>
-                    {guest.group_label || '—'}
-                  </td>
-                  <td style={{ padding: '12px 16px' }}>
-                    {rsvpBadge(guest.rsvp_status)}
-                  </td>
-                  <td style={{ padding: '12px 16px', textAlign: 'right' }}>
-                    <button
-                      onClick={() => startEdit(guest)}
-                      style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: 'var(--color-terracotta)', marginRight: 12 }}
+              {groupByParty(guests).map((party) =>
+                party.members.map((guest, memberIdx) => {
+                  const isPrimary = memberIdx === 0;
+                  const isLastInGroup = memberIdx === party.members.length - 1;
+                  const isMultiMember = party.members.length > 1;
+                  const roleBadge = guest.party_role && guest.party_role !== 'primary' ? (
+                    <span style={{
+                      fontSize: 10,
+                      padding: '1px 6px',
+                      borderRadius: 999,
+                      background: 'rgba(198,163,85,0.1)',
+                      color: 'var(--color-gold-dark)',
+                      marginLeft: 6,
+                      fontWeight: 400,
+                    }}>
+                      {guest.party_role}
+                    </span>
+                  ) : null;
+
+                  return (
+                    <tr
+                      key={guest.id}
+                      style={{
+                        borderBottom: isLastInGroup ? '2px solid var(--border-light)' : '1px solid var(--border-light)',
+                        background: selectedIds.has(guest.id)
+                          ? 'rgba(196, 112, 75, 0.04)'
+                          : !isPrimary ? 'rgba(0,0,0,0.015)' : undefined,
+                      }}
                     >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() =>
-                        setConfirmDelete({ type: 'single', id: guest.id, name: guest.display_name })
-                      }
-                      style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: 'var(--text-tertiary)' }}
-                    >
-                      Delete
-                    </button>
-                  </td>
-                </tr>
-              ))}
+                      <td style={{ width: 40, padding: '10px 0 10px 16px' }}>
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.has(guest.id)}
+                          onChange={() => toggleSelect(guest.id)}
+                          style={{ cursor: 'pointer', accentColor: 'var(--color-terracotta)' }}
+                        />
+                      </td>
+                      <td style={{ padding: '10px 16px', fontSize: isPrimary ? 14 : 13, fontWeight: isPrimary ? 500 : 400, color: 'var(--text-primary)' }}>
+                        <span style={{ display: 'inline-flex', alignItems: 'center' }}>
+                          {isMultiMember && !isPrimary && (
+                            <span style={{ color: 'var(--text-tertiary)', marginRight: 6, fontSize: 12 }}>└</span>
+                          )}
+                          {guest.display_name}
+                          {roleBadge}
+                        </span>
+                      </td>
+                      <td style={{ padding: '10px 16px', fontSize: 13, color: 'var(--text-secondary)' }}>
+                        {isPrimary ? (guest.email || '—') : ''}
+                      </td>
+                      <td style={{ padding: '10px 16px', fontSize: 13, color: 'var(--text-secondary)' }}>
+                        {isPrimary ? (guest.phone || '—') : ''}
+                      </td>
+                      <td style={{ padding: '10px 16px', fontSize: 13, color: 'var(--text-secondary)' }}>
+                        {isPrimary ? (guest.group_label || '—') : ''}
+                      </td>
+                      <td style={{ padding: '10px 16px' }}>
+                        {rsvpBadge(guest.rsvp_status)}
+                      </td>
+                      <td style={{ padding: '10px 16px', textAlign: 'right' }}>
+                        <button
+                          onClick={() => startEdit(guest)}
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: 'var(--color-terracotta)', marginRight: 12 }}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() =>
+                            setConfirmDelete({ type: 'single', id: guest.id, name: guest.display_name })
+                          }
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: 'var(--text-tertiary)' }}
+                        >
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
             </tbody>
           </table>
         </div>
