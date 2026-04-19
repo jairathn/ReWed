@@ -134,6 +134,12 @@ export async function GET(
       rsvp_url: typeof config.rsvp_url === 'string' && config.rsvp_url.trim()
         ? config.rsvp_url.trim()
         : null,
+      rsvp_passcode: typeof config.rsvp_passcode === 'string' && config.rsvp_passcode.trim()
+        ? config.rsvp_passcode.trim()
+        : null,
+      invite_url: typeof config.invite_url === 'string' && config.invite_url.trim()
+        ? config.invite_url.trim()
+        : null,
       events,
       features: {
         social_feed: packageConfig.social_feed ?? false,

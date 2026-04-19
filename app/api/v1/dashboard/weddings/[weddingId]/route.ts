@@ -19,6 +19,18 @@ const updateWeddingSchema = z.object({
     .nullable()
     .optional()
     .or(z.literal('')),
+  // Passcode for the external wedding site — copied to clipboard when the
+  // guest taps the RSVP button. Plain string; the user sees this themselves.
+  rsvp_passcode: z.string().max(100).nullable().optional().or(z.literal('')),
+  // Invite link (Canva, Paperless Post, etc.) — separate button on the guest
+  // home next to the RSVP button.
+  invite_url: z
+    .string()
+    .max(500)
+    .url()
+    .nullable()
+    .optional()
+    .or(z.literal('')),
 });
 
 /**
@@ -63,13 +75,19 @@ export async function PATCH(
       values.push(parsed.venue_lng);
     }
 
-    // rsvp_url lives inside the config JSONB (empty string / null clears it).
-    if (parsed.rsvp_url !== undefined) {
-      const next =
-        typeof parsed.rsvp_url === 'string' && parsed.rsvp_url.trim()
-          ? parsed.rsvp_url.trim()
-          : null;
-      sets.push(`config = jsonb_set(COALESCE(config, '{}'::jsonb), '{rsvp_url}', $${idx++}::jsonb, true)`);
+    // These three all live inside the wedding config JSONB. Empty string and
+    // explicit null both clear the field.
+    const configFields: Array<{ key: string; value: string | null | undefined }> = [
+      { key: 'rsvp_url', value: parsed.rsvp_url },
+      { key: 'rsvp_passcode', value: parsed.rsvp_passcode },
+      { key: 'invite_url', value: parsed.invite_url },
+    ];
+    for (const f of configFields) {
+      if (f.value === undefined) continue;
+      const next = typeof f.value === 'string' && f.value.trim() ? f.value.trim() : null;
+      sets.push(
+        `config = jsonb_set(COALESCE(config, '{}'::jsonb), '{${f.key}}', $${idx++}::jsonb, true)`
+      );
       values.push(JSON.stringify(next));
     }
 
