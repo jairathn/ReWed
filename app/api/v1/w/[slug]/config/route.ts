@@ -131,6 +131,9 @@ export async function GET(
       prompts: config.prompts || { heartfelt: [], fun: [], quick_takes: [] },
       enabled_filters: config.enabled_filters || [],
       enabled_ai_styles: config.enabled_ai_styles || [],
+      rsvp_url: typeof config.rsvp_url === 'string' && config.rsvp_url.trim()
+        ? config.rsvp_url.trim()
+        : null,
       events,
       features: {
         social_feed: packageConfig.social_feed ?? false,

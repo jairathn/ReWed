@@ -12,7 +12,37 @@ interface ConnectionStatus {
     last_scanned_at: string | null;
     last_drive_scanned_at: string | null;
     connected_at: string;
+    backfill_from_date: string | null;
+    backfill_completed_at: string | null;
+    last_synced_at: string | null;
+    backfill_page_token: string | null;
   } | null;
+  knowledge: {
+    thread_count: number;
+    extracted_count: number;
+    fact_count: number;
+    unextracted_count: number;
+  };
+}
+
+interface IngestState {
+  backfill_from_date: string | null;
+  backfill_completed_at: string | null;
+  last_synced_at: string | null;
+  backfill_page_token: string | null;
+  registered_total: number;
+  extracted_total: number;
+  unextracted_count: number;
+}
+
+interface IngestResult {
+  phase: 'register' | 'extract' | 'done' | 'idle';
+  registered?: number;
+  extracted?: number;
+  failed?: number;
+  discovered?: number;
+  reachedEndOfBackfill?: boolean;
+  state: IngestState;
 }
 
 interface Suggestion {
@@ -36,6 +66,8 @@ export default function GoogleSuggestionsCard({ weddingId }: { weddingId: string
   const [acting, setActing] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [flash, setFlash] = useState('');
+  const [syncing, setSyncing] = useState(false);
+  const [syncProgress, setSyncProgress] = useState<string>('');
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -102,6 +134,72 @@ export default function GoogleSuggestionsCard({ weddingId }: { weddingId: string
     if (!confirm('Disconnect Google? Suggestions already created will stay in your inbox.')) return;
     await fetch(`/api/v1/dashboard/weddings/${weddingId}/google`, { method: 'DELETE' });
     await load();
+  };
+
+  /**
+   * Run the ingest loop: call POST /google/ingest repeatedly until the server
+   * reports phase === 'done'. The serverless endpoint bounds work per call so
+   * one invocation is always fast; we loop here to chip through the whole
+   * backfill. Aborts cleanly on error or if the user reloads the page.
+   */
+  const runSync = async (opts: { mode?: 'batch' | 'incremental'; fromDate?: string } = {}) => {
+    if (syncing) return;
+    setSyncing(true);
+    setError('');
+    setFlash('');
+
+    const maxIterations = 200; // hard cap so a bad server response can't loop forever
+    let iterations = 0;
+    let totalRegistered = 0;
+    let totalExtracted = 0;
+    let discovered = 0;
+
+    try {
+      while (iterations < maxIterations) {
+        iterations += 1;
+        const res = await fetch(`/api/v1/dashboard/weddings/${weddingId}/google/ingest`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            mode: iterations === 1 ? opts.mode ?? 'batch' : 'batch',
+            from_date: opts.fromDate,
+          }),
+        });
+        const json = await res.json();
+        if (!res.ok) throw new Error(json?.error?.message || 'Sync failed');
+        const result = (json.data as IngestResult) ?? { phase: 'idle', state: {} as IngestState };
+
+        totalRegistered += result.registered ?? 0;
+        totalExtracted += result.extracted ?? 0;
+        discovered += result.discovered ?? 0;
+
+        const s = result.state;
+        if (result.phase === 'register') {
+          setSyncProgress(
+            `Registering threads… ${s.registered_total} indexed so far`
+          );
+        } else if (result.phase === 'extract') {
+          setSyncProgress(
+            `Extracting facts… ${s.extracted_total} of ${s.registered_total} threads done`
+          );
+        } else {
+          setSyncProgress('');
+          break;
+        }
+      }
+
+      setFlash(
+        `Sync done. ${totalRegistered} thread${totalRegistered === 1 ? '' : 's'} indexed` +
+          (discovered ? ` (+${discovered} new)` : '') +
+          `, ${totalExtracted} fact${totalExtracted === 1 ? '' : 's'} extracted.`
+      );
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Sync failed');
+    } finally {
+      setSyncing(false);
+      setSyncProgress('');
+    }
   };
 
   const resolve = async (id: string, action: 'accept' | 'decline') => {
@@ -196,6 +294,15 @@ export default function GoogleSuggestionsCard({ weddingId }: { weddingId: string
 
       {flash && <p style={flashText}>{flash}</p>}
       {error && <p style={errorText}>{error}</p>}
+
+      <KnowledgeBaseSection
+        connection={conn}
+        knowledge={status.knowledge}
+        syncing={syncing}
+        syncProgress={syncProgress}
+        onSync={(opts) => runSync(opts)}
+        weddingId={weddingId}
+      />
 
       {suggestions.length > 0 && (
         <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -412,3 +519,138 @@ const googleIcon = (
     <path d="M21.35 11.1H12v3.2h5.35c-.5 2.4-2.55 3.6-5.35 3.6a6 6 0 110-12c1.5 0 2.85.55 3.9 1.45l2.4-2.4A9.5 9.5 0 0012 2a10 10 0 100 20c5.75 0 9.55-4.05 9.55-9.75 0-.4 0-.85-.2-1.15z" fill="var(--color-gold-dark)" />
   </svg>
 );
+
+function KnowledgeBaseSection({
+  connection,
+  knowledge,
+  syncing,
+  syncProgress,
+  onSync,
+  weddingId,
+}: {
+  connection: NonNullable<ConnectionStatus['connection']>;
+  knowledge: ConnectionStatus['knowledge'];
+  syncing: boolean;
+  syncProgress: string;
+  onSync: (opts: { mode?: 'batch' | 'incremental'; fromDate?: string }) => void;
+  weddingId: string;
+}) {
+  const neverStarted =
+    !connection.backfill_from_date && knowledge.thread_count === 0;
+  const backfillDone = !!connection.backfill_completed_at;
+  const inFlight = !backfillDone && knowledge.thread_count > 0;
+  const pct =
+    knowledge.thread_count > 0
+      ? Math.round((knowledge.extracted_count / knowledge.thread_count) * 100)
+      : 0;
+
+  return (
+    <div
+      style={{
+        marginTop: 14,
+        padding: 14,
+        borderRadius: 12,
+        background: 'var(--bg-soft-cream)',
+        border: '1px solid var(--border-light)',
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+        <div style={{ minWidth: 0, flex: 1 }}>
+          <div
+            style={{
+              fontSize: 11,
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px',
+              color: 'var(--color-gold-dark)',
+              fontWeight: 700,
+              fontFamily: 'var(--font-body)',
+            }}
+          >
+            Knowledge base
+          </div>
+          <div style={{ fontSize: 14, color: 'var(--text-primary)', fontFamily: 'var(--font-body)', fontWeight: 500, marginTop: 2 }}>
+            {knowledge.fact_count} fact{knowledge.fact_count === 1 ? '' : 's'} from {knowledge.thread_count} thread{knowledge.thread_count === 1 ? '' : 's'}
+          </div>
+          <div style={{ fontSize: 12, color: 'var(--text-secondary)', fontFamily: 'var(--font-body)', marginTop: 2 }}>
+            {neverStarted
+              ? 'Build a month-by-month knowledge base from your inbox. Facts power the chatbot and auto-todos.'
+              : backfillDone
+              ? `Backfill complete from ${connection.backfill_from_date}. ${connection.last_synced_at ? `Last synced ${formatRelative(connection.last_synced_at)}.` : ''}`
+              : inFlight
+              ? `Backfill in progress from ${connection.backfill_from_date}. ${knowledge.unextracted_count} thread${knowledge.unextracted_count === 1 ? '' : 's'} left to extract.`
+              : `Ready to backfill from ${connection.backfill_from_date}.`}
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <a
+            href={`/dashboard/${weddingId}/facts`}
+            style={{ ...ghostBtn, textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}
+          >
+            View facts
+          </a>
+          {neverStarted && (
+            <button
+              onClick={() => onSync({ mode: 'batch' })}
+              disabled={syncing}
+              style={primaryBtn}
+            >
+              {syncing ? 'Starting…' : 'Start syncing'}
+            </button>
+          )}
+          {(inFlight || knowledge.unextracted_count > 0) && !neverStarted && (
+            <button
+              onClick={() => onSync({ mode: 'batch' })}
+              disabled={syncing}
+              style={primaryBtn}
+            >
+              {syncing ? 'Syncing…' : 'Continue sync'}
+            </button>
+          )}
+          {backfillDone && knowledge.unextracted_count === 0 && (
+            <button
+              onClick={() => onSync({ mode: 'incremental' })}
+              disabled={syncing}
+              style={primaryBtn}
+            >
+              {syncing ? 'Checking…' : 'Check for new'}
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Progress bar */}
+      {knowledge.thread_count > 0 && (
+        <div style={{ marginTop: 10 }}>
+          <div
+            style={{
+              height: 6,
+              borderRadius: 999,
+              background: 'var(--bg-pure-white)',
+              border: '1px solid var(--border-light)',
+              overflow: 'hidden',
+            }}
+          >
+            <div
+              style={{
+                width: `${pct}%`,
+                height: '100%',
+                background: 'linear-gradient(90deg, var(--color-olive), var(--color-gold))',
+                transition: 'width 0.4s',
+              }}
+            />
+          </div>
+          <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 4, fontFamily: 'var(--font-body)' }}>
+            {knowledge.extracted_count} of {knowledge.thread_count} extracted · {pct}%
+          </div>
+        </div>
+      )}
+
+      {/* Live progress line while the loop is running */}
+      {syncing && syncProgress && (
+        <p style={{ fontSize: 12, color: 'var(--color-gold-dark)', margin: '8px 0 0', fontFamily: 'var(--font-body)' }}>
+          {syncProgress}
+        </p>
+      )}
+    </div>
+  );
+}

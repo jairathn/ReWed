@@ -10,6 +10,15 @@ const updateWeddingSchema = z.object({
   venue_country: z.string().max(200).optional(),
   venue_lat: z.number().min(-90).max(90).optional(),
   venue_lng: z.number().min(-180).max(180).optional(),
+  // RSVP link shown on the guest home. Null / empty string clears it.
+  // Accepts http(s) or null; we don't try to verify the URL resolves.
+  rsvp_url: z
+    .string()
+    .max(500)
+    .url()
+    .nullable()
+    .optional()
+    .or(z.literal('')),
 });
 
 /**
@@ -52,6 +61,16 @@ export async function PATCH(
     if (parsed.venue_lng !== undefined) {
       sets.push(`venue_lng = $${idx++}`);
       values.push(parsed.venue_lng);
+    }
+
+    // rsvp_url lives inside the config JSONB (empty string / null clears it).
+    if (parsed.rsvp_url !== undefined) {
+      const next =
+        typeof parsed.rsvp_url === 'string' && parsed.rsvp_url.trim()
+          ? parsed.rsvp_url.trim()
+          : null;
+      sets.push(`config = jsonb_set(COALESCE(config, '{}'::jsonb), '{rsvp_url}', $${idx++}::jsonb, true)`);
+      values.push(JSON.stringify(next));
     }
 
     if (sets.length === 0) {
