@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Dashboard | ReWed',
+  title: 'Dashboard | Zari',
   description: 'Manage your wedding experience.',
 };
 

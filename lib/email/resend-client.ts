@@ -57,7 +57,7 @@ export async function sendEmail(opts: SendEmailOptions): Promise<SendEmailResult
   }
 
   const fromEmail = env.RESEND_FROM_EMAIL!;
-  const fromName = opts.fromName || env.RESEND_FROM_NAME || 'ReWed';
+  const fromName = opts.fromName || env.RESEND_FROM_NAME || 'Zari';
   const from = `${fromName} <${fromEmail}>`;
   const replyTo = opts.replyTo || env.RESEND_REPLY_TO || undefined;
 

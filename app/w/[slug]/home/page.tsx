@@ -102,7 +102,7 @@ export default function GuestHomePage() {
               color: 'var(--color-gold-dark)',
             }}
           >
-            ReWed
+            Zari
           </h1>
         </div>
         <GuestAccountMenu />

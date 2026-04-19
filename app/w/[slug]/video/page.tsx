@@ -456,7 +456,7 @@ export default function VideoRecordingPage() {
                   textShadow: '0 1px 4px rgba(0, 0, 0, 0.3)',
                 }}
               >
-                ReWed
+                Zari
               </h1>
             </div>
             <div className="w-8" />

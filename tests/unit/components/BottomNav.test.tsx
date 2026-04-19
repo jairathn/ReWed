@@ -25,14 +25,13 @@ vi.mock('next/navigation', () => ({
 import BottomNav from '@/components/guest/BottomNav';
 
 describe('BottomNav', () => {
-  it('renders all 5 tabs', () => {
+  it('renders the four primary tabs', () => {
     render(<BottomNav />);
 
     expect(screen.getByText('Home')).toBeDefined();
+    expect(screen.getByText('Schedule')).toBeDefined();
     expect(screen.getByText('Capture')).toBeDefined();
     expect(screen.getByText('Travel')).toBeDefined();
-    expect(screen.getByText('Gallery')).toBeDefined();
-    expect(screen.getByText('Events')).toBeDefined();
   });
 
   it('has correct links for each tab', () => {
@@ -41,31 +40,21 @@ describe('BottomNav', () => {
     const homeLink = screen.getByText('Home').closest('a');
     expect(homeLink?.getAttribute('href')).toBe('/w/test-wedding/home');
 
+    const scheduleLink = screen.getByText('Schedule').closest('a');
+    expect(scheduleLink?.getAttribute('href')).toBe('/w/test-wedding/schedule');
+
     const captureLink = screen.getByText('Capture').closest('a');
     expect(captureLink?.getAttribute('href')).toBe('/w/test-wedding/capture');
 
     const travelLink = screen.getByText('Travel').closest('a');
     expect(travelLink?.getAttribute('href')).toBe('/w/test-wedding/travel');
-
-    const galleryLink = screen.getByText('Gallery').closest('a');
-    expect(galleryLink?.getAttribute('href')).toBe('/w/test-wedding/gallery');
-
-    const eventsLink = screen.getByText('Events').closest('a');
-    expect(eventsLink?.getAttribute('href')).toBe('/w/test-wedding/schedule');
-  });
-
-  it('renders the Travel tab as elevated (with gradient circle)', () => {
-    render(<BottomNav />);
-
-    const travelLink = screen.getByText('Travel').closest('a');
-    expect(travelLink?.className).toContain('-mt-5'); // elevated
   });
 
   it('all tabs have accessible labels', () => {
     render(<BottomNav />);
 
     const links = screen.getAllByRole('link');
-    expect(links.length).toBe(5);
+    expect(links.length).toBe(4);
     links.forEach((link) => {
       expect(link.getAttribute('aria-label')).toBeDefined();
     });

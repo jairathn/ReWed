@@ -86,5 +86,9 @@ export const IMAGE_MODEL = 'gpt-image-1' as const;
 export const CHAT_MODEL = 'gpt-4.1' as const;
 // Smaller chat model for simpler tasks
 export const CHAT_MODEL_MINI = 'gpt-4.1-mini' as const;
+// Frontier model for the couple's expert chatbot — handles full-wedding
+// context and open-ended "what am I forgetting?" questions. Swap to
+// 'gpt-5.4-pro' if you want even higher reasoning effort.
+export const CHAT_MODEL_EXPERT = 'gpt-5.4' as const;
 // Embedding model for FAQ
 export const EMBEDDING_MODEL = 'text-embedding-3-small' as const;

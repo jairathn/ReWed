@@ -15,6 +15,7 @@ export default function GuestRegistrationPage() {
   const [isSearching, setIsSearching] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
   const [error, setError] = useState('');
+  const [hasSubmitted, setHasSubmitted] = useState(false);
 
   // If already authenticated, redirect to home
   useEffect(() => {
@@ -128,7 +129,7 @@ export default function GuestRegistrationPage() {
       style={{ background: 'var(--bg-warm-gradient)' }}
     >
       <div className="w-full max-w-md text-center">
-        {/* ReWed Branding */}
+        {/* Zari Branding */}
         <p
           className="text-2xl tracking-wide mb-8"
           style={{
@@ -137,7 +138,7 @@ export default function GuestRegistrationPage() {
             color: 'var(--color-gold-dark)',
           }}
         >
-          ReWed
+          Zari
         </p>
 
         {/* Wedding Name */}
@@ -197,7 +198,20 @@ export default function GuestRegistrationPage() {
             type="text"
             placeholder="Find your name..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              if (hasSubmitted) setHasSubmitted(false);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                if (searchResults.length === 1 && (matchType === 'exact' || matchType === 'unique_first')) {
+                  handleSelectGuest(searchResults[0]);
+                } else {
+                  setHasSubmitted(true);
+                }
+              }
+            }}
             className="w-full px-6 py-4 rounded-2xl text-lg outline-none transition-shadow focus:shadow-md"
             style={{
               background: 'var(--bg-pure-white)',
@@ -301,7 +315,8 @@ export default function GuestRegistrationPage() {
           </div>
         )}
 
-        {searchQuery.length >= 2 &&
+        {hasSubmitted &&
+          searchQuery.length >= 2 &&
           matchType === 'none' &&
           !isSearching && (
             <p

@@ -310,7 +310,7 @@ export default function FeedPage() {
               color: 'var(--color-gold-dark)',
             }}
           >
-            ReWed
+            Zari
           </h1>
           <div className="w-8" />
         </header>
@@ -365,7 +365,7 @@ export default function FeedPage() {
             color: 'var(--color-gold-dark)',
           }}
         >
-          ReWed
+          Zari
         </h1>
         <div className="w-8" />
       </header>

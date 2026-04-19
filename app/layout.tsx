@@ -2,11 +2,11 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "ReWed — Every Guest. Every Moment. Every Message.",
+  title: "Zari — Every Guest. Every Moment. Every Message.",
   description:
     "Your guests record heartfelt video toasts, take stunning photos with artistic filters, and create fun portraits. Days later, everyone receives a personalized video reel of their memories from your wedding.",
   openGraph: {
-    title: "ReWed — The moments between moments.",
+    title: "Zari — The moments between moments.",
     description:
       "Every guest becomes part of the story. Video messages, photo booth, AI portraits, and personalized keepsake reels.",
     type: "website",

@@ -2,7 +2,7 @@
 
 import { useCallback, useSyncExternalStore } from 'react';
 
-const STORAGE_KEY = 'rewed_preview';
+const STORAGE_KEY = 'zari_preview';
 const UNLOCK_CODE = 'Shriya';
 
 // Subscribers notified when we change the value from within this tab.

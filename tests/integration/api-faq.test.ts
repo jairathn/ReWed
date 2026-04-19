@@ -38,6 +38,7 @@ describe('POST /api/v1/w/[slug]/faq', () => {
           config: {},
         }],
       }) // wedding lookup
+      .mockResolvedValueOnce({ rows: [{ count: 1 }] }) // chatbot_usage upsert (rate limit)
       .mockResolvedValueOnce({ rows: [] }) // cache check
       .mockResolvedValueOnce({
         rows: [
@@ -74,6 +75,9 @@ describe('POST /api/v1/w/[slug]/faq', () => {
           config: {},
         }],
       })
+      .mockResolvedValueOnce({ rows: [{ count: 1 }] }) // chatbot_usage upsert (rate limit)
+      .mockResolvedValueOnce({ rows: [{ id: 'faq-1', question: 'q', answer: 'a' }] }) // faq entries
+      .mockResolvedValueOnce({ rows: [] }) // events
       .mockResolvedValueOnce({
         rows: [{ answer: 'Smart casual, colors preferred.' }],
       }) // cache hit!
@@ -151,5 +155,31 @@ describe('POST /api/v1/w/[slug]/faq', () => {
 
     const response = await POST(request, makeParams());
     expect(response.status).toBe(401);
+  });
+
+  it('rate-limits the 21st question of the day', async () => {
+    mockQuery
+      .mockResolvedValueOnce({
+        rows: [{
+          id: 'w-001',
+          package_config: { faq_chatbot: true },
+          display_name: "Neil & Shriya's Wedding",
+          config: {},
+        }],
+      })
+      // chatbot_usage upsert returns count > limit
+      .mockResolvedValueOnce({ rows: [{ count: 21 }] });
+
+    const request = new NextRequest('http://localhost:3000/api/v1/w/neil-shriya/faq', {
+      method: 'POST',
+      body: JSON.stringify({ question: 'one too many' }),
+      headers: {
+        'Content-Type': 'application/json',
+        Cookie: 'wedding_session=valid-token',
+      },
+    });
+
+    const response = await POST(request, makeParams());
+    expect(response.status).toBe(429);
   });
 });

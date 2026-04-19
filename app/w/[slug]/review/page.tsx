@@ -180,7 +180,7 @@ function ReviewContent() {
               color: 'var(--color-gold-dark)',
             }}
           >
-            ReWed
+            Zari
           </h1>
           <div className="w-8" />
         </header>
@@ -218,7 +218,7 @@ function ReviewContent() {
               color: 'var(--color-gold-dark)',
             }}
           >
-            ReWed
+            Zari
           </h1>
           <div className="w-8" />
         </header>
@@ -285,7 +285,7 @@ function ReviewContent() {
             color: 'var(--color-gold-dark)',
           }}
         >
-          ReWed
+          Zari
         </h1>
         <div className="w-8" />
       </header>
@@ -502,7 +502,7 @@ export default function ReviewPage() {
                 color: 'var(--color-gold-dark)',
               }}
             >
-              ReWed
+              Zari
             </h1>
             <div className="w-8" />
           </header>

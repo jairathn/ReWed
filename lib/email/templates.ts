@@ -1,10 +1,14 @@
 /**
  * Minimal branded email template. Returns { html, text } from a plain-text
  * message body. Keeps things simple — no external template engine required.
+ *
+ * Intentionally has NO "Hi <name>" greeting: guests imported from a CSV are
+ * stored individually without their plus-ones, so a personal greeting reads
+ * weird when only one member of a couple actually receives the email. The
+ * heading + body carry the message instead.
  */
 export interface BuildEmailArgs {
   weddingName: string;
-  guestName?: string | null;
   heading: string;
   body: string;
   ctaLabel?: string;
@@ -31,7 +35,6 @@ function bodyToHtml(body: string): string {
 export function buildGuestEmail(args: BuildEmailArgs): { html: string; text: string } {
   const {
     weddingName,
-    guestName,
     heading,
     body,
     ctaLabel,
@@ -39,7 +42,6 @@ export function buildGuestEmail(args: BuildEmailArgs): { html: string; text: str
     footerNote,
   } = args;
 
-  const greeting = guestName ? `Hi ${escapeHtml(guestName)},` : 'Hi there,';
   const bodyHtml = bodyToHtml(body);
   const ctaHtml =
     ctaLabel && ctaUrl
@@ -69,7 +71,7 @@ export function buildGuestEmail(args: BuildEmailArgs): { html: string; text: str
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#FFFFFF;border-radius:18px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.04);">
             <tr>
               <td style="padding:32px 32px 8px;text-align:center;">
-                <p style="margin:0;font-family:Georgia,serif;font-style:italic;font-size:22px;color:#8a6d1f;letter-spacing:0.02em;">ReWed</p>
+                <p style="margin:0;font-family:Georgia,serif;font-style:italic;font-size:22px;color:#8a6d1f;letter-spacing:0.02em;">Zari</p>
               </td>
             </tr>
             <tr>
@@ -84,7 +86,6 @@ export function buildGuestEmail(args: BuildEmailArgs): { html: string; text: str
             </tr>
             <tr>
               <td style="padding:24px 36px 32px;font-family:Georgia,serif;font-size:15px;line-height:1.65;color:#3b3a36;">
-                <p style="margin:0 0 16px;">${greeting}</p>
                 ${bodyHtml}
                 ${ctaHtml}
                 ${footer}
@@ -93,7 +94,7 @@ export function buildGuestEmail(args: BuildEmailArgs): { html: string; text: str
             <tr>
               <td style="padding:20px 32px 28px;text-align:center;border-top:1px solid #F0EBE1;">
                 <p style="margin:0;font-size:11px;color:#a8a29e;font-family:Arial,sans-serif;letter-spacing:0.4px;">
-                  Sent with love via ReWed
+                  Sent with love via Zari
                 </p>
               </td>
             </tr>
@@ -104,18 +105,14 @@ export function buildGuestEmail(args: BuildEmailArgs): { html: string; text: str
   </body>
 </html>`;
 
-  const textLines = [
-    greeting.replace('&#39;', "'"),
-    '',
-    body,
-  ];
+  const textLines = [body];
   if (ctaLabel && ctaUrl) {
     textLines.push('', `${ctaLabel}: ${ctaUrl}`);
   }
   if (footerNote) {
     textLines.push('', footerNote);
   }
-  textLines.push('', '— Sent with love via ReWed');
+  textLines.push('', '— Sent with love via Zari');
 
   return { html, text: textLines.join('\n') };
 }

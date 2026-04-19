@@ -6,6 +6,7 @@ import { getOpenAIClient, CHAT_MODEL_MINI } from '@/lib/ai/openai';
 import { sanitizeText } from '@/lib/validation';
 import { AppError, handleApiError } from '@/lib/errors';
 import { isTestMode } from '@/lib/env';
+import { enforceChatbotLimit, getRequestIp, DAILY_CHATBOT_LIMIT } from '@/lib/chatbot-limit';
 import { createHash } from 'crypto';
 
 const askSchema = z.object({
@@ -80,6 +81,21 @@ export async function POST(
     }
 
     const question = sanitizeText(parsed.data.question);
+
+    // Enforce 20-questions-per-day cap to keep inference costs bounded.
+    const limitResult = await enforceChatbotLimit(
+      pool,
+      session.weddingId,
+      session.guestId,
+      'guest',
+      getRequestIp(request.headers)
+    );
+    if (!limitResult.allowed) {
+      throw new AppError(
+        'RATE_LIMITED',
+        `You've asked ${DAILY_CHATBOT_LIMIT} questions today — the limit resets at midnight. For anything urgent, reach out to the couple or their planner directly.`
+      );
+    }
 
     // Extract wedding config + planner early — we need the planner contact
     // for both cache-hit and fresh responses (it's appended to every reply).

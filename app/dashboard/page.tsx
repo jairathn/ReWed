@@ -217,7 +217,7 @@ export default function DashboardHomePage() {
                 letterSpacing: '0.02em',
               }}
             >
-              ReWed
+              Zari
             </h1>
             <h2
               className="text-2xl mb-2"
@@ -232,7 +232,7 @@ export default function DashboardHomePage() {
             <p className="text-sm" style={{ color: 'var(--text-secondary)', fontFamily: 'var(--font-body)' }}>
               {authMode === 'login'
                 ? 'Sign in to manage your weddings'
-                : 'Get started with ReWed'}
+                : 'Get started with Zari'}
             </p>
           </div>
 
@@ -452,7 +452,7 @@ export default function DashboardHomePage() {
                 margin: 0,
               }}
             >
-              ReWed
+              Zari
             </h1>
             <span
               style={{
