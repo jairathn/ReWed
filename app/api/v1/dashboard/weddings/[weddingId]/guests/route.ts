@@ -32,7 +32,8 @@ export async function GET(
     let result;
     if (search && search.length >= 2) {
       result = await pool.query(
-        `SELECT id, first_name, last_name, display_name, email, phone, group_label, rsvp_status, created_at
+        `SELECT id, first_name, last_name, display_name, email, phone, group_label, rsvp_status,
+                party_id, party_role, created_at
          FROM guests WHERE wedding_id = $1
          AND (first_name ILIKE $2 OR last_name ILIKE $2 OR display_name ILIKE $2 OR email ILIKE $2)
          ORDER BY last_name, first_name`,
@@ -40,7 +41,8 @@ export async function GET(
       );
     } else {
       result = await pool.query(
-        `SELECT id, first_name, last_name, display_name, email, phone, group_label, rsvp_status, created_at
+        `SELECT id, first_name, last_name, display_name, email, phone, group_label, rsvp_status,
+                party_id, party_role, created_at
          FROM guests WHERE wedding_id = $1
          ORDER BY last_name, first_name`,
         [weddingId]

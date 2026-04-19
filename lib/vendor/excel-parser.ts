@@ -91,7 +91,11 @@ function timeLabelToSortOrder(label: string): number {
   // Handle "10:00:00" (24-hour) and ranges like "18:25:00"
   const h24 = clean.match(/^(\d{1,2}):(\d{2})(?::\d{2})?$/);
   if (h24) {
-    return parseInt(h24[1], 10) * 60 + parseInt(h24[2], 10);
+    let h = parseInt(h24[1], 10);
+    const m = parseInt(h24[2], 10);
+    // Wedding events: 0:00–5:59 = end of night, sort after 23:59
+    if (h < 6) h += 24;
+    return h * 60 + m;
   }
 
   // Handle "10:00 AM" / "6:00 PM"
@@ -102,6 +106,8 @@ function timeLabelToSortOrder(label: string): number {
     const isPM = ampm[3].toUpperCase() === 'PM';
     if (isPM && h !== 12) h += 12;
     if (!isPM && h === 12) h = 0;
+    // Wedding events: 12 AM–5 AM = end of night, sort after 11 PM
+    if (h < 6 && !isPM) h += 24;
     return h * 60 + m;
   }
 

@@ -37,7 +37,10 @@ function buildFixtureWorkbook(): Buffer {
     ['📅 SEPTEMBER 11, 2026 — WEDDING — Castell de Sant Marçal', '', '', '', '', ''],
     ['3:30 PM', 'Baraat', 'Parking lot → Lawn', 'Jas Johal, Ruben Larruy', 'Maximum energy', ''],
     ['', 'Neil gets on horse', '', '', '', ''],
+    ['11:00 PM', 'Last dance', 'Ballroom', '', '', ''],
     ['Late', 'Cellar afterparty', 'Cellar', 'Jas Johal', 'Slow build', 'TO DO'],
+    ['12:00 AM', 'Bar closes', '', '', '', 'DEADLINE'],
+    ['12:30 AM', 'Buses back to hotel', '', '', '', ''],
   ]);
   XLSX.utils.book_append_sheet(wb, masterTimeline, 'Master Timeline');
 
@@ -72,7 +75,7 @@ describe('parseWeddingExcel', () => {
     const haldiEntries = parsed.timeline.filter((e) => e.event_date === '2026-09-09');
     const weddingEntries = parsed.timeline.filter((e) => e.event_date === '2026-09-11');
     expect(haldiEntries).toHaveLength(4);
-    expect(weddingEntries).toHaveLength(3);
+    expect(weddingEntries).toHaveLength(6);
     expect(haldiEntries[0].event_name).toBe('HALDI');
   });
 
@@ -99,6 +102,16 @@ describe('parseWeddingExcel', () => {
     const late = parsed.timeline.find((e) => e.action === 'Cellar afterparty');
     expect(late).toBeDefined();
     expect(late!.time_label).toBe('Late');
+  });
+
+  it('sorts midnight/late-night AM times after PM times, not at start of day', () => {
+    const wedding = parsed.timeline.filter((e) => e.event_date === '2026-09-11');
+    const actions = wedding.map((e) => e.action);
+    // 3:30 PM → 11 PM → Late → 12:00 AM → 12:30 AM — midnight comes at end of night
+    expect(actions.indexOf('Baraat')).toBeLessThan(actions.indexOf('Last dance'));
+    expect(actions.indexOf('Last dance')).toBeLessThan(actions.indexOf('Cellar afterparty'));
+    expect(actions.indexOf('Cellar afterparty')).toBeLessThan(actions.indexOf('Bar closes'));
+    expect(actions.indexOf('Bar closes')).toBeLessThan(actions.indexOf('Buses back to hotel'));
   });
 
   it('sorts blank-time entries after their preceding timed entry, not at end of day', () => {
