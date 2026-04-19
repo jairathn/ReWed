@@ -9,6 +9,7 @@ import {
   normalizeDate,
 } from '@/lib/utils/date-format';
 import { vendorColorByName, eventColorByName } from '@/lib/utils/vendor-color';
+import VendorChatWidget from '@/components/vendor/VendorChatWidget';
 
 interface Vendor {
   id: string;
@@ -81,7 +82,7 @@ interface PortalData {
   todos: VendorTodo[];
 }
 
-type Tab = 'mine' | 'todos' | 'master' | 'contacts' | 'ask';
+type Tab = 'mine' | 'todos' | 'master' | 'contacts';
 
 export default function VendorPortalPage({
   params,
@@ -358,7 +359,6 @@ export default function VendorPortalPage({
           { id: 'todos' as const, label: `To-dos (${data.todos.filter((t) => t.status === 'open').length})` },
           { id: 'master' as const, label: 'Master timeline' },
           { id: 'contacts' as const, label: `Contacts (${uniqueContacts.length + data.emergency_contacts.length})` },
-          { id: 'ask' as const, label: 'Ask the FAQbot' },
         ]).map((t) => (
           <button
             key={t.id}
@@ -505,8 +505,10 @@ export default function VendorPortalPage({
           </>
         )}
 
-        {tab === 'ask' && <FaqWidget slug={slug} token={token} />}
       </main>
+
+      {/* Floating chat widget — vendors can ask questions without tab-switching */}
+      <VendorChatWidget slug={slug} token={token} />
 
       {/* Comment modal */}
       {commentEntry && (
@@ -726,71 +728,6 @@ const sectionSubtitle: React.CSSProperties = {
   fontFamily: 'var(--font-body)',
   fontWeight: 500,
 };
-
-function FaqWidget({ slug, token }: { slug: string; token: string }) {
-  const [question, setQuestion] = useState('');
-  const [answer, setAnswer] = useState<string | null>(null);
-  const [remaining, setRemaining] = useState<number | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-
-  const ask = async () => {
-    if (!question.trim()) return;
-    setLoading(true);
-    setError('');
-    try {
-      const res = await fetch(`/api/v1/v/${slug}/${token}/faq`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.error?.message || 'Could not get an answer');
-      setAnswer(data.data.answer);
-      setRemaining(data.data.remaining);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not get an answer');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <>
-      <SectionHeader
-        title="Ask about your role"
-        subtitle="Quick answers about your timeline, who to coordinate with, and emergency contacts. 20 questions per day."
-      />
-      <div style={cardStyle}>
-        <textarea
-          rows={2}
-          value={question}
-          onChange={(e) => setQuestion(e.target.value)}
-          placeholder="What time should I arrive on Sept 11?"
-          style={{ ...input, resize: 'vertical' }}
-        />
-        <div style={{ display: 'flex', gap: 8, marginTop: 10, alignItems: 'center', justifyContent: 'space-between' }}>
-          <span style={{ fontSize: 11, color: 'var(--text-tertiary)', fontFamily: 'var(--font-body)' }}>
-            {remaining !== null ? `${remaining} questions left today` : ''}
-          </span>
-          <button onClick={ask} disabled={loading || !question.trim()} style={primaryBtn}>
-            {loading ? 'Thinking…' : 'Ask'}
-          </button>
-        </div>
-        {error && (
-          <p style={{ marginTop: 10, fontSize: 13, color: 'var(--color-terracotta)', fontFamily: 'var(--font-body)' }}>
-            {error}
-          </p>
-        )}
-        {answer && !error && (
-          <div style={{ marginTop: 14, padding: 14, borderRadius: 12, background: 'var(--bg-soft-cream)', fontSize: 14, color: 'var(--text-primary)', fontFamily: 'var(--font-body)', lineHeight: 1.55, whiteSpace: 'pre-wrap' }}>
-            {answer}
-          </div>
-        )}
-      </div>
-    </>
-  );
-}
 
 function MasterTimeline({
   entries,
