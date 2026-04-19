@@ -178,6 +178,27 @@ export default function VendorPortalPage({
     return ds === dayFilter;
   };
 
+  // Compute the "focus list": what this vendor should care about right now.
+  // We parse time_label loosely (the spreadsheet has a lot of formats —
+  // "10:00 AM", "6-8 PM", "14:00" — take the first H:MM token we find).
+  // Anything that started within the last 90 minutes counts as "happening now"
+  // so a vendor who refreshes mid-task still sees it. Otherwise we surface
+  // the next three assigned items, day-filter included if set.
+  const focus = (() => {
+    const now = new Date();
+    const windowStart = new Date(now.getTime() - 90 * 60 * 1000);
+    const dated: Array<{ entry: TimelineEntry; start: Date; status: 'now' | 'next' }> = [];
+    for (const e of data.assigned) {
+      if (!matchesDay(e.event_date)) continue;
+      const start = entryStartDate(e);
+      if (!start) continue;
+      if (start < windowStart) continue;
+      dated.push({ entry: e, start, status: start <= now ? 'now' : 'next' });
+    }
+    dated.sort((a, b) => a.start.getTime() - b.start.getTime());
+    return dated.slice(0, 3);
+  })();
+
   // Distinct days present across *either* my assignments or the master timeline
   // — so the day pills stay consistent whichever tab you're on.
   const allDays = Array.from(
@@ -363,6 +384,7 @@ export default function VendorPortalPage({
       <main style={{ maxWidth: 720, margin: '0 auto', padding: '24px 16px 80px' }}>
         {tab === 'mine' && (
           <>
+            <FocusCard items={focus} contactsByEntry={contactsByEntry} />
             <SectionHeader
               title="Your assigned timeline"
               subtitle="Everything you need for each item is on its row — time, where, notes, who to coordinate with."
@@ -939,6 +961,196 @@ function DayFilter({
           </button>
         );
       })}
+    </div>
+  );
+}
+
+/**
+ * Parse common spreadsheet time_label formats into {hours, minutes}. Takes the
+ * first time token it finds and applies any AM/PM marker found anywhere in
+ * the label (so "6-8 PM" → 6 PM, not 6 AM, and "10:00-10:30 AM" → 10 AM).
+ * Returns null if nothing parseable.
+ */
+function parseTimeLabel(label: string | null): { hours: number; minutes: number } | null {
+  if (!label) return null;
+  const m = label.match(/(\d{1,2})(?::(\d{2}))?/);
+  if (!m) return null;
+  let h = parseInt(m[1], 10);
+  if (Number.isNaN(h) || h < 0 || h > 23) return null;
+  const mins = m[2] ? parseInt(m[2], 10) : 0;
+  if (mins < 0 || mins > 59) return null;
+  const ampm = label.match(/(am|pm)/i)?.[1].toLowerCase();
+  if (ampm === 'pm' && h < 12) h += 12;
+  if (ampm === 'am' && h === 12) h = 0;
+  return { hours: h, minutes: mins };
+}
+
+function entryStartDate(entry: TimelineEntry): Date | null {
+  const date = normalizeDate(entry.event_date);
+  if (!date) return null;
+  const t = parseTimeLabel(entry.time_label);
+  if (!t) return null;
+  return new Date(
+    `${date}T${String(t.hours).padStart(2, '0')}:${String(t.minutes).padStart(2, '0')}:00`
+  );
+}
+
+function FocusCard({
+  items,
+  contactsByEntry,
+}: {
+  items: Array<{ entry: TimelineEntry; start: Date; status: 'now' | 'next' }>;
+  contactsByEntry: Map<string, CoordContact[]>;
+}) {
+  if (items.length === 0) return null;
+  const hasNow = items.some((i) => i.status === 'now');
+
+  return (
+    <div
+      style={{
+        marginBottom: 18,
+        borderRadius: 16,
+        background: hasNow
+          ? 'linear-gradient(135deg, rgba(196,112,75,0.08), rgba(232,134,90,0.04))'
+          : 'var(--bg-pure-white)',
+        border: `1px solid ${hasNow ? 'rgba(196,112,75,0.25)' : 'var(--border-light)'}`,
+        boxShadow: hasNow ? '0 4px 20px rgba(196,112,75,0.10)' : '0 2px 8px rgba(0,0,0,0.02)',
+        overflow: 'hidden',
+      }}
+    >
+      <div
+        style={{
+          padding: '10px 16px',
+          borderBottom: '1px solid var(--border-light)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+        }}
+      >
+        <span
+          style={{
+            fontSize: 10,
+            textTransform: 'uppercase',
+            letterSpacing: '0.6px',
+            color: hasNow ? 'var(--color-terracotta)' : 'var(--color-gold-dark)',
+            fontWeight: 700,
+            fontFamily: 'var(--font-body)',
+          }}
+        >
+          {hasNow ? 'Focus — happening now' : 'Up next for you'}
+        </span>
+      </div>
+      <div>
+        {items.map((it, idx) => (
+          <FocusRow
+            key={it.entry.id}
+            entry={it.entry}
+            start={it.start}
+            status={it.status}
+            contacts={contactsByEntry.get(it.entry.id) || []}
+            isLast={idx === items.length - 1}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function FocusRow({
+  entry,
+  start,
+  status,
+  contacts,
+  isLast,
+}: {
+  entry: TimelineEntry;
+  start: Date;
+  status: 'now' | 'next';
+  contacts: CoordContact[];
+  isLast: boolean;
+}) {
+  const now = new Date();
+  const diffMin = Math.round((start.getTime() - now.getTime()) / 60000);
+  const whenLabel =
+    status === 'now'
+      ? diffMin >= -5
+        ? 'Now'
+        : `Started ${Math.abs(diffMin)}m ago`
+      : diffMin < 60
+      ? `In ${Math.max(diffMin, 1)} min`
+      : diffMin < 60 * 24
+      ? `In ${Math.round(diffMin / 60)}h`
+      : `${Math.round(diffMin / (60 * 24))}d away`;
+
+  const primaryContact = contacts[0];
+
+  return (
+    <div
+      style={{
+        padding: '12px 16px',
+        borderBottom: isLast ? 'none' : '1px solid var(--border-light)',
+        display: 'grid',
+        gridTemplateColumns: '92px 1fr',
+        gap: 14,
+        alignItems: 'flex-start',
+      }}
+    >
+      <div>
+        <div
+          style={{
+            fontSize: 13,
+            fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
+            fontVariantNumeric: 'tabular-nums',
+            fontWeight: 600,
+            color: 'var(--text-primary)',
+          }}
+        >
+          {entry.time_label || '—'}
+        </div>
+        <div
+          style={{
+            fontSize: 10,
+            textTransform: 'uppercase',
+            letterSpacing: '0.5px',
+            fontWeight: 600,
+            color: status === 'now' ? 'var(--color-terracotta)' : 'var(--color-gold-dark)',
+            fontFamily: 'var(--font-body)',
+            marginTop: 2,
+          }}
+        >
+          {whenLabel}
+        </div>
+      </div>
+      <div style={{ minWidth: 0 }}>
+        <div
+          style={{
+            fontSize: 14,
+            fontFamily: 'var(--font-body)',
+            color: 'var(--text-primary)',
+            fontWeight: 500,
+            lineHeight: 1.4,
+          }}
+        >
+          {entry.action}
+        </div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 6 }}>
+          {entry.location && <span style={chip}>📍 {entry.location}</span>}
+          {entry.deadline && <span style={chipDeadline}>⏰ Deadline</span>}
+          {primaryContact && <ContactPill contact={primaryContact} />}
+          {contacts.length > 1 && (
+            <span
+              style={{
+                fontSize: 11,
+                color: 'var(--text-tertiary)',
+                fontFamily: 'var(--font-body)',
+                padding: '4px 6px',
+              }}
+            >
+              +{contacts.length - 1} more
+            </span>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
