@@ -2,8 +2,17 @@ import type { Pool } from 'pg';
 import { createHash } from 'crypto';
 
 export const DAILY_CHATBOT_LIMIT = 20;
+// Couple "expert" bot is the paying user's daily research tool — give it a
+// looser cap. Still bounded so a runaway script can't burn through credits.
+export const DAILY_EXPERT_LIMIT = 50;
 
-export type BotType = 'guest' | 'vendor';
+export type BotType = 'guest' | 'vendor' | 'expert';
+
+const LIMITS: Record<BotType, number> = {
+  guest: DAILY_CHATBOT_LIMIT,
+  vendor: DAILY_CHATBOT_LIMIT,
+  expert: DAILY_EXPERT_LIMIT,
+};
 
 function hashIp(ip: string): string {
   return createHash('sha256').update(ip).digest('hex').slice(0, 32);
@@ -42,10 +51,11 @@ export async function enforceChatbotLimit(
   );
 
   const count = result.rows[0].count as number;
-  const remaining = Math.max(0, DAILY_CHATBOT_LIMIT - count);
+  const limit = LIMITS[botType];
+  const remaining = Math.max(0, limit - count);
   return {
-    allowed: count <= DAILY_CHATBOT_LIMIT,
+    allowed: count <= limit,
     remaining,
-    limit: DAILY_CHATBOT_LIMIT,
+    limit,
   };
 }
