@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, use, useCallback } from 'react';
+import GoogleSuggestionsCard from '@/components/dashboard/GoogleSuggestionsCard';
 
 type Urgency = 'fresh' | 'yellow' | 'orange' | 'red';
 
@@ -150,6 +151,8 @@ export default function TodosPage({
           Action items extracted from meetings, plus anything you add manually. Items aged over 30, 45, and 60 days light up so nothing slips.
         </p>
       </div>
+
+      <GoogleSuggestionsCard weddingId={weddingId} />
 
       {/* Urgency badges */}
       <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
