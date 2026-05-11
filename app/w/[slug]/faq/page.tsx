@@ -5,6 +5,7 @@ import BackButton from '@/components/guest/BackButton';
 import { useWedding } from '@/components/WeddingProvider';
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { RichText } from '@/lib/rich-text/RichText';
 
 interface ChatMessage {
   id: string;
@@ -228,7 +229,15 @@ export default function FaqPage() {
                 border: msg.role === 'assistant' ? '1px solid var(--border-light)' : 'none',
               }}
             >
-              <p className="text-sm whitespace-pre-wrap leading-relaxed">{msg.content}</p>
+              {/* User messages stay as plain text — assistant replies often
+                  use markdown (** bold **, lists) so we render them rich. */}
+              {msg.role === 'assistant' ? (
+                <div className="text-sm leading-relaxed">
+                  <RichText value={msg.content} format="rich" />
+                </div>
+              ) : (
+                <p className="text-sm whitespace-pre-wrap leading-relaxed">{msg.content}</p>
+              )}
             </div>
           </div>
         ))}

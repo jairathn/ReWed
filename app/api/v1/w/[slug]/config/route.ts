@@ -70,7 +70,7 @@ export async function GET(
     // Fetch events for this wedding
     const eventsResult = await pool.query(
       `SELECT id, name, date, start_time, end_time, venue_name, venue_address,
-              dress_code, description, logistics, accent_color
+              dress_code, description, logistics, accent_color, content_format
        FROM events WHERE wedding_id = $1 ORDER BY sort_order ASC, date ASC`,
       [wedding.id]
     );
@@ -90,6 +90,8 @@ export async function GET(
       description: (e.description as string) || null,
       logistics: (e.logistics as string) || null,
       accent_color: (e.accent_color as string) || null,
+      content_format:
+        (e.content_format as 'plain' | 'rich' | null) === 'rich' ? 'rich' : 'plain',
     }));
 
     const weddingConfig: WeddingConfig = {

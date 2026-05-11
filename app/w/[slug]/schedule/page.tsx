@@ -2,6 +2,7 @@ import { getPool } from '@/lib/db/client';
 import { getMediaUrl } from '@/lib/storage/r2';
 import BottomNav from '@/components/guest/BottomNav';
 import BackButton from '@/components/guest/BackButton';
+import { RichText } from '@/lib/rich-text/RichText';
 
 type Params = { slug: string };
 
@@ -19,6 +20,7 @@ interface EventRow {
   logistics: string | null;
   accent_color: string | null;
   style_guide_urls: string[];
+  content_format: 'plain' | 'rich';
 }
 
 async function getScheduleData(slug: string) {
@@ -35,7 +37,7 @@ async function getScheduleData(slug: string) {
 
   const eventsResult = await pool.query(
     `SELECT id, name, date, start_time, end_time, end_date, venue_name, venue_address,
-            dress_code, description, logistics, accent_color,
+            dress_code, description, logistics, accent_color, content_format,
             COALESCE(style_guide_images, '[]'::jsonb) AS style_guide_images
      FROM events WHERE wedding_id = $1
      ORDER BY sort_order ASC, date ASC, start_time ASC`,
@@ -46,7 +48,11 @@ async function getScheduleData(slug: string) {
     eventsResult.rows.map(async (row) => {
       const keys: string[] = Array.isArray(row.style_guide_images) ? row.style_guide_images : [];
       const urls = await Promise.all(keys.map((k: string) => getMediaUrl(k).catch(() => '')));
-      return { ...row, style_guide_urls: urls.filter(Boolean) };
+      return {
+        ...row,
+        style_guide_urls: urls.filter(Boolean),
+        content_format: row.content_format === 'rich' ? 'rich' : 'plain',
+      };
     })
   );
 
@@ -326,21 +332,26 @@ export default async function SchedulePage({
                       {event.name}
                     </p>
 
-                    {/* Description with preserved line formatting */}
+                    {/* Description, parsed as rich text when the couple
+                        used the rich editor; falls back to plain-mode
+                        rendering (line breaks preserved, Markdown chars
+                        escaped) for legacy rows. */}
                     {event.description && (
-                      <p
+                      <div
                         style={{
                           fontFamily: 'var(--font-display)',
                           fontSize: 14,
                           fontStyle: 'italic',
                           color: 'var(--text-secondary)',
                           marginTop: 3,
-                          whiteSpace: 'pre-line',
                           lineHeight: 1.6,
                         }}
                       >
-                        {event.description}
-                      </p>
+                        <RichText
+                          value={event.description}
+                          format={event.content_format ?? 'plain'}
+                        />
+                      </div>
                     )}
 
                     {/* Time */}
@@ -400,9 +411,12 @@ export default async function SchedulePage({
                       </a>
                     )}
                     {event.logistics && (
-                      <p style={{ fontSize: 12, color: 'var(--text-secondary)', marginLeft: 18, marginTop: 2 }}>
-                        {event.logistics}
-                      </p>
+                      <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginLeft: 18, marginTop: 2 }}>
+                        <RichText
+                          value={event.logistics}
+                          format={event.content_format ?? 'plain'}
+                        />
+                      </div>
                     )}
 
                     {/* What to Wear / Style Guide card */}
