@@ -139,6 +139,10 @@ export default function GuestsPage({ params }: { params: Promise<{ weddingId: st
   const [importLoading, setImportLoading] = useState(false);
   const [importResult, setImportResult] = useState<{ imported: number; skipped: number; errors: string[] } | null>(null);
   const [estimatedGuests, setEstimatedGuests] = useState(0);
+  // Off by default — pending is the correct default for a contact-list
+  // import (audit C-3). When the couple really is importing a list of
+  // confirmed yes-RSVPs, they flip this on before committing.
+  const [assumeAllAttending, setAssumeAllAttending] = useState(false);
 
   const fetchGuests = useCallback(async () => {
     try {
@@ -370,7 +374,12 @@ export default function GuestsPage({ params }: { params: Promise<{ weddingId: st
       const res = await fetch(`/api/v1/dashboard/weddings/${weddingId}/guests/import`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ csv_text: csvText, step: 'import', column_mapping: csvMapping }),
+        body: JSON.stringify({
+          csv_text: csvText,
+          step: 'import',
+          column_mapping: csvMapping,
+          assume_all_attending: assumeAllAttending,
+        }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -752,6 +761,37 @@ export default function GuestsPage({ params }: { params: Promise<{ weddingId: st
             </table>
           </div>
         )}
+
+        {/* Audit C-3: default is Pending. Couples flip this on only when the
+            CSV genuinely represents already-confirmed RSVPs. */}
+        <label
+          style={{
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: 10,
+            padding: '10px 14px',
+            borderRadius: 10,
+            background: 'var(--bg-soft-cream)',
+            border: '1px solid var(--border-light)',
+            marginBottom: 14,
+            cursor: 'pointer',
+          }}
+        >
+          <input
+            type="checkbox"
+            checked={assumeAllAttending}
+            onChange={(e) => setAssumeAllAttending(e.target.checked)}
+            style={{ marginTop: 3, accentColor: 'var(--color-terracotta)' }}
+          />
+          <span style={{ fontSize: 13, color: 'var(--text-primary)', fontFamily: 'var(--font-body)', lineHeight: 1.5 }}>
+            <strong>Treat everyone in this file as already RSVP&apos;d Yes.</strong>{' '}
+            <span style={{ color: 'var(--text-secondary)' }}>
+              Leave unchecked if you&apos;re just uploading your contact list — they&apos;ll
+              all land as Pending and respond via the RSVP flow. Any explicit
+              RSVP value in the mapped column overrides this checkbox.
+            </span>
+          </span>
+        </label>
 
         {error && <p style={{ color: 'var(--color-terracotta)', fontSize: 13, marginBottom: 12 }}>{error}</p>}
 
