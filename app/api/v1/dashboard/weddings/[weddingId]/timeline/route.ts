@@ -31,7 +31,7 @@ export async function GET(
       `SELECT id, event_date, event_name, time_label, sort_order, action,
               location, notes, status, deadline, created_at, updated_at
        FROM timeline_entries
-       WHERE wedding_id = $1
+       WHERE wedding_id = $1 AND soft_deleted_at IS NULL
        ORDER BY event_date ASC NULLS LAST, sort_order ASC`,
       [weddingId]
     );
@@ -99,13 +99,13 @@ export async function DELETE(
       }
 
       const result = await pool.query(
-        `DELETE FROM timeline_entries WHERE ${conditions.join(' AND ')}`,
+        `UPDATE timeline_entries SET soft_deleted_at = NOW() WHERE ${conditions.join(' AND ')} AND soft_deleted_at IS NULL`,
         values
       );
       deleted = result.rowCount ?? 0;
     } else {
       const result = await pool.query(
-        `DELETE FROM timeline_entries WHERE wedding_id = $1`,
+        `UPDATE timeline_entries SET soft_deleted_at = NOW() WHERE wedding_id = $1 AND soft_deleted_at IS NULL`,
         [weddingId]
       );
       deleted = result.rowCount ?? 0;
@@ -157,7 +157,7 @@ export async function POST(
     if (d.vendor_ids && d.vendor_ids.length > 0) {
       // Only allow assigning vendors that belong to this wedding.
       const valid = await pool.query(
-        `SELECT id FROM vendors WHERE wedding_id = $1 AND id = ANY($2::uuid[])`,
+        `SELECT id FROM vendors WHERE wedding_id = $1 AND id = ANY($2::uuid[]) AND soft_deleted_at IS NULL`,
         [weddingId, d.vendor_ids]
       );
       for (const row of valid.rows) {

@@ -32,7 +32,7 @@ export async function GET(
                 COUNT(*) FILTER (WHERE rsvp_status = 'attending') as attending,
                 COUNT(*) FILTER (WHERE rsvp_status = 'declined') as declined,
                 COUNT(*) FILTER (WHERE rsvp_status = 'pending') as pending
-         FROM guests WHERE wedding_id = $1`,
+         FROM guests WHERE wedding_id = $1 AND soft_deleted_at IS NULL`,
         [weddingId]
       ),
       pool.query('SELECT COUNT(*) as total FROM events WHERE wedding_id = $1', [weddingId]),

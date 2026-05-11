@@ -40,7 +40,7 @@ export async function POST(
     // Verify guest exists for this wedding
     const guestResult = await pool.query(
       `SELECT id, first_name, last_name, email, group_label
-       FROM guests WHERE id = $1 AND wedding_id = $2`,
+       FROM guests WHERE id = $1 AND wedding_id = $2 AND soft_deleted_at IS NULL`,
       [guest_id, wedding.id]
     );
 

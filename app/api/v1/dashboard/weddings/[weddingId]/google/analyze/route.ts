@@ -29,17 +29,17 @@ export async function POST(
     // Build the lightweight context the AI needs to spot real changes.
     const [weddingRow, vendorsRows, todosRows, timelineRows] = await Promise.all([
       pool.query(`SELECT display_name FROM weddings WHERE id = $1`, [weddingId]),
-      pool.query(`SELECT name FROM vendors WHERE wedding_id = $1`, [weddingId]),
+      pool.query(`SELECT name FROM vendors WHERE wedding_id = $1 AND soft_deleted_at IS NULL`, [weddingId]),
       pool.query(
         `SELECT t.title, v.name AS vendor_name
          FROM todos t
          LEFT JOIN vendors v ON v.id = t.assigned_to_vendor_id
-         WHERE t.wedding_id = $1 AND t.status = 'open'`,
+         WHERE t.wedding_id = $1 AND t.status = 'open' AND t.soft_deleted_at IS NULL`,
         [weddingId]
       ),
       pool.query(
         `SELECT event_date, time_label, action FROM timeline_entries
-         WHERE wedding_id = $1
+         WHERE wedding_id = $1 AND soft_deleted_at IS NULL
          ORDER BY event_date ASC NULLS LAST, sort_order ASC LIMIT 80`,
         [weddingId]
       ),

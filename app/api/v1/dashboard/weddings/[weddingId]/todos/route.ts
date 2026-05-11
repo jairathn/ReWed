@@ -25,7 +25,7 @@ export async function GET(
     const url = new URL(request.url);
     const statusFilter = url.searchParams.get('status'); // 'open'|'completed'|null
 
-    const conditions: string[] = ['t.wedding_id = $1'];
+    const conditions: string[] = ['t.wedding_id = $1', 't.soft_deleted_at IS NULL'];
     const queryParams: (string | number)[] = [weddingId];
     if (statusFilter === 'open' || statusFilter === 'completed') {
       conditions.push(`t.status = $2`);
@@ -97,7 +97,7 @@ export async function POST(
     const pool = getPool();
     if (d.assigned_to_vendor_id) {
       const check = await pool.query(
-        `SELECT id FROM vendors WHERE id = $1 AND wedding_id = $2`,
+        `SELECT id FROM vendors WHERE id = $1 AND wedding_id = $2 AND soft_deleted_at IS NULL`,
         [d.assigned_to_vendor_id, weddingId]
       );
       if (check.rows.length === 0) {

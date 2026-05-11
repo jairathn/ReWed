@@ -30,7 +30,7 @@ export async function PATCH(
     // Make sure this to-do belongs to this vendor.
     const check = await pool.query(
       `SELECT id FROM todos
-       WHERE id = $1 AND wedding_id = $2 AND assigned_to_vendor_id = $3`,
+       WHERE id = $1 AND wedding_id = $2 AND assigned_to_vendor_id = $3 AND soft_deleted_at IS NULL`,
       [todoId, ctx.wedding.id, ctx.vendor.id]
     );
     if (check.rows.length === 0) throw new AppError('WEDDING_NOT_FOUND');

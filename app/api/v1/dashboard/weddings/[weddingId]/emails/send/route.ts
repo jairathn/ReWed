@@ -81,21 +81,21 @@ export async function POST(
       guestsResult = await pool.query(
         `SELECT id, first_name, last_name, email, party_id, party_role, rsvp_status
          FROM guests
-         WHERE wedding_id = $1 AND id = ANY($2::uuid[]) AND email IS NOT NULL AND email != ''`,
+         WHERE wedding_id = $1 AND id = ANY($2::uuid[]) AND email IS NOT NULL AND email != '' AND soft_deleted_at IS NULL`,
         [weddingId, parsed.guest_ids]
       );
     } else if (parsed.audience === 'all') {
       guestsResult = await pool.query(
         `SELECT id, first_name, last_name, email, party_id, party_role, rsvp_status
          FROM guests
-         WHERE wedding_id = $1 AND email IS NOT NULL AND email != ''`,
+         WHERE wedding_id = $1 AND email IS NOT NULL AND email != '' AND soft_deleted_at IS NULL`,
         [weddingId]
       );
     } else {
       guestsResult = await pool.query(
         `SELECT id, first_name, last_name, email, party_id, party_role, rsvp_status
          FROM guests
-         WHERE wedding_id = $1 AND rsvp_status = $2 AND email IS NOT NULL AND email != ''`,
+         WHERE wedding_id = $1 AND rsvp_status = $2 AND email IS NOT NULL AND email != '' AND soft_deleted_at IS NULL`,
         [weddingId, parsed.audience]
       );
     }
@@ -119,7 +119,7 @@ export async function POST(
       const membersResult = await pool.query(
         `SELECT first_name, party_id, party_role
          FROM guests
-         WHERE wedding_id = $1 AND party_id = ANY($2::uuid[])
+         WHERE wedding_id = $1 AND party_id = ANY($2::uuid[]) AND soft_deleted_at IS NULL
          ORDER BY party_id,
            CASE party_role WHEN 'primary' THEN 0 WHEN 'partner' THEN 1 WHEN 'child' THEN 2 ELSE 3 END`,
         [weddingId, partyIds]

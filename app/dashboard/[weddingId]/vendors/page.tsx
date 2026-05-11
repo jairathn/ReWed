@@ -2,6 +2,7 @@
 
 import { useState, useEffect, use, useCallback, useMemo } from 'react';
 import Link from 'next/link';
+import UndoToast from '@/components/ui/UndoToast';
 import { vendorColor } from '@/lib/utils/vendor-color';
 
 interface Vendor {
@@ -133,11 +134,26 @@ export default function VendorsPage({
     await load();
   };
 
-  const deleteVendor = async (id: string) => {
-    if (!confirm('Delete this vendor? Their timeline links will be removed.')) return;
-    await fetch(`/api/v1/dashboard/weddings/${weddingId}/vendors/${id}`, {
+  // Undo-toast state for vendor delete. Soft-deleted server-side immediately;
+  // restore endpoint reverses it during the toast window.
+  const [pendingDelete, setPendingDelete] = useState<{ id: string; name: string } | null>(null);
+
+  const deleteVendor = async (vendor: Vendor) => {
+    setVendors((prev) => prev.filter((v) => v.id !== vendor.id));
+    setPendingDelete({ id: vendor.id, name: vendor.name });
+    await fetch(`/api/v1/dashboard/weddings/${weddingId}/vendors/${vendor.id}`, {
       method: 'DELETE',
     });
+  };
+
+  const undoDelete = async () => {
+    if (!pendingDelete) return;
+    await fetch(`/api/v1/dashboard/weddings/${weddingId}/restore`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ kind: 'vendor', id: pendingDelete.id }),
+    });
+    setPendingDelete(null);
     await load();
   };
 
@@ -643,7 +659,7 @@ export default function VendorsPage({
                     Edit
                   </button>
                   <button
-                    onClick={() => deleteVendor(v.id)}
+                    onClick={() => deleteVendor(v)}
                     style={{ ...secondaryButtonStyle, color: 'var(--color-terracotta)' }}
                   >
                     Delete
@@ -669,6 +685,13 @@ export default function VendorsPage({
           onCancel={() => { setEditing(null); setError(''); }}
         />
       )}
+
+      <UndoToast
+        open={pendingDelete !== null}
+        message={pendingDelete ? `Removed ${pendingDelete.name}` : ''}
+        onUndo={undoDelete}
+        onTimeout={() => setPendingDelete(null)}
+      />
     </div>
   );
 }

@@ -6,7 +6,7 @@ import { requireWeddingAccess } from '@/lib/dashboard-auth';
 async function ensureMeetingOwned(weddingId: string, meetingId: string) {
   const pool = getPool();
   const row = await pool.query(
-    `SELECT id FROM meetings WHERE id = $1 AND wedding_id = $2`,
+    `SELECT id FROM meetings WHERE id = $1 AND wedding_id = $2 AND soft_deleted_at IS NULL`,
     [meetingId, weddingId]
   );
   if (row.rows.length === 0) throw new AppError('WEDDING_NOT_FOUND');
@@ -24,7 +24,7 @@ export async function GET(
     const pool = getPool();
     const meeting = await pool.query(
       `SELECT id, title, meeting_date, raw_notes, created_by_role, created_by_label, created_at
-       FROM meetings WHERE id = $1`,
+       FROM meetings WHERE id = $1 AND soft_deleted_at IS NULL`,
       [meetingId]
     );
 
@@ -43,7 +43,7 @@ export async function GET(
               v.name AS vendor_name
        FROM todos t
        LEFT JOIN vendors v ON v.id = t.assigned_to_vendor_id
-       WHERE t.meeting_id = $1
+       WHERE t.meeting_id = $1 AND t.soft_deleted_at IS NULL
        ORDER BY (t.priority = 'high') DESC, t.created_at ASC`,
       [meetingId]
     );
@@ -70,7 +70,7 @@ export async function DELETE(
     await ensureMeetingOwned(weddingId, meetingId);
 
     const pool = getPool();
-    await pool.query(`DELETE FROM meetings WHERE id = $1`, [meetingId]);
+    await pool.query(`UPDATE meetings SET soft_deleted_at = NOW() WHERE id = $1 AND soft_deleted_at IS NULL`, [meetingId]);
     return Response.json({ data: { id: meetingId } });
   } catch (error) {
     return handleApiError(error);

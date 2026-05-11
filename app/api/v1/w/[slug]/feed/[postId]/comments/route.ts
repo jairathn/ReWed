@@ -151,7 +151,7 @@ export async function POST(
 
     // Get guest info
     const guestResult = await pool.query(
-      `SELECT id, first_name, last_name, display_name FROM guests WHERE id = $1`,
+      `SELECT id, first_name, last_name, display_name FROM guests WHERE id = $1 AND soft_deleted_at IS NULL`,
       [session.guestId]
     );
 

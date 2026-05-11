@@ -29,7 +29,7 @@ export async function GET(
          COUNT(*) FILTER (WHERE rsvp_status = 'declined' AND email IS NOT NULL AND email != '') AS declined,
          COUNT(*) AS total
        FROM guests
-       WHERE wedding_id = $1`,
+       WHERE wedding_id = $1 AND soft_deleted_at IS NULL`,
       [weddingId]
     );
     const row = result.rows[0];

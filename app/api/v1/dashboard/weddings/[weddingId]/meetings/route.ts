@@ -23,8 +23,8 @@ export async function GET(
     const pool = getPool();
     const meetings = await pool.query(
       `SELECT id, title, meeting_date, created_by_role, created_by_label, created_at,
-              (SELECT COUNT(*)::int FROM todos t WHERE t.meeting_id = meetings.id) AS todo_count
-       FROM meetings WHERE wedding_id = $1
+              (SELECT COUNT(*)::int FROM todos t WHERE t.meeting_id = meetings.id AND t.soft_deleted_at IS NULL) AS todo_count
+       FROM meetings WHERE wedding_id = $1 AND soft_deleted_at IS NULL
        ORDER BY meeting_date DESC NULLS LAST, created_at DESC`,
       [weddingId]
     );
@@ -64,7 +64,7 @@ export async function POST(
     if (d.stakeholder_vendor_ids.length > 0) {
       const valid = await pool.query(
         `SELECT id, name, category FROM vendors
-         WHERE wedding_id = $1 AND id = ANY($2::uuid[])`,
+         WHERE wedding_id = $1 AND id = ANY($2::uuid[]) AND soft_deleted_at IS NULL`,
         [weddingId, d.stakeholder_vendor_ids]
       );
       stakeholderRows = valid.rows;

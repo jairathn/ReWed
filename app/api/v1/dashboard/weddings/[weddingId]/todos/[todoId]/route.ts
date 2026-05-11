@@ -16,7 +16,7 @@ const patchSchema = z.object({
 async function ensureTodoOwned(weddingId: string, todoId: string) {
   const pool = getPool();
   const row = await pool.query(
-    `SELECT id FROM todos WHERE id = $1 AND wedding_id = $2`,
+    `SELECT id FROM todos WHERE id = $1 AND wedding_id = $2 AND soft_deleted_at IS NULL`,
     [todoId, weddingId]
   );
   if (row.rows.length === 0) throw new AppError('WEDDING_NOT_FOUND');
@@ -41,7 +41,7 @@ export async function PATCH(
     const pool = getPool();
     if (d.assigned_to_vendor_id) {
       const check = await pool.query(
-        `SELECT id FROM vendors WHERE id = $1 AND wedding_id = $2`,
+        `SELECT id FROM vendors WHERE id = $1 AND wedding_id = $2 AND soft_deleted_at IS NULL`,
         [d.assigned_to_vendor_id, weddingId]
       );
       if (check.rows.length === 0) {
@@ -96,8 +96,15 @@ export async function DELETE(
     await requireWeddingAccess(request, weddingId);
     await ensureTodoOwned(weddingId, todoId);
 
+    // Soft-delete only — janitor cron hard-removes after 30d. The Undo
+    // toast on the client calls /restore to clear soft_deleted_at within
+    // the toast window.
     const pool = getPool();
-    await pool.query(`DELETE FROM todos WHERE id = $1`, [todoId]);
+    await pool.query(
+      `UPDATE todos SET soft_deleted_at = NOW()
+       WHERE id = $1 AND soft_deleted_at IS NULL`,
+      [todoId]
+    );
     return Response.json({ data: { id: todoId } });
   } catch (error) {
     return handleApiError(error);

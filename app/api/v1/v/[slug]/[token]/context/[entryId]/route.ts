@@ -41,7 +41,7 @@ export async function GET(
               te.action, te.location, te.notes
        FROM timeline_entries te
        JOIN timeline_entry_vendors tev ON tev.timeline_entry_id = te.id
-       WHERE te.id = $1 AND te.wedding_id = $2 AND tev.vendor_id = $3`,
+       WHERE te.id = $1 AND te.wedding_id = $2 AND tev.vendor_id = $3 AND te.soft_deleted_at IS NULL`,
       [entryId, ctx.wedding.id, ctx.vendor.id]
     );
     if (entryRes.rows.length === 0) {
@@ -86,6 +86,7 @@ export async function GET(
        LEFT JOIN timeline_entry_vendors tev ON tev.timeline_entry_id = te.id
        LEFT JOIN vendors v ON v.id = tev.vendor_id
        WHERE te.wedding_id = $1
+         AND te.soft_deleted_at IS NULL
          AND (
            ($2::date IS NULL AND te.event_date IS NULL)
            OR te.event_date = $2::date

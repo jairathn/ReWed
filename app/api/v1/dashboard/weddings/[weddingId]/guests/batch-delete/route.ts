@@ -33,7 +33,7 @@ export async function POST(
       const chunk = ids.slice(i, i + CHUNK_SIZE);
       const placeholders = chunk.map((_, j) => `$${j + 2}`).join(', ');
       const result = await pool.query(
-        `DELETE FROM guests WHERE wedding_id = $1 AND id IN (${placeholders}) RETURNING id`,
+        `UPDATE guests SET soft_deleted_at = NOW() WHERE wedding_id = $1 AND id IN (${placeholders}) AND soft_deleted_at IS NULL RETURNING id`,
         [weddingId, ...chunk]
       );
       totalDeleted += result.rowCount ?? 0;

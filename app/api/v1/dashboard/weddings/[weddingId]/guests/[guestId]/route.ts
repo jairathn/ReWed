@@ -67,7 +67,7 @@ export async function PUT(
     values.push(guestId, weddingId);
     const result = await pool.query(
       `UPDATE guests SET ${sets.join(', ')}
-       WHERE id = $${idx++} AND wedding_id = $${idx}
+       WHERE id = $${idx++} AND wedding_id = $${idx} AND soft_deleted_at IS NULL
        RETURNING id, first_name, last_name, display_name, email, phone, group_label, rsvp_status, created_at`,
       values
     );
@@ -97,7 +97,7 @@ export async function DELETE(
 
     const pool = getPool();
     const result = await pool.query(
-      'DELETE FROM guests WHERE id = $1 AND wedding_id = $2 RETURNING id',
+      'UPDATE guests SET soft_deleted_at = NOW() WHERE id = $1 AND wedding_id = $2 AND soft_deleted_at IS NULL RETURNING id',
       [guestId, weddingId]
     );
 

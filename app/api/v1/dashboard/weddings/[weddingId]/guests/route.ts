@@ -34,7 +34,7 @@ export async function GET(
       result = await pool.query(
         `SELECT id, first_name, last_name, display_name, email, phone, group_label, rsvp_status,
                 party_id, party_role, created_at
-         FROM guests WHERE wedding_id = $1
+         FROM guests WHERE wedding_id = $1 AND soft_deleted_at IS NULL
          AND (first_name ILIKE $2 OR last_name ILIKE $2 OR display_name ILIKE $2 OR email ILIKE $2)
          ORDER BY last_name, first_name`,
         [weddingId, `%${search}%`]
@@ -43,7 +43,7 @@ export async function GET(
       result = await pool.query(
         `SELECT id, first_name, last_name, display_name, email, phone, group_label, rsvp_status,
                 party_id, party_role, created_at
-         FROM guests WHERE wedding_id = $1
+         FROM guests WHERE wedding_id = $1 AND soft_deleted_at IS NULL
          ORDER BY last_name, first_name`,
         [weddingId]
       );

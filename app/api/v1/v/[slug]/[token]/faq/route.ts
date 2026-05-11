@@ -87,7 +87,7 @@ export async function POST(
               te.location, te.notes, te.status
        FROM timeline_entries te
        JOIN timeline_entry_vendors tev ON tev.timeline_entry_id = te.id
-       WHERE te.wedding_id = $1 AND tev.vendor_id = $2
+       WHERE te.wedding_id = $1 AND tev.vendor_id = $2 AND te.soft_deleted_at IS NULL
        ORDER BY te.event_date ASC NULLS LAST, te.sort_order ASC`,
       [ctx.wedding.id, ctx.vendor.id]
     );

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, use, useCallback, useMemo } from 'react';
+import UndoToast from '@/components/ui/UndoToast';
 import { formatDayHeader, normalizeDate } from '@/lib/utils/date-format';
 import { vendorColor, eventColorByName } from '@/lib/utils/vendor-color';
 
@@ -163,16 +164,35 @@ export default function TimelinePage({
     await load();
   };
 
-  const deleteEntry = async (id: string) => {
-    if (!confirm('Delete this entry?')) return;
+  // Undo toast for single-entry delete. The two bulk-delete paths
+  // (`deleteSection` and `deleteAll`) keep their double-confirm prompts
+  // because they're high-cost operations; soft-delete still backs them so
+  // even an accidental nuclear option is recoverable from the trash for 30d.
+  const [pendingDelete, setPendingDelete] = useState<{ id: string; label: string } | null>(null);
+
+  const deleteEntry = async (entry: TimelineEntry) => {
+    setEntries((prev) => prev.filter((e) => e.id !== entry.id));
+    const label = (entry.action || 'this entry').slice(0, 60);
+    setPendingDelete({ id: entry.id, label });
     const res = await fetch(
-      `/api/v1/dashboard/weddings/${weddingId}/timeline/${id}`,
+      `/api/v1/dashboard/weddings/${weddingId}/timeline/${entry.id}`,
       { method: 'DELETE' }
     );
     if (!res.ok) {
       setError('Delete failed');
-      return;
+      setPendingDelete(null);
+      await load();
     }
+  };
+
+  const undoEntryDelete = async () => {
+    if (!pendingDelete) return;
+    await fetch(`/api/v1/dashboard/weddings/${weddingId}/restore`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ kind: 'timeline_entry', id: pendingDelete.id }),
+    });
+    setPendingDelete(null);
     await load();
   };
 
@@ -626,7 +646,7 @@ export default function TimelinePage({
                     )}
                   </div>
                   <button
-                    onClick={(ev) => { ev.stopPropagation(); deleteEntry(e.id); }}
+                    onClick={(ev) => { ev.stopPropagation(); deleteEntry(e); }}
                     style={iconButtonStyle}
                     aria-label="Delete entry"
                   >
@@ -654,6 +674,13 @@ export default function TimelinePage({
           onCancel={() => setEditing(null)}
         />
       )}
+
+      <UndoToast
+        open={pendingDelete !== null}
+        message={pendingDelete ? `Removed "${pendingDelete.label}"` : ''}
+        onUndo={undoEntryDelete}
+        onTimeout={() => setPendingDelete(null)}
+      />
     </div>
   );
 }

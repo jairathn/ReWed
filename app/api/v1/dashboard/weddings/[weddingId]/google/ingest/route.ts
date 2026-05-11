@@ -74,7 +74,7 @@ export async function POST(
         [weddingId]
       ),
       pool.query<{ name: string }>(
-        `SELECT name FROM vendors WHERE wedding_id = $1`,
+        `SELECT name FROM vendors WHERE wedding_id = $1 AND soft_deleted_at IS NULL`,
         [weddingId]
       ),
     ]);

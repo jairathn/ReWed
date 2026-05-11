@@ -21,7 +21,7 @@ const patchSchema = z.object({
 async function ensureEntryOwned(weddingId: string, entryId: string) {
   const pool = getPool();
   const row = await pool.query(
-    `SELECT id FROM timeline_entries WHERE id = $1 AND wedding_id = $2`,
+    `SELECT id FROM timeline_entries WHERE id = $1 AND wedding_id = $2 AND soft_deleted_at IS NULL`,
     [entryId, weddingId]
   );
   if (row.rows.length === 0) throw new AppError('WEDDING_NOT_FOUND');
@@ -64,7 +64,7 @@ export async function PATCH(
     // Snapshot BEFORE state so we can diff for email notifications.
     const beforeResult = await pool.query(
       `SELECT event_date, event_name, time_label, action, location, notes, status
-       FROM timeline_entries WHERE id = $1`,
+       FROM timeline_entries WHERE id = $1 AND soft_deleted_at IS NULL`,
       [entryId]
     );
     const before = beforeResult.rows[0] || {};
@@ -73,7 +73,7 @@ export async function PATCH(
       updates.push(`updated_at = NOW()`);
       values.push(entryId);
       await pool.query(
-        `UPDATE timeline_entries SET ${updates.join(', ')} WHERE id = $${i}`,
+        `UPDATE timeline_entries SET ${updates.join(', ')} WHERE id = $${i} AND soft_deleted_at IS NULL`,
         values
       );
     }
@@ -85,7 +85,7 @@ export async function PATCH(
       );
       if (d.vendor_ids.length > 0) {
         const valid = await pool.query(
-          `SELECT id FROM vendors WHERE wedding_id = $1 AND id = ANY($2::uuid[])`,
+          `SELECT id FROM vendors WHERE wedding_id = $1 AND id = ANY($2::uuid[]) AND soft_deleted_at IS NULL`,
           [weddingId, d.vendor_ids]
         );
         for (const row of valid.rows) {
@@ -102,7 +102,7 @@ export async function PATCH(
     // Notify assigned vendors if anything user-facing changed.
     const afterResult = await pool.query(
       `SELECT event_date, event_name, time_label, action, location, notes, status
-       FROM timeline_entries WHERE id = $1`,
+       FROM timeline_entries WHERE id = $1 AND soft_deleted_at IS NULL`,
       [entryId]
     );
     const after = afterResult.rows[0] || {};
@@ -164,7 +164,7 @@ export async function DELETE(
     await ensureEntryOwned(weddingId, entryId);
 
     const pool = getPool();
-    await pool.query(`DELETE FROM timeline_entries WHERE id = $1`, [entryId]);
+    await pool.query(`UPDATE timeline_entries SET soft_deleted_at = NOW() WHERE id = $1 AND soft_deleted_at IS NULL`, [entryId]);
     return Response.json({ data: { id: entryId } });
   } catch (error) {
     return handleApiError(error);

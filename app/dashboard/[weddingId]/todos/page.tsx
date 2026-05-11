@@ -2,6 +2,8 @@
 
 import { useState, useEffect, use, useCallback, useMemo } from 'react';
 import GoogleSuggestionsCard from '@/components/dashboard/GoogleSuggestionsCard';
+import UndoToast from '@/components/ui/UndoToast';
+import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import { formatShortDate } from '@/lib/utils/date-format';
 import { vendorColor } from '@/lib/utils/vendor-color';
 
@@ -77,6 +79,13 @@ export default function TodosPage({
   const [nudging, setNudging] = useState<string | null>(null);
   const [nudgeFlash, setNudgeFlash] = useState<string | null>(null);
   const [error, setError] = useState('');
+  // Pending soft-delete shown as an Undo toast. Restoring before the toast
+  // expires hits /restore; if the user ignores it, the row stays soft-deleted
+  // and the janitor hard-deletes after 30 days.
+  const [pendingDelete, setPendingDelete] = useState<{ id: string; title: string } | null>(null);
+  // Side-effect actions go through a confirm dialog rather than undo: nudging
+  // fires a real email to the vendor, can't unfire that.
+  const [pendingNudge, setPendingNudge] = useState<Todo | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -107,15 +116,38 @@ export default function TodosPage({
     await load();
   };
 
-  const deleteTodo = async (id: string) => {
-    if (!confirm('Delete this to-do?')) return;
-    await fetch(`/api/v1/dashboard/weddings/${weddingId}/todos/${id}`, {
+  const deleteTodo = async (todo: Todo) => {
+    // Optimistic: pull from local list and surface an Undo toast. The server
+    // already soft-deletes, so a tab close mid-toast still leaves the row
+    // recoverable for 30 days via the trash.
+    setTodos((prev) => prev.filter((t) => t.id !== todo.id));
+    setPendingDelete({ id: todo.id, title: todo.title });
+    await fetch(`/api/v1/dashboard/weddings/${weddingId}/todos/${todo.id}`, {
       method: 'DELETE',
     });
+  };
+
+  const undoDelete = async () => {
+    if (!pendingDelete) return;
+    const { id } = pendingDelete;
+    await fetch(`/api/v1/dashboard/weddings/${weddingId}/restore`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ kind: 'todo', id }),
+    });
+    setPendingDelete(null);
     await load();
   };
 
-  const nudge = async (todo: Todo) => {
+  // Open the confirm dialog. Actual send happens in `confirmNudge` once the
+  // user confirms — we don't want the click to fire a real email.
+  const nudge = (todo: Todo) => {
+    setPendingNudge(todo);
+  };
+
+  const confirmNudge = async () => {
+    const todo = pendingNudge;
+    if (!todo) return;
     setNudging(todo.id);
     setError('');
     setNudgeFlash(null);
@@ -132,6 +164,7 @@ export default function TodosPage({
       setError(err instanceof Error ? err.message : 'Could not send nudge');
     } finally {
       setNudging(null);
+      setPendingNudge(null);
     }
   };
 
@@ -327,6 +360,30 @@ export default function TodosPage({
           ? <Empty text="No to-dos yet." />
           : <Section title="Everything" todos={todos} onToggle={toggleStatus} onDelete={deleteTodo} onNudge={nudge} nudging={nudging} />
       )}
+
+      <UndoToast
+        open={pendingDelete !== null}
+        message={pendingDelete ? `Deleted "${pendingDelete.title.slice(0, 60)}"` : ''}
+        onUndo={undoDelete}
+        onTimeout={() => setPendingDelete(null)}
+      />
+
+      <ConfirmDialog
+        open={pendingNudge !== null}
+        title="Send a nudge email?"
+        description={
+          pendingNudge ? (
+            <>
+              We&apos;ll email <strong>{pendingNudge.vendor_name || 'the couple'}</strong> a reminder
+              about <strong>&ldquo;{pendingNudge.title}&rdquo;</strong>. This goes out immediately.
+            </>
+          ) : ''
+        }
+        confirmLabel="Send nudge"
+        variant="primary"
+        onConfirm={confirmNudge}
+        onCancel={() => setPendingNudge(null)}
+      />
     </div>
   );
 }
@@ -359,7 +416,7 @@ function Section({
   title: string;
   todos: Todo[];
   onToggle: (t: Todo) => void;
-  onDelete: (id: string) => void;
+  onDelete: (t: Todo) => void;
   onNudge: (t: Todo) => void;
   nudging: string | null;
 }) {
@@ -472,7 +529,7 @@ function Section({
                   </button>
                 )}
                 <button
-                  onClick={() => onDelete(t.id)}
+                  onClick={() => onDelete(t)}
                   style={{
                     padding: '6px 8px',
                     borderRadius: 8,
