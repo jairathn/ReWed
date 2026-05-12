@@ -85,6 +85,7 @@ export default function FactsPage({ params }: { params: Promise<{ weddingId: str
             gap: 4,
             marginBottom: 10,
           }}
+          prefetch={false}
         >
           ← Back to to-dos
         </Link>

@@ -619,6 +619,7 @@ export default function VendorsPage({
                           fontWeight: 600,
                           textDecoration: 'none',
                         }}
+                        prefetch={false}
                       >
                         No timeline yet →
                       </Link>

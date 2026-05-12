@@ -134,6 +134,7 @@ export default function CreateWeddingPage() {
         href="/dashboard"
         className="inline-flex items-center gap-2 text-sm mb-8"
         style={{ color: 'var(--text-secondary)' }}
+        prefetch={false}
       >
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <polyline points="15 18 9 12 15 6" />

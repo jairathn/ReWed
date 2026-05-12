@@ -258,6 +258,7 @@ export default function WeddingOverviewPage({
             border: '1px solid var(--border-light)',
             textDecoration: 'none',
           }}
+          prefetch={false}
         >
           Back to Dashboard
         </Link>
@@ -458,6 +459,7 @@ export default function WeddingOverviewPage({
               textDecoration: 'none',
               boxShadow: '0 2px 8px rgba(198,163,85,0.2)',
             }}
+            prefetch={false}
           >
             Add Guests
           </Link>
@@ -501,7 +503,7 @@ export default function WeddingOverviewPage({
 
           if (card.link) {
             return (
-              <Link key={card.label} href={card.link} style={{ textDecoration: 'none' }}>
+              <Link key={card.label} href={card.link} style={{ textDecoration: 'none' }} prefetch={false}>
                 {inner}
               </Link>
             );
@@ -770,6 +772,7 @@ function AttentionTile({
         textDecoration: 'none',
         transition: 'transform 0.15s, box-shadow 0.15s',
       }}
+      prefetch={false}
     >
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 4 }}>
         <span style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 600, color: palette.color, lineHeight: 1 }}>

@@ -67,12 +67,23 @@ export async function POST(request: NextRequest) {
 
     // Transcode: auto-rotate from EXIF, strip the rest, cap long edge, encode
     // webp. Output is what we actually serve; original never leaves the
-    // request handler.
-    const transformed = await sharp(input)
-      .rotate()
-      .resize({ width: 2000, height: 2000, fit: 'inside', withoutEnlargement: true })
-      .webp({ quality: 85 })
-      .toBuffer({ resolveWithObject: true });
+    // request handler. The MIME allowlist above is advisory — a browser will
+    // happily set image/jpeg on bytes that aren't a real JPEG, so we still
+    // catch sharp's decode errors here and turn them into a friendly 400
+    // instead of letting them bubble to a 500.
+    let transformed: { data: Buffer; info: sharp.OutputInfo };
+    try {
+      transformed = await sharp(input)
+        .rotate()
+        .resize({ width: 2000, height: 2000, fit: 'inside', withoutEnlargement: true })
+        .webp({ quality: 85 })
+        .toBuffer({ resolveWithObject: true });
+    } catch {
+      throw new AppError(
+        'UPLOAD_INVALID_TYPE',
+        'We couldn’t read that image — try a different file, or save it as a fresh JPG or PNG.'
+      );
+    }
 
     const key = `weddings/${weddingId}/rich-text/${randomUUID()}.webp`;
     await uploadObject(key, transformed.data, 'image/webp');
