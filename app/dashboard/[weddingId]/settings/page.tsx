@@ -1,9 +1,15 @@
 'use client';
 
 import { useState, useEffect, useCallback, use } from 'react';
+import dynamic from 'next/dynamic';
 import PasswordConfirmDialog from '@/components/ui/PasswordConfirmDialog';
 import { formatShortDate } from '@/lib/utils/date-format';
 import { eventColorByName } from '@/lib/utils/vendor-color';
+import { useFeatureFlag } from '@/lib/hooks/useFeatureFlag';
+
+// Lazy-load the Tiptap editor — ~200kb chunk only needed when authoring
+// event descriptions, not on the list view.
+const RichTextEditor = dynamic(() => import('@/lib/rich-text/RichTextEditor'), { ssr: false });
 
 interface StyleGuideImage {
   storage_key: string;
@@ -42,6 +48,9 @@ type View = 'list' | 'add' | 'edit' | 'import';
 
 export default function SettingsPage({ params }: { params: Promise<{ weddingId: string }> }) {
   const { weddingId } = use(params);
+  // Rich-text editor gates on rich_text_v1 (same flag as FAQ). Off by default;
+  // flip on weddings.package_config.feature_flags.rich_text_v1 to enable.
+  const { enabled: richEnabled } = useFeatureFlag(weddingId, 'rich_text_v1');
   const [events, setEvents] = useState<WeddingEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState<View>('list');
@@ -325,6 +334,10 @@ export default function SettingsPage({ params }: { params: Promise<{ weddingId: 
       dress_code: dressCode || null,
       description: description || null,
       logistics: logistics || null,
+      // Mark the row as rich when the rich editor authored it. Plain-mode
+      // saves leave content_format unset so the server keeps the existing
+      // value (defaults to 'plain' for new rows).
+      content_format: richEnabled ? ('rich' as const) : undefined,
     };
 
     try {
@@ -647,12 +660,22 @@ export default function SettingsPage({ params }: { params: Promise<{ weddingId: 
 
           <div style={{ marginBottom: 16 }}>
             <label style={labelStyle}>Description</label>
-            <textarea
-              style={{ ...inputStyle, minHeight: 80, resize: 'vertical' }}
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Tell guests about this event..."
-            />
+            {richEnabled ? (
+              <RichTextEditor
+                value={description}
+                onChange={setDescription}
+                weddingId={weddingId}
+                placeholder="Tell guests about this event..."
+                minHeight={120}
+              />
+            ) : (
+              <textarea
+                style={{ ...inputStyle, minHeight: 80, resize: 'vertical' }}
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Tell guests about this event..."
+              />
+            )}
           </div>
 
           <div style={{ marginBottom: 20 }}>

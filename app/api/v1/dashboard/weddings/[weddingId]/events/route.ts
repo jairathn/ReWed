@@ -18,6 +18,9 @@ const createEventSchema = z.object({
   logistics: z.string().max(2000).optional(),
   accent_color: z.string().max(20).optional(),
   sort_order: z.number().int().optional(),
+  // 'rich' marks the description as Markdown (rendered by RichText). Older
+  // rows stay 'plain' until they're re-saved through the rich editor.
+  content_format: z.enum(['plain', 'rich']).optional(),
 });
 
 /**
@@ -36,7 +39,7 @@ export async function GET(
     const pool = getPool();
     const result = await pool.query(
       `SELECT id, name, date, start_time, end_time, end_date, venue_name, venue_address,
-              dress_code, description, logistics, accent_color, sort_order,
+              dress_code, description, logistics, accent_color, sort_order, content_format,
               COALESCE(style_guide_images, '[]'::jsonb) AS style_guide_images, created_at
        FROM events WHERE wedding_id = $1
        ORDER BY sort_order, date, start_time`,
@@ -75,10 +78,10 @@ export async function POST(
 
     const result = await pool.query(
       `INSERT INTO events (wedding_id, name, date, start_time, end_time, end_date, venue_name, venue_address,
-                           dress_code, description, logistics, accent_color, sort_order)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+                           dress_code, description, logistics, accent_color, sort_order, content_format)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, COALESCE($14, 'plain'))
        RETURNING id, name, date, start_time, end_time, end_date, venue_name, venue_address,
-                 dress_code, description, logistics, accent_color, sort_order, created_at`,
+                 dress_code, description, logistics, accent_color, sort_order, content_format, created_at`,
       [
         weddingId,
         parsed.name.trim(),
@@ -93,6 +96,7 @@ export async function POST(
         parsed.logistics?.trim() || null,
         parsed.accent_color || null,
         parsed.sort_order ?? 0,
+        parsed.content_format ?? null,
       ]
     );
 

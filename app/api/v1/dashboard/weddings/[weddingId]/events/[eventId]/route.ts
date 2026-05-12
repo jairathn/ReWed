@@ -18,6 +18,7 @@ const updateEventSchema = z.object({
   logistics: z.string().max(2000).optional().or(z.null()),
   accent_color: z.string().max(20).optional().or(z.null()),
   sort_order: z.number().int().optional(),
+  content_format: z.enum(['plain', 'rich']).optional(),
 });
 
 /**
@@ -42,7 +43,7 @@ export async function PUT(
 
     const fields: (keyof typeof parsed)[] = [
       'name', 'date', 'start_time', 'end_time', 'end_date', 'venue_name', 'venue_address',
-      'dress_code', 'description', 'logistics', 'accent_color', 'sort_order',
+      'dress_code', 'description', 'logistics', 'accent_color', 'sort_order', 'content_format',
     ];
 
     for (const field of fields) {
@@ -62,7 +63,7 @@ export async function PUT(
       `UPDATE events SET ${sets.join(', ')}
        WHERE id = $${idx++} AND wedding_id = $${idx}
        RETURNING id, name, date, start_time, end_time, end_date, venue_name, venue_address,
-                 dress_code, description, logistics, accent_color, sort_order, created_at`,
+                 dress_code, description, logistics, accent_color, sort_order, content_format, created_at`,
       values
     );
 
