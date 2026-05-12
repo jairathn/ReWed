@@ -383,7 +383,7 @@ RESEND_REPLY_TO=shriyaneilwedding@gmail.com`}
           <label style={labelStyle}>Audience</label>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 8 }}>
             {([
-              { id: 'all', label: 'Everyone', count: status?.counts.with_email ?? 0, color: 'var(--text-primary)', accent: 'var(--text-secondary)', tint: 'rgba(44,40,37,0.06)' },
+              { id: 'all', label: 'Everyone with email', count: status?.counts.with_email ?? 0, color: 'var(--text-primary)', accent: 'var(--text-secondary)', tint: 'rgba(44,40,37,0.06)' },
               { id: 'attending', label: 'Attending', count: status?.counts.attending ?? 0, color: 'var(--color-olive)', accent: 'var(--color-olive)', tint: 'rgba(122,139,92,0.10)' },
               { id: 'pending', label: 'Pending', count: status?.counts.pending ?? 0, color: 'var(--color-gold-dark)', accent: 'var(--color-gold-dark)', tint: 'rgba(198,163,85,0.10)' },
               { id: 'declined', label: 'Declined', count: status?.counts.declined ?? 0, color: 'var(--color-terracotta)', accent: 'var(--color-terracotta)', tint: 'rgba(196,112,75,0.10)' },
@@ -450,9 +450,23 @@ RESEND_REPLY_TO=shriyaneilwedding@gmail.com`}
             </button>
           )}
           {audience !== 'custom' && status && status.counts.total > status.counts.with_email && (
-            <p style={{ margin: '10px 0 0', fontSize: 12, color: 'var(--text-tertiary)', fontFamily: 'var(--font-body)' }}>
-              {status.counts.total - status.counts.with_email} guest{status.counts.total - status.counts.with_email === 1 ? ' has' : 's have'} no email on file and will be skipped.
-            </p>
+            <div
+              style={{
+                margin: '10px 0 0',
+                padding: '8px 12px',
+                borderRadius: 8,
+                background: 'rgba(218,175,53,0.10)',
+                border: '1px solid rgba(218,175,53,0.30)',
+                fontSize: 12,
+                color: 'var(--color-gold-dark)',
+                fontFamily: 'var(--font-body)',
+              }}
+            >
+              ⚠ {status.counts.total - status.counts.with_email} of {status.counts.total} guest
+              {status.counts.total - status.counts.with_email === 1 ? ' has' : 's have'} no email on
+              file and will be skipped — only{' '}
+              <strong>{status.counts.with_email}</strong> will receive this send.
+            </div>
           )}
         </div>
 

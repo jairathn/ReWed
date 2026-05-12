@@ -5,7 +5,7 @@ import BottomNav from '@/components/guest/BottomNav';
 import GuestAccountMenu from '@/components/guest/GuestAccountMenu';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useSyncExternalStore } from 'react';
 import { usePreviewMode } from '@/lib/hooks/usePreviewMode';
 
 export default function GuestHomePage() {
@@ -50,9 +50,18 @@ export default function GuestHomePage() {
     }
   }, [isLoading, isAuthenticated, router, slug]);
 
-  // Calculate countdown
+  // Calculate countdown — but only after the client has hydrated. Computing
+  // `new Date()` during SSR produces a different value than the first client
+  // render (React #418 hydration mismatch). We use useSyncExternalStore with
+  // a no-op subscribe to get a value that's `false` on the server and `true`
+  // post-mount in a way the React Compiler accepts.
+  const mounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
   const countdown = useMemo(() => {
-    if (!config?.wedding_date) return null;
+    if (!mounted || !config?.wedding_date) return null;
     const tz = config.timezone || 'America/New_York';
     const nowInTz = new Date(new Date().toLocaleString('en-US', { timeZone: tz }));
     const weddingDate = new Date(config.wedding_date + 'T12:00:00');
@@ -62,7 +71,7 @@ export default function GuestHomePage() {
     const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
     const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
     return { days, hours, mins };
-  }, [config]);
+  }, [config, mounted]);
 
   if (configError && !isLoading) {
     return (
@@ -107,9 +116,9 @@ export default function GuestHomePage() {
       <header
         className="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-6 py-4"
         style={{
-          background: 'linear-gradient(to bottom, rgba(250, 249, 245, 0.92) 0%, rgba(250, 249, 245, 0.78) 55%, rgba(250, 249, 245, 0.55) 100%)',
-          backdropFilter: 'blur(14px) saturate(140%)',
-          WebkitBackdropFilter: 'blur(14px) saturate(140%)',
+          background: 'linear-gradient(to bottom, rgba(250, 249, 245, 0.96) 0%, rgba(250, 249, 245, 0.88) 55%, rgba(250, 249, 245, 0.72) 100%)',
+          backdropFilter: 'blur(18px) saturate(160%)',
+          WebkitBackdropFilter: 'blur(18px) saturate(160%)',
         }}
       >
         <div className="flex items-center gap-4">

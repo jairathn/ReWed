@@ -288,50 +288,78 @@ export default function MeetingsPage({
 
             <label style={label}>Stakeholders in the room</label>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
-              {[{ id: COUPLE_OPTION_ID, name: 'Bride & Groom', category: null }, ...vendors].map((v) => {
-                const selected = draft.stakeholder_ids.includes(v.id);
-                const isCouple = v.id === COUPLE_OPTION_ID;
-                const color = isCouple ? '#A8883F' : vendorColor(v.id);
-                return (
-                  <button
-                    key={v.id}
-                    type="button"
-                    onClick={() => {
-                      const next = selected
-                        ? draft.stakeholder_ids.filter((id) => id !== v.id)
-                        : [...draft.stakeholder_ids, v.id];
-                      setDraft({ ...draft, stakeholder_ids: next });
-                    }}
-                    style={{
-                      padding: '5px 11px 5px 8px',
-                      borderRadius: 999,
-                      border: selected ? 'none' : '1px solid var(--border-light)',
-                      background: selected ? color : 'var(--bg-pure-white)',
-                      color: selected ? '#FDFBF7' : 'var(--text-primary)',
-                      fontSize: 12,
-                      fontFamily: 'var(--font-body)',
-                      fontWeight: selected ? 600 : 500,
-                      cursor: 'pointer',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: 6,
-                      transition: 'background 0.15s',
-                    }}
-                  >
-                    <span
-                      aria-hidden
-                      style={{
-                        width: 7,
-                        height: 7,
-                        borderRadius: 999,
-                        background: selected ? '#FDFBF7' : color,
-                        display: 'inline-block',
+              {(() => {
+                // Audit B: vendors with duplicate display names need
+                // disambiguation in the picker. Add role/category when there
+                // are collisions so the user can tell them apart.
+                const nameCounts = new Map<string, number>();
+                for (const v of vendors) {
+                  const k = v.name.toLowerCase().trim();
+                  nameCounts.set(k, (nameCounts.get(k) ?? 0) + 1);
+                }
+                const options = [
+                  { id: COUPLE_OPTION_ID, name: 'Bride & Groom', category: null as string | null },
+                  ...vendors,
+                ];
+                return options.map((v) => {
+                  const selected = draft.stakeholder_ids.includes(v.id);
+                  const isCouple = v.id === COUPLE_OPTION_ID;
+                  const color = isCouple ? '#A8883F' : vendorColor(v.id);
+                  const collides =
+                    !isCouple && (nameCounts.get(v.name.toLowerCase().trim()) ?? 0) > 1;
+                  return (
+                    <button
+                      key={v.id}
+                      type="button"
+                      onClick={() => {
+                        const next = selected
+                          ? draft.stakeholder_ids.filter((id) => id !== v.id)
+                          : [...draft.stakeholder_ids, v.id];
+                        setDraft({ ...draft, stakeholder_ids: next });
                       }}
-                    />
-                    {v.name}
-                  </button>
-                );
-              })}
+                      style={{
+                        padding: '5px 11px 5px 8px',
+                        borderRadius: 999,
+                        border: selected ? 'none' : '1px solid var(--border-light)',
+                        background: selected ? color : 'var(--bg-pure-white)',
+                        color: selected ? '#FDFBF7' : 'var(--text-primary)',
+                        fontSize: 12,
+                        fontFamily: 'var(--font-body)',
+                        fontWeight: selected ? 600 : 500,
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 6,
+                        transition: 'background 0.15s',
+                      }}
+                    >
+                      <span
+                        aria-hidden
+                        style={{
+                          width: 7,
+                          height: 7,
+                          borderRadius: 999,
+                          background: selected ? '#FDFBF7' : color,
+                          display: 'inline-block',
+                        }}
+                      />
+                      {v.name}
+                      {collides && v.category && (
+                        <span
+                          style={{
+                            opacity: 0.7,
+                            fontWeight: 400,
+                            fontSize: 11,
+                            marginLeft: 2,
+                          }}
+                        >
+                          · {v.category}
+                        </span>
+                      )}
+                    </button>
+                  );
+                });
+              })()}
             </div>
             <p style={{ fontSize: 11, color: 'var(--text-tertiary)', margin: '0 0 12px', fontFamily: 'var(--font-body)' }}>
               The couple is always implicit — to-dos can be assigned to them even if you don&apos;t pick the chip.

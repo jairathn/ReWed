@@ -93,8 +93,10 @@ export function formatDayHeader(
 export function daysUntil(date: unknown): number | null {
   const d = toLocalNoon(date);
   if (!d) return null;
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const diff = d.getTime() - today.getTime();
-  return Math.round(diff / (1000 * 60 * 60 * 24));
+  const now = new Date();
+  const diff = d.getTime() - now.getTime();
+  // Floor so the count matches the user's mental model of "X full days left".
+  // The guest home countdown uses the same flooring rule — both surfaces now
+  // agree on the integer day count (audit C-9 / Finding 5).
+  return Math.floor(diff / (1000 * 60 * 60 * 24));
 }

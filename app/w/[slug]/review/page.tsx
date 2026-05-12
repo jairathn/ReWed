@@ -166,9 +166,9 @@ function ReviewContent() {
         <header
           className="fixed top-0 w-full z-50 flex justify-between items-center px-6 py-4"
           style={{
-            background: 'linear-gradient(to bottom, rgba(250, 249, 245, 0.92) 0%, rgba(250, 249, 245, 0.78) 55%, rgba(250, 249, 245, 0.55) 100%)',
-            backdropFilter: 'blur(14px) saturate(140%)',
-            WebkitBackdropFilter: 'blur(14px) saturate(140%)',
+            background: 'linear-gradient(to bottom, rgba(250, 249, 245, 0.96) 0%, rgba(250, 249, 245, 0.88) 55%, rgba(250, 249, 245, 0.72) 100%)',
+            backdropFilter: 'blur(18px) saturate(160%)',
+            WebkitBackdropFilter: 'blur(18px) saturate(160%)',
           }}
         >
           <div className="flex items-center gap-3">
@@ -206,9 +206,9 @@ function ReviewContent() {
         <header
           className="fixed top-0 w-full z-50 flex justify-between items-center px-6 py-4"
           style={{
-            background: 'linear-gradient(to bottom, rgba(250, 249, 245, 0.92) 0%, rgba(250, 249, 245, 0.78) 55%, rgba(250, 249, 245, 0.55) 100%)',
-            backdropFilter: 'blur(14px) saturate(140%)',
-            WebkitBackdropFilter: 'blur(14px) saturate(140%)',
+            background: 'linear-gradient(to bottom, rgba(250, 249, 245, 0.96) 0%, rgba(250, 249, 245, 0.88) 55%, rgba(250, 249, 245, 0.72) 100%)',
+            backdropFilter: 'blur(18px) saturate(160%)',
+            WebkitBackdropFilter: 'blur(18px) saturate(160%)',
           }}
         >
           <div className="flex items-center gap-3">
@@ -275,9 +275,9 @@ function ReviewContent() {
       <header
         className="fixed top-0 w-full z-50 flex justify-between items-center px-6 py-4"
         style={{
-          background: 'linear-gradient(to bottom, rgba(250, 249, 245, 0.92) 0%, rgba(250, 249, 245, 0.78) 55%, rgba(250, 249, 245, 0.55) 100%)',
-          backdropFilter: 'blur(14px) saturate(140%)',
-          WebkitBackdropFilter: 'blur(14px) saturate(140%)',
+          background: 'linear-gradient(to bottom, rgba(250, 249, 245, 0.96) 0%, rgba(250, 249, 245, 0.88) 55%, rgba(250, 249, 245, 0.72) 100%)',
+          backdropFilter: 'blur(18px) saturate(160%)',
+          WebkitBackdropFilter: 'blur(18px) saturate(160%)',
         }}
       >
         <div className="flex items-center gap-3">
@@ -496,9 +496,9 @@ export default function ReviewPage() {
           <header
             className="fixed top-0 w-full z-50 flex justify-between items-center px-6 py-4"
             style={{
-              background: 'linear-gradient(to bottom, rgba(250, 249, 245, 0.92) 0%, rgba(250, 249, 245, 0.78) 55%, rgba(250, 249, 245, 0.55) 100%)',
-              backdropFilter: 'blur(14px) saturate(140%)',
-              WebkitBackdropFilter: 'blur(14px) saturate(140%)',
+              background: 'linear-gradient(to bottom, rgba(250, 249, 245, 0.96) 0%, rgba(250, 249, 245, 0.88) 55%, rgba(250, 249, 245, 0.72) 100%)',
+              backdropFilter: 'blur(18px) saturate(160%)',
+              WebkitBackdropFilter: 'blur(18px) saturate(160%)',
             }}
           >
             <div className="w-8" />
