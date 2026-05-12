@@ -505,7 +505,7 @@ export default function TravelListView({
             className="text-xl"
             style={{ fontFamily: 'var(--font-display)', color: 'var(--text-primary)' }}
           >
-            Guest Destinations
+            Where guests are flying from
           </h2>
           {stops.length > 0 && (
             <span

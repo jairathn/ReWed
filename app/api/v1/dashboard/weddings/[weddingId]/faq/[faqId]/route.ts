@@ -6,7 +6,13 @@ import { getCoupleId, verifyWeddingOwnership } from '@/lib/dashboard-auth';
 
 const updateFaqSchema = z.object({
   question: z.string().min(1).max(500).optional(),
-  answer: z.string().min(1).max(2000).optional(),
+  answer: z.string().min(1).max(20000).optional(),
+  /**
+   * Set by the rich-text editor to mark the row as Markdown-authored. Plain
+   * textarea saves omit this — the column keeps its existing value (defaults
+   * to 'plain' on rows created before migration 025).
+   */
+  content_format: z.enum(['plain', 'rich']).optional(),
 });
 
 /**
@@ -36,6 +42,10 @@ export async function PUT(
     if (parsed.answer !== undefined) {
       sets.push(`answer = $${idx++}`);
       values.push(parsed.answer.trim());
+    }
+    if (parsed.content_format !== undefined) {
+      sets.push(`content_format = $${idx++}`);
+      values.push(parsed.content_format);
     }
 
     if (sets.length === 0) {

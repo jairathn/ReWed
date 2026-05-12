@@ -6,8 +6,9 @@ import { getCoupleId, verifyWeddingOwnership } from '@/lib/dashboard-auth';
 
 const createFaqSchema = z.object({
   question: z.string().min(1).max(500),
-  answer: z.string().min(1).max(2000),
+  answer: z.string().min(1).max(20000),
   source: z.enum(['manual', 'zola_import', 'generated']).optional(),
+  content_format: z.enum(['plain', 'rich']).optional(),
 });
 
 const bulkImportSchema = z.object({
@@ -94,10 +95,16 @@ export async function POST(
     // Single entry mode
     const parsed = createFaqSchema.parse(body);
     const result = await pool.query(
-      `INSERT INTO faq_entries (wedding_id, question, answer, source)
-       VALUES ($1, $2, $3, $4)
-       RETURNING id, question, answer, source, created_at`,
-      [weddingId, parsed.question.trim(), parsed.answer.trim(), parsed.source || 'manual']
+      `INSERT INTO faq_entries (wedding_id, question, answer, source, content_format)
+       VALUES ($1, $2, $3, $4, COALESCE($5, 'plain'))
+       RETURNING id, question, answer, source, content_format, created_at`,
+      [
+        weddingId,
+        parsed.question.trim(),
+        parsed.answer.trim(),
+        parsed.source || 'manual',
+        parsed.content_format ?? null,
+      ]
     );
 
     // Clear FAQ cache so new entries are used for answers

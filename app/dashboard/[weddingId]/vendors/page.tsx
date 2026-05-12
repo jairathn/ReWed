@@ -361,19 +361,35 @@ export default function VendorsPage({
               setPlannerForm({ ...plannerForm, email: e.target.value });
               if (plannerError) setPlannerError('');
             }}
+            onBlur={(e) => {
+              // Inline blur validation — catches typos before the user clicks
+              // Grant access. The grantPlanner server-side check is the
+              // belt-and-suspenders.
+              const v = e.target.value.trim();
+              if (v && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) {
+                setPlannerError('Enter a valid email — we send the magic link there.');
+              }
+            }}
             style={{
               ...inputStyle,
               borderColor: plannerError ? 'var(--color-terracotta)' : (inputStyle.borderColor as string | undefined) ?? undefined,
             }}
             aria-invalid={!!plannerError}
           />
-          <button
-            onClick={grantPlanner}
-            disabled={plannerSaving || !plannerForm.email.trim()}
-            style={primaryButtonStyle(plannerSaving || !plannerForm.email.trim())}
-          >
-            {plannerSaving ? 'Sending…' : 'Grant access'}
-          </button>
+          {(() => {
+            const v = plannerForm.email.trim();
+            const looksValid = !!v && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+            const disabled = plannerSaving || !looksValid;
+            return (
+              <button
+                onClick={grantPlanner}
+                disabled={disabled}
+                style={primaryButtonStyle(disabled)}
+              >
+                {plannerSaving ? 'Sending…' : 'Grant access'}
+              </button>
+            );
+          })()}
         </div>
         {plannerError && (
           <p style={{ fontSize: 12, color: 'var(--color-terracotta)', fontFamily: 'var(--font-body)', margin: '-4px 0 10px' }}>

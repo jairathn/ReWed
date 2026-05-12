@@ -72,9 +72,9 @@ export default function TravelPage() {
       <header
         className="fixed top-0 w-full z-50 flex justify-between items-center px-6 py-4"
         style={{
-          background: 'linear-gradient(to bottom, rgba(250, 249, 245, 0.92) 0%, rgba(250, 249, 245, 0.78) 55%, rgba(250, 249, 245, 0.55) 100%)',
-          backdropFilter: 'blur(14px) saturate(140%)',
-          WebkitBackdropFilter: 'blur(14px) saturate(140%)',
+          background: 'linear-gradient(to bottom, rgba(250, 249, 245, 0.96) 0%, rgba(250, 249, 245, 0.88) 55%, rgba(250, 249, 245, 0.72) 100%)',
+          backdropFilter: 'blur(18px) saturate(160%)',
+          WebkitBackdropFilter: 'blur(18px) saturate(160%)',
         }}
       >
         <div className="flex items-center gap-3">
@@ -139,7 +139,7 @@ export default function TravelPage() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-sm font-medium rounded-xl transition-all duration-200"
+                className="flex-1 flex items-center justify-center gap-1.5 py-3 px-3 text-sm font-medium rounded-xl transition-all duration-200"
                 style={{
                   background: isActive
                     ? 'linear-gradient(135deg, var(--color-gold-dark), var(--color-gold))'

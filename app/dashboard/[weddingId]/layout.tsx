@@ -280,6 +280,7 @@ export default function WeddingManageLayout({
                     <Link
                       key={item.href}
                       href={item.href}
+                      prefetch={false}
                       style={{
                         display: 'flex',
                         alignItems: 'center',

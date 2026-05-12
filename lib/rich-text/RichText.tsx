@@ -162,6 +162,7 @@ const MARKDOWN_COMPONENTS: Components = {
 function SafeLink({
   href,
   children,
+  style,
   ...rest
 }: React.AnchorHTMLAttributes<HTMLAnchorElement> & { href: string; children: React.ReactNode }) {
   if (!isSafeLinkHref(href)) {
@@ -175,6 +176,16 @@ function SafeLink({
       href={href}
       target={external ? '_blank' : undefined}
       rel={external ? 'noopener noreferrer' : undefined}
+      style={{
+        // Default link styling so guest-facing renders (chatbot answers,
+        // FAQ list, etc.) get an obvious tap target. Per-site CSS can
+        // override via passed-in `style` if needed.
+        color: 'var(--color-gold-dark, #A8883F)',
+        textDecoration: 'underline',
+        textDecorationThickness: '1px',
+        textUnderlineOffset: '2px',
+        ...style,
+      }}
       {...rest}
     >
       {children}
@@ -228,7 +239,15 @@ function EmbedBlock({ embed }: { embed: Embed }) {
  * React elements / text nodes, so we walk them shallowly.
  */
 function extractSoleUrl(children: React.ReactNode): string | null {
-  const nodes = React.Children.toArray(children);
+  // Tolerate trailing/leading whitespace text nodes that remark-breaks or
+  // generic remark parsing can introduce around a single URL. The audit
+  // caught this — a bare URL on its own line was sometimes followed by a
+  // newline-rendered whitespace node, making children.length !== 1 and
+  // disabling embed promotion. Filter those out before the strict check.
+  const nodes = React.Children.toArray(children).filter((n) => {
+    if (typeof n === 'string') return n.trim().length > 0;
+    return true;
+  });
   if (nodes.length !== 1) return null;
   const only = nodes[0];
 
@@ -241,12 +260,20 @@ function extractSoleUrl(children: React.ReactNode): string | null {
     if (el.type === 'a' || (typeof el.type === 'function')) {
       const href = el.props?.href;
       const inner = el.props?.children;
-      const innerText =
-        typeof inner === 'string'
-          ? inner
-          : Array.isArray(inner) && inner.every((c) => typeof c === 'string')
-          ? inner.join('')
-          : null;
+      // Tolerate inner being a string, an array of strings, or an array
+      // containing the URL plus whitespace siblings.
+      let innerText: string | null = null;
+      if (typeof inner === 'string') {
+        innerText = inner;
+      } else if (Array.isArray(inner)) {
+        const stringly = inner
+          .filter((c) => typeof c === 'string')
+          .map((c) => c as string)
+          .join('');
+        if (stringly && inner.every((c) => typeof c === 'string')) {
+          innerText = stringly;
+        }
+      }
       if (href && innerText && href.trim() === innerText.trim() && isUrlOnly(href)) {
         return href.trim();
       }

@@ -1,7 +1,14 @@
 'use client';
 
 import { useState, useEffect, useCallback, use } from 'react';
+import dynamic from 'next/dynamic';
 import PasswordConfirmDialog from '@/components/ui/PasswordConfirmDialog';
+import { useFeatureFlag } from '@/lib/hooks/useFeatureFlag';
+
+// Lazy-load the Tiptap editor — it's a ~200kb chunk and only needed on
+// Manage pages that author rich content. Keeps the rest of the dashboard
+// bundle lean.
+const RichTextEditor = dynamic(() => import('@/lib/rich-text/RichTextEditor'), { ssr: false });
 
 interface FaqEntry {
   id: string;
@@ -20,6 +27,9 @@ type View = 'list' | 'add' | 'edit' | 'import';
 
 export default function FaqPage({ params }: { params: Promise<{ weddingId: string }> }) {
   const { weddingId } = use(params);
+  // Rich-text editor gates on rich_text_v1. Disabled by default; flip the
+  // flag on weddings.package_config.feature_flags.rich_text_v1 to enable.
+  const { enabled: richEnabled } = useFeatureFlag(weddingId, 'rich_text_v1');
   const [entries, setEntries] = useState<FaqEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState<View>('list');
@@ -77,7 +87,14 @@ export default function FaqPage({ params }: { params: Promise<{ weddingId: strin
       const res = await fetch(url, {
         method: editEntry ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question, answer }),
+        body: JSON.stringify({
+          question,
+          answer,
+          // Mark the row as rich whenever the rich editor authored it. Plain-
+          // mode saves leave content_format alone (server keeps current
+          // value, defaults to 'plain' for new rows).
+          content_format: richEnabled ? 'rich' : undefined,
+        }),
       });
 
       if (!res.ok) {
@@ -402,13 +419,23 @@ export default function FaqPage({ params }: { params: Promise<{ weddingId: strin
           </div>
           <div style={{ marginBottom: 20 }}>
             <label style={labelStyle}>Answer *</label>
-            <textarea
-              style={{ ...inputStyle, minHeight: 100, resize: 'vertical' }}
-              value={answer}
-              onChange={(e) => setAnswer(e.target.value)}
-              placeholder="The ceremony is formal attire. Please wear..."
-              required
-            />
+            {richEnabled ? (
+              <RichTextEditor
+                value={answer}
+                onChange={setAnswer}
+                weddingId={weddingId}
+                placeholder="The ceremony is formal attire. Please wear..."
+                minHeight={140}
+              />
+            ) : (
+              <textarea
+                style={{ ...inputStyle, minHeight: 100, resize: 'vertical' }}
+                value={answer}
+                onChange={(e) => setAnswer(e.target.value)}
+                placeholder="The ceremony is formal attire. Please wear..."
+                required
+              />
+            )}
           </div>
           {error && <p style={{ color: 'var(--color-terracotta)', fontSize: 13, marginBottom: 12 }}>{error}</p>}
           <div style={{ display: 'flex', gap: 12 }}>
