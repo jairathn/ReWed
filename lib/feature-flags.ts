@@ -64,8 +64,9 @@ export async function setFlag(
     `UPDATE weddings
        SET package_config = jsonb_set(
          COALESCE(package_config, '{}'::jsonb),
-         ARRAY['feature_flags', $2],
-         to_jsonb($3::boolean),
+         ARRAY['feature_flags'],
+         COALESCE(package_config->'feature_flags', '{}'::jsonb)
+           || jsonb_build_object($2::text, $3::boolean),
          true
        )
      WHERE id = $1`,
