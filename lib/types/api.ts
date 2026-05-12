@@ -117,6 +117,13 @@ export type EventConfig = {
   description: string | null;
   logistics: string | null;
   accent_color: string | null;
+  /**
+   * Whether this event's text fields (description, logistics) were authored
+   * via the Tiptap rich-text editor ('rich') or the legacy plain textarea
+   * ('plain'). Drives <RichText format=…> on the guest side. Defaults to
+   * 'plain' for every existing row (migration 025).
+   */
+  content_format: 'plain' | 'rich';
 };
 
 export type GuestProfile = {

@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect, useCallback, use } from 'react';
-import PasswordConfirmDialog from '@/components/ui/PasswordConfirmDialog';
+import ConfirmDialog from '@/components/ui/ConfirmDialog';
+import UndoToast from '@/components/ui/UndoToast';
 
 interface Guest {
   id: string;
@@ -112,12 +113,11 @@ export default function GuestsPage({ params }: { params: Promise<{ weddingId: st
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [batchDeleting, setBatchDeleting] = useState(false);
 
-  // Delete confirmation (password-gated)
-  const [confirmDelete, setConfirmDelete] = useState<
-    | { type: 'single'; id: string; name: string }
-    | { type: 'batch'; count: number }
-    | null
-  >(null);
+  // Single delete → optimistic + UndoToast. Batch delete → plain
+  // ConfirmDialog (no password). PasswordConfirmDialog kept available for
+  // future high-risk flows but no longer in the delete paths.
+  const [pendingDelete, setPendingDelete] = useState<{ id: string; name: string } | null>(null);
+  const [confirmBatch, setConfirmBatch] = useState<{ count: number } | null>(null);
 
   // CSV Import
   const [csvText, setCsvText] = useState('');
@@ -139,6 +139,10 @@ export default function GuestsPage({ params }: { params: Promise<{ weddingId: st
   const [importLoading, setImportLoading] = useState(false);
   const [importResult, setImportResult] = useState<{ imported: number; skipped: number; errors: string[] } | null>(null);
   const [estimatedGuests, setEstimatedGuests] = useState(0);
+  // Off by default — pending is the correct default for a contact-list
+  // import (audit C-3). When the couple really is importing a list of
+  // confirmed yes-RSVPs, they flip this on before committing.
+  const [assumeAllAttending, setAssumeAllAttending] = useState(false);
 
   const fetchGuests = useCallback(async () => {
     try {
@@ -235,20 +239,32 @@ export default function GuestsPage({ params }: { params: Promise<{ weddingId: st
     }
   };
 
-  const performDelete = async (guestId: string) => {
-    try {
-      const res = await fetch(`/api/v1/dashboard/weddings/${weddingId}/guests/${guestId}`, {
-        method: 'DELETE',
-      });
-      if (res.ok) {
-        setGuests((prev) => prev.filter((g) => g.id !== guestId));
-      }
-    } catch {
-      // Silently fail
-    } finally {
-      setConfirmDelete(null);
+  // Optimistic single-delete: drops the row from local state, fires the
+  // soft-delete on the server, and surfaces an Undo toast. Re-renders the
+  // row if Undo is clicked within the window.
+  const optimisticDelete = async (guest: Guest) => {
+    setGuests((prev) => prev.filter((g) => g.id !== guest.id));
+    setPendingDelete({ id: guest.id, name: guest.display_name });
+    const res = await fetch(`/api/v1/dashboard/weddings/${weddingId}/guests/${guest.id}`, {
+      method: 'DELETE',
+    });
+    if (!res.ok) {
+      setPendingDelete(null);
+      await fetchGuests();
     }
   };
+
+  const undoSingleDelete = async () => {
+    if (!pendingDelete) return;
+    await fetch(`/api/v1/dashboard/weddings/${weddingId}/restore`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ kind: 'guest', id: pendingDelete.id }),
+    });
+    setPendingDelete(null);
+    await fetchGuests();
+  };
+
 
   const toggleSelect = (id: string) => {
     setSelectedIds((prev) => {
@@ -297,7 +313,7 @@ export default function GuestsPage({ params }: { params: Promise<{ weddingId: st
       // Silently fail
     } finally {
       setBatchDeleting(false);
-      setConfirmDelete(null);
+      setConfirmBatch(null);
     }
   };
 
@@ -358,7 +374,12 @@ export default function GuestsPage({ params }: { params: Promise<{ weddingId: st
       const res = await fetch(`/api/v1/dashboard/weddings/${weddingId}/guests/import`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ csv_text: csvText, step: 'import', column_mapping: csvMapping }),
+        body: JSON.stringify({
+          csv_text: csvText,
+          step: 'import',
+          column_mapping: csvMapping,
+          assume_all_attending: assumeAllAttending,
+        }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -741,6 +762,37 @@ export default function GuestsPage({ params }: { params: Promise<{ weddingId: st
           </div>
         )}
 
+        {/* Audit C-3: default is Pending. Couples flip this on only when the
+            CSV genuinely represents already-confirmed RSVPs. */}
+        <label
+          style={{
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: 10,
+            padding: '10px 14px',
+            borderRadius: 10,
+            background: 'var(--bg-soft-cream)',
+            border: '1px solid var(--border-light)',
+            marginBottom: 14,
+            cursor: 'pointer',
+          }}
+        >
+          <input
+            type="checkbox"
+            checked={assumeAllAttending}
+            onChange={(e) => setAssumeAllAttending(e.target.checked)}
+            style={{ marginTop: 3, accentColor: 'var(--color-terracotta)' }}
+          />
+          <span style={{ fontSize: 13, color: 'var(--text-primary)', fontFamily: 'var(--font-body)', lineHeight: 1.5 }}>
+            <strong>Treat everyone in this file as already RSVP&apos;d Yes.</strong>{' '}
+            <span style={{ color: 'var(--text-secondary)' }}>
+              Leave unchecked if you&apos;re just uploading your contact list — they&apos;ll
+              all land as Pending and respond via the RSVP flow. Any explicit
+              RSVP value in the mapped column overrides this checkbox.
+            </span>
+          </span>
+        </label>
+
         {error && <p style={{ color: 'var(--color-terracotta)', fontSize: 13, marginBottom: 12 }}>{error}</p>}
 
         <div style={{ display: 'flex', gap: 12 }}>
@@ -886,7 +938,7 @@ export default function GuestsPage({ params }: { params: Promise<{ weddingId: st
             {selectedIds.size} selected
           </span>
           <button
-            onClick={() => setConfirmDelete({ type: 'batch', count: selectedIds.size })}
+            onClick={() => setConfirmBatch({ count: selectedIds.size })}
             disabled={batchDeleting}
             style={{
               background: 'var(--color-terracotta)',
@@ -1024,9 +1076,7 @@ export default function GuestsPage({ params }: { params: Promise<{ weddingId: st
                           Edit
                         </button>
                         <button
-                          onClick={() =>
-                            setConfirmDelete({ type: 'single', id: guest.id, name: guest.display_name })
-                          }
+                          onClick={() => optimisticDelete(guest)}
                           style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: 'var(--text-tertiary)' }}
                         >
                           Delete
@@ -1041,36 +1091,32 @@ export default function GuestsPage({ params }: { params: Promise<{ weddingId: st
         </div>
       )}
 
-      <PasswordConfirmDialog
-        open={confirmDelete !== null}
+      <ConfirmDialog
+        open={confirmBatch !== null}
         title={
-          confirmDelete?.type === 'batch'
-            ? `Delete ${confirmDelete.count} guest${confirmDelete.count !== 1 ? 's' : ''}?`
-            : 'Delete this guest?'
+          confirmBatch ? `Delete ${confirmBatch.count} guest${confirmBatch.count !== 1 ? 's' : ''}?` : ''
         }
         description={
-          confirmDelete?.type === 'batch' ? (
+          confirmBatch ? (
             <>
-              This will permanently remove <strong>{confirmDelete.count}</strong> guest
-              {confirmDelete.count !== 1 ? 's' : ''} from your list. This cannot be undone.
-              Enter your password to confirm.
+              We&apos;ll remove <strong>{confirmBatch.count}</strong> guest
+              {confirmBatch.count !== 1 ? 's' : ''} from your list. You can recover any of them
+              from the trash within 30 days.
             </>
-          ) : confirmDelete?.type === 'single' ? (
-            <>
-              This will permanently remove <strong>{confirmDelete.name}</strong> from your guest
-              list. This cannot be undone. Enter your password to confirm.
-            </>
-          ) : (
-            ''
-          )
+          ) : ''
         }
-        confirmLabel={confirmDelete?.type === 'batch' ? 'Delete guests' : 'Delete guest'}
-        onConfirm={async () => {
-          if (confirmDelete?.type === 'single') await performDelete(confirmDelete.id);
-          else if (confirmDelete?.type === 'batch') await performBatchDelete();
-        }}
-        onCancel={() => setConfirmDelete(null)}
+        confirmLabel={confirmBatch ? `Delete ${confirmBatch.count}` : 'Delete'}
+        onConfirm={performBatchDelete}
+        onCancel={() => setConfirmBatch(null)}
       />
+
+      <UndoToast
+        open={pendingDelete !== null}
+        message={pendingDelete ? `Removed ${pendingDelete.name}` : ''}
+        onUndo={undoSingleDelete}
+        onTimeout={() => setPendingDelete(null)}
+      />
+
     </div>
   );
 }

@@ -45,7 +45,7 @@ export async function GET(
     const [guestsResult, weddingResult] = await Promise.all([
       pool.query(
         `SELECT id, first_name, last_name, display_name, memoir_published FROM guests
-         WHERE wedding_id = $1 ORDER BY last_name, first_name`,
+         WHERE wedding_id = $1 AND soft_deleted_at IS NULL ORDER BY last_name, first_name`,
         [weddingId]
       ),
       pool.query(
@@ -108,7 +108,7 @@ export async function POST(
       }
 
       await pool.query(
-        `UPDATE guests SET memoir_published = $1 WHERE id = $2 AND wedding_id = $3`,
+        `UPDATE guests SET memoir_published = $1 WHERE id = $2 AND wedding_id = $3 AND soft_deleted_at IS NULL`,
         [action === 'publish', guest_id, weddingId]
       );
 
@@ -133,7 +133,7 @@ export async function POST(
 
       // Look up guest name for the folder path
       const guestLookup = await pool.query(
-        `SELECT first_name, last_name, display_name FROM guests WHERE id = $1 AND wedding_id = $2`,
+        `SELECT first_name, last_name, display_name FROM guests WHERE id = $1 AND wedding_id = $2 AND soft_deleted_at IS NULL`,
         [guest_id, weddingId]
       );
       const guestRow = guestLookup.rows[0];

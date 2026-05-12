@@ -2,6 +2,8 @@
 
 import { useState, useEffect, use, useCallback, useMemo } from 'react';
 import GoogleSuggestionsCard from '@/components/dashboard/GoogleSuggestionsCard';
+import UndoToast from '@/components/ui/UndoToast';
+import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import { formatShortDate } from '@/lib/utils/date-format';
 import { vendorColor } from '@/lib/utils/vendor-color';
 
@@ -77,6 +79,70 @@ export default function TodosPage({
   const [nudging, setNudging] = useState<string | null>(null);
   const [nudgeFlash, setNudgeFlash] = useState<string | null>(null);
   const [error, setError] = useState('');
+  // Pending soft-delete shown as an Undo toast. Restoring before the toast
+  // expires hits /restore; if the user ignores it, the row stays soft-deleted
+  // and the janitor hard-deletes after 30 days.
+  const [pendingDelete, setPendingDelete] = useState<{ id: string; title: string } | null>(null);
+  // Side-effect actions go through a confirm dialog rather than undo: nudging
+  // fires a real email to the vendor, can't unfire that.
+  const [pendingNudge, setPendingNudge] = useState<Todo | null>(null);
+  // Manual + Add to-do modal state. Uses existing todos schema only —
+  // owner = vendor_id (or null = couple), due_date, priority, description.
+  // Block 3 reopens the owner model with partner / planner / label types.
+  const [adding, setAdding] = useState(false);
+  const [addForm, setAddForm] = useState<{
+    title: string;
+    description: string;
+    due_date: string;
+    priority: 'high' | 'normal' | 'low';
+    assigned_to_vendor_id: string | null;
+  }>({ title: '', description: '', due_date: '', priority: 'normal', assigned_to_vendor_id: null });
+  const [addSaving, setAddSaving] = useState(false);
+  const [vendors, setVendors] = useState<Array<{ id: string; name: string; category: string | null }>>([]);
+
+  // Pull vendors once for the owner dropdown. Re-fetch on every load isn't
+  // worth it; the list changes rarely vs the to-do list.
+  useEffect(() => {
+    fetch(`/api/v1/dashboard/weddings/${weddingId}/vendors`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => setVendors(d?.data?.vendors ?? []))
+      .catch(() => {});
+  }, [weddingId]);
+
+  const openAdd = () => {
+    setAddForm({ title: '', description: '', due_date: '', priority: 'normal', assigned_to_vendor_id: null });
+    setAdding(true);
+  };
+
+  const submitAdd = async () => {
+    const title = addForm.title.trim();
+    if (!title) return;
+    setAddSaving(true);
+    try {
+      const res = await fetch(`/api/v1/dashboard/weddings/${weddingId}/todos`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title,
+          description: addForm.description.trim() || null,
+          due_date: addForm.due_date || null,
+          priority: addForm.priority,
+          assigned_to_vendor_id: addForm.assigned_to_vendor_id || null,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data?.error?.message || 'Could not add to-do');
+        return;
+      }
+      setAdding(false);
+      await load();
+    } catch {
+      setError('Network error');
+    } finally {
+      setAddSaving(false);
+    }
+  };
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -107,15 +173,38 @@ export default function TodosPage({
     await load();
   };
 
-  const deleteTodo = async (id: string) => {
-    if (!confirm('Delete this to-do?')) return;
-    await fetch(`/api/v1/dashboard/weddings/${weddingId}/todos/${id}`, {
+  const deleteTodo = async (todo: Todo) => {
+    // Optimistic: pull from local list and surface an Undo toast. The server
+    // already soft-deletes, so a tab close mid-toast still leaves the row
+    // recoverable for 30 days via the trash.
+    setTodos((prev) => prev.filter((t) => t.id !== todo.id));
+    setPendingDelete({ id: todo.id, title: todo.title });
+    await fetch(`/api/v1/dashboard/weddings/${weddingId}/todos/${todo.id}`, {
       method: 'DELETE',
     });
+  };
+
+  const undoDelete = async () => {
+    if (!pendingDelete) return;
+    const { id } = pendingDelete;
+    await fetch(`/api/v1/dashboard/weddings/${weddingId}/restore`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ kind: 'todo', id }),
+    });
+    setPendingDelete(null);
     await load();
   };
 
-  const nudge = async (todo: Todo) => {
+  // Open the confirm dialog. Actual send happens in `confirmNudge` once the
+  // user confirms — we don't want the click to fire a real email.
+  const nudge = (todo: Todo) => {
+    setPendingNudge(todo);
+  };
+
+  const confirmNudge = async () => {
+    const todo = pendingNudge;
+    if (!todo) return;
     setNudging(todo.id);
     setError('');
     setNudgeFlash(null);
@@ -132,6 +221,7 @@ export default function TodosPage({
       setError(err instanceof Error ? err.message : 'Could not send nudge');
     } finally {
       setNudging(null);
+      setPendingNudge(null);
     }
   };
 
@@ -176,11 +266,39 @@ export default function TodosPage({
 
   return (
     <div style={{ maxWidth: 880 }}>
-      <div style={{ marginBottom: 20 }}>
-        <h1 style={headingStyle}>To-dos</h1>
-        <p style={subtitleStyle}>
-          Action items extracted from meetings, plus anything you add manually. Items aged over 30, 45, and 60 days light up so nothing slips.
-        </p>
+      <div
+        style={{
+          marginBottom: 20,
+          display: 'flex',
+          alignItems: 'flex-start',
+          justifyContent: 'space-between',
+          gap: 16,
+          flexWrap: 'wrap',
+        }}
+      >
+        <div>
+          <h1 style={headingStyle}>To-dos</h1>
+          <p style={subtitleStyle}>
+            Action items extracted from meetings, plus anything you add manually. Items aged over 30, 45, and 60 days light up so nothing slips.
+          </p>
+        </div>
+        <button
+          onClick={openAdd}
+          style={{
+            padding: '10px 18px',
+            borderRadius: 10,
+            border: 'none',
+            background: 'linear-gradient(135deg, var(--color-gold-dark), var(--color-gold))',
+            color: '#FDFBF7',
+            fontSize: 13,
+            fontWeight: 600,
+            fontFamily: 'var(--font-body)',
+            cursor: 'pointer',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          + Add to-do
+        </button>
       </div>
 
       <GoogleSuggestionsCard weddingId={weddingId} />
@@ -327,6 +445,197 @@ export default function TodosPage({
           ? <Empty text="No to-dos yet." />
           : <Section title="Everything" todos={todos} onToggle={toggleStatus} onDelete={deleteTodo} onNudge={nudge} nudging={nudging} />
       )}
+
+      <UndoToast
+        open={pendingDelete !== null}
+        message={pendingDelete ? `Deleted "${pendingDelete.title.slice(0, 60)}"` : ''}
+        onUndo={undoDelete}
+        onTimeout={() => setPendingDelete(null)}
+      />
+
+      {adding && (
+        <div
+          onClick={() => !addSaving && setAdding(false)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(27, 28, 26, 0.45)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 100,
+            padding: 20,
+            backdropFilter: 'blur(2px)',
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: 'var(--bg-pure-white)',
+              borderRadius: 18,
+              padding: 24,
+              maxWidth: 520,
+              width: '100%',
+              boxShadow: '0 20px 50px rgba(0,0,0,0.18)',
+            }}
+          >
+            <h3
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontSize: 20,
+                fontWeight: 500,
+                margin: '0 0 14px',
+                color: 'var(--text-primary)',
+              }}
+            >
+              New to-do
+            </h3>
+
+            <label style={addLabelStyle}>Title *</label>
+            <input
+              type="text"
+              autoFocus
+              value={addForm.title}
+              onChange={(e) => setAddForm({ ...addForm, title: e.target.value })}
+              placeholder="What needs to happen?"
+              style={addInputStyle}
+            />
+
+            <label style={addLabelStyle}>Notes</label>
+            <textarea
+              value={addForm.description}
+              onChange={(e) => setAddForm({ ...addForm, description: e.target.value })}
+              placeholder="Optional detail — context, links, decisions"
+              rows={3}
+              style={{ ...addInputStyle, resize: 'vertical' }}
+            />
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 4 }}>
+              <div>
+                <label style={addLabelStyle}>Owner</label>
+                <select
+                  value={addForm.assigned_to_vendor_id ?? ''}
+                  onChange={(e) =>
+                    setAddForm({ ...addForm, assigned_to_vendor_id: e.target.value || null })
+                  }
+                  style={addInputStyle}
+                >
+                  <option value="">Couple (default)</option>
+                  {vendors.map((v) => (
+                    <option key={v.id} value={v.id}>
+                      {v.name}
+                      {v.category ? ` · ${v.category}` : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label style={addLabelStyle}>Due date</label>
+                <input
+                  type="date"
+                  value={addForm.due_date}
+                  onChange={(e) => setAddForm({ ...addForm, due_date: e.target.value })}
+                  style={addInputStyle}
+                />
+              </div>
+            </div>
+
+            <label style={addLabelStyle}>Priority</label>
+            <div style={{ display: 'flex', gap: 6, marginBottom: 6 }}>
+              {(['low', 'normal', 'high'] as const).map((p) => {
+                const active = addForm.priority === p;
+                return (
+                  <button
+                    key={p}
+                    type="button"
+                    onClick={() => setAddForm({ ...addForm, priority: p })}
+                    style={{
+                      padding: '6px 12px',
+                      borderRadius: 999,
+                      border: active ? 'none' : '1px solid var(--border-light)',
+                      background:
+                        active
+                          ? p === 'high'
+                            ? 'var(--color-terracotta)'
+                            : p === 'normal'
+                            ? 'var(--color-gold-dark)'
+                            : 'var(--text-tertiary)'
+                          : 'var(--bg-pure-white)',
+                      color: active ? '#FDFBF7' : 'var(--text-primary)',
+                      fontSize: 12,
+                      fontFamily: 'var(--font-body)',
+                      fontWeight: active ? 600 : 500,
+                      cursor: 'pointer',
+                      textTransform: 'capitalize',
+                    }}
+                  >
+                    {p}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 18 }}>
+              <button
+                type="button"
+                onClick={() => setAdding(false)}
+                disabled={addSaving}
+                style={{
+                  padding: '10px 20px',
+                  borderRadius: 10,
+                  border: '1px solid var(--border-light)',
+                  background: 'var(--bg-pure-white)',
+                  color: 'var(--text-secondary)',
+                  fontSize: 14,
+                  fontFamily: 'var(--font-body)',
+                  cursor: addSaving ? 'default' : 'pointer',
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={submitAdd}
+                disabled={addSaving || !addForm.title.trim()}
+                style={{
+                  padding: '10px 24px',
+                  borderRadius: 10,
+                  border: 'none',
+                  background:
+                    addSaving || !addForm.title.trim()
+                      ? 'var(--border-light)'
+                      : 'linear-gradient(135deg, var(--color-gold-dark), var(--color-gold))',
+                  color:
+                    addSaving || !addForm.title.trim() ? 'var(--text-tertiary)' : '#FDFBF7',
+                  fontSize: 14,
+                  fontWeight: 500,
+                  fontFamily: 'var(--font-body)',
+                  cursor: addSaving || !addForm.title.trim() ? 'default' : 'pointer',
+                }}
+              >
+                {addSaving ? 'Adding…' : 'Add to-do'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <ConfirmDialog
+        open={pendingNudge !== null}
+        title="Send a nudge email?"
+        description={
+          pendingNudge ? (
+            <>
+              We&apos;ll email <strong>{pendingNudge.vendor_name || 'the couple'}</strong> a reminder
+              about <strong>&ldquo;{pendingNudge.title}&rdquo;</strong>. This goes out immediately.
+            </>
+          ) : ''
+        }
+        confirmLabel="Send nudge"
+        variant="primary"
+        onConfirm={confirmNudge}
+        onCancel={() => setPendingNudge(null)}
+      />
     </div>
   );
 }
@@ -359,7 +668,7 @@ function Section({
   title: string;
   todos: Todo[];
   onToggle: (t: Todo) => void;
-  onDelete: (id: string) => void;
+  onDelete: (t: Todo) => void;
   onNudge: (t: Todo) => void;
   nudging: string | null;
 }) {
@@ -472,7 +781,7 @@ function Section({
                   </button>
                 )}
                 <button
-                  onClick={() => onDelete(t.id)}
+                  onClick={() => onDelete(t)}
                   style={{
                     padding: '6px 8px',
                     borderRadius: 8,
@@ -551,4 +860,29 @@ const sectionTitle: React.CSSProperties = {
   margin: '0 0 10px',
   fontFamily: 'var(--font-body)',
   fontWeight: 500,
+};
+
+const addLabelStyle: React.CSSProperties = {
+  display: 'block',
+  fontSize: 11,
+  textTransform: 'uppercase',
+  letterSpacing: '0.5px',
+  color: 'var(--text-tertiary)',
+  marginTop: 12,
+  marginBottom: 6,
+  fontFamily: 'var(--font-body)',
+  fontWeight: 600,
+};
+
+const addInputStyle: React.CSSProperties = {
+  width: '100%',
+  padding: '10px 12px',
+  borderRadius: 10,
+  border: '1px solid var(--border-light)',
+  background: 'var(--bg-pure-white)',
+  fontSize: 14,
+  fontFamily: 'var(--font-body)',
+  color: 'var(--text-primary)',
+  outline: 'none',
+  boxSizing: 'border-box',
 };

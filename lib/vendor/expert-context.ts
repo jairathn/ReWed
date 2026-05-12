@@ -116,7 +116,7 @@ export async function buildWeddingExpertContext(
      FROM todos t
      LEFT JOIN vendors v ON v.id = t.assigned_to_vendor_id
      LEFT JOIN meetings m ON m.id = t.meeting_id
-     WHERE t.wedding_id = $1
+     WHERE t.wedding_id = $1 AND t.soft_deleted_at IS NULL
      ORDER BY (t.status = 'open') DESC, (t.priority = 'high') DESC, t.created_at DESC`,
     [weddingId]
   );

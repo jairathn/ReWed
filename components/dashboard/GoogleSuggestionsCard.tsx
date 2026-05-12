@@ -237,7 +237,7 @@ export default function GoogleSuggestionsCard({ weddingId }: { weddingId: string
           <h3 style={cardLabel}>Gmail + Drive (setup required)</h3>
         </div>
         <p style={subtitle}>
-          Connect a Google account so the AI can scan recent emails and Drive files for changes that should become to-dos or timeline updates. Setup takes about 10 minutes — see <code>SETUP_GMAIL.md</code> for the Google Cloud steps.
+          Connect a Google account so the AI can scan recent emails and Drive files for changes that should become to-dos or timeline updates. Google integration isn&apos;t enabled on your Zari workspace yet — once it&apos;s configured, a <strong>Connect Google</strong> button will appear here.
         </p>
       </div>
     );

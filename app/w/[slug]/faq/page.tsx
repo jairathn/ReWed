@@ -5,6 +5,7 @@ import BackButton from '@/components/guest/BackButton';
 import { useWedding } from '@/components/WeddingProvider';
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { RichText } from '@/lib/rich-text/RichText';
 
 interface ChatMessage {
   id: string;
@@ -83,7 +84,9 @@ export default function FaqPage() {
         <header
           className="fixed top-0 w-full z-50 flex justify-between items-center px-6 py-4"
           style={{
-            background: 'linear-gradient(to bottom, rgba(250, 249, 245, 0.88) 0%, rgba(250, 249, 245, 0.5) 55%, rgba(250, 249, 245, 0) 100%)',
+            background: 'linear-gradient(to bottom, rgba(250, 249, 245, 0.92) 0%, rgba(250, 249, 245, 0.78) 55%, rgba(250, 249, 245, 0.55) 100%)',
+            backdropFilter: 'blur(14px) saturate(140%)',
+            WebkitBackdropFilter: 'blur(14px) saturate(140%)',
           }}
         >
           <div className="flex items-center gap-3">
@@ -121,7 +124,9 @@ export default function FaqPage() {
       <header
         className="fixed top-0 w-full z-50 flex justify-between items-center px-6 py-4"
         style={{
-          background: 'linear-gradient(to bottom, rgba(250, 249, 245, 0.88) 0%, rgba(250, 249, 245, 0.5) 55%, rgba(250, 249, 245, 0) 100%)',
+          background: 'linear-gradient(to bottom, rgba(250, 249, 245, 0.92) 0%, rgba(250, 249, 245, 0.78) 55%, rgba(250, 249, 245, 0.55) 100%)',
+          backdropFilter: 'blur(14px) saturate(140%)',
+          WebkitBackdropFilter: 'blur(14px) saturate(140%)',
         }}
       >
         <div className="flex items-center gap-3">
@@ -224,7 +229,15 @@ export default function FaqPage() {
                 border: msg.role === 'assistant' ? '1px solid var(--border-light)' : 'none',
               }}
             >
-              <p className="text-sm whitespace-pre-wrap leading-relaxed">{msg.content}</p>
+              {/* User messages stay as plain text — assistant replies often
+                  use markdown (** bold **, lists) so we render them rich. */}
+              {msg.role === 'assistant' ? (
+                <div className="text-sm leading-relaxed">
+                  <RichText value={msg.content} format="rich" />
+                </div>
+              ) : (
+                <p className="text-sm whitespace-pre-wrap leading-relaxed">{msg.content}</p>
+              )}
             </div>
           </div>
         ))}

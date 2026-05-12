@@ -28,7 +28,7 @@ export async function GET(
               te.action, te.location, te.notes, te.status, te.deadline
        FROM timeline_entries te
        JOIN timeline_entry_vendors tev ON tev.timeline_entry_id = te.id
-       WHERE te.wedding_id = $1 AND tev.vendor_id = $2
+       WHERE te.wedding_id = $1 AND tev.vendor_id = $2 AND te.soft_deleted_at IS NULL
        ORDER BY te.event_date ASC NULLS LAST, te.sort_order ASC`,
       [ctx.wedding.id, ctx.vendor.id]
     );
@@ -68,7 +68,7 @@ export async function GET(
        FROM timeline_entries te
        LEFT JOIN timeline_entry_vendors tev ON tev.timeline_entry_id = te.id
        LEFT JOIN vendors v ON v.id = tev.vendor_id
-       WHERE te.wedding_id = $1
+       WHERE te.wedding_id = $1 AND te.soft_deleted_at IS NULL
        GROUP BY te.id
        ORDER BY te.event_date ASC NULLS LAST, te.sort_order ASC`,
       [ctx.wedding.id]
@@ -85,7 +85,7 @@ export async function GET(
               m.title AS meeting_title, m.meeting_date
        FROM todos t
        LEFT JOIN meetings m ON m.id = t.meeting_id
-       WHERE t.wedding_id = $1 AND t.assigned_to_vendor_id = $2
+       WHERE t.wedding_id = $1 AND t.assigned_to_vendor_id = $2 AND t.soft_deleted_at IS NULL
        ORDER BY (t.status = 'open') DESC, (t.priority = 'high') DESC,
                 t.due_date ASC NULLS LAST, t.created_at DESC`,
       [ctx.wedding.id, ctx.vendor.id]

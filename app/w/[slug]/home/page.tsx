@@ -11,10 +11,9 @@ import { usePreviewMode } from '@/lib/hooks/usePreviewMode';
 export default function GuestHomePage() {
   const { config, guest, slug, isAuthenticated, isLoading, configError, retryConfig } = useWedding();
   const router = useRouter();
-  const { unlocked, tryUnlock } = usePreviewMode();
-  const [showPasswordPrompt, setShowPasswordPrompt] = useState(false);
-  const [passwordInput, setPasswordInput] = useState('');
-  const [passwordError, setPasswordError] = useState(false);
+  // Preview-mode flag is set on /w/[slug]/preview (separate route); this
+  // page just reads it to decide whether to show preview-only cards below.
+  const { unlocked } = usePreviewMode();
   const [rsvpToast, setRsvpToast] = useState<string | null>(null);
 
   // Auto-dismiss the RSVP passcode toast after a few seconds.
@@ -108,21 +107,12 @@ export default function GuestHomePage() {
       <header
         className="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-6 py-4"
         style={{
-          background: 'linear-gradient(to bottom, rgba(250, 249, 245, 0.88) 0%, rgba(250, 249, 245, 0.5) 55%, rgba(250, 249, 245, 0) 100%)',
+          background: 'linear-gradient(to bottom, rgba(250, 249, 245, 0.92) 0%, rgba(250, 249, 245, 0.78) 55%, rgba(250, 249, 245, 0.55) 100%)',
+          backdropFilter: 'blur(14px) saturate(140%)',
+          WebkitBackdropFilter: 'blur(14px) saturate(140%)',
         }}
       >
         <div className="flex items-center gap-4">
-          <button
-            onClick={() => { if (!unlocked) setShowPasswordPrompt(true); }}
-            style={{ background: 'none', border: 'none', padding: 0, cursor: 'default', lineHeight: 0 }}
-            aria-label="menu"
-          >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--color-gold-dark)" strokeWidth="1.5" strokeLinecap="round">
-              <line x1="3" y1="6" x2="21" y2="6" />
-              <line x1="3" y1="12" x2="21" y2="12" />
-              <line x1="3" y1="18" x2="21" y2="18" />
-            </svg>
-          </button>
           <h1
             className="text-2xl tracking-wide"
             style={{
@@ -643,98 +633,6 @@ export default function GuestHomePage() {
           </Link>
         </section>
       </main>
-
-      {/* Password prompt for preview mode */}
-      {showPasswordPrompt && (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(0,0,0,0.5)',
-            zIndex: 70,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: 24,
-          }}
-          onClick={() => { setShowPasswordPrompt(false); setPasswordInput(''); setPasswordError(false); }}
-        >
-          <div
-            className="rounded-2xl p-6"
-            style={{
-              background: 'var(--bg-warm-white)',
-              width: '100%',
-              maxWidth: 300,
-              boxShadow: '0 16px 48px rgba(0,0,0,0.2)',
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <p
-              className="text-center mb-4"
-              style={{
-                fontFamily: 'var(--font-display)',
-                fontStyle: 'italic',
-                fontSize: 16,
-                color: 'var(--text-primary)',
-              }}
-            >
-              Preview mode
-            </p>
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                if (tryUnlock(passwordInput)) {
-                  setShowPasswordPrompt(false);
-                  setPasswordInput('');
-                  setPasswordError(false);
-                } else {
-                  setPasswordError(true);
-                }
-              }}
-            >
-              <input
-                type="password"
-                value={passwordInput}
-                onChange={(e) => { setPasswordInput(e.target.value); setPasswordError(false); }}
-                placeholder="Password"
-                autoFocus
-                style={{
-                  width: '100%',
-                  padding: '10px 14px',
-                  borderRadius: 10,
-                  border: `1.5px solid ${passwordError ? '#ef4444' : 'var(--border-medium)'}`,
-                  background: 'var(--bg-pure-white)',
-                  fontSize: 14,
-                  fontFamily: 'var(--font-body)',
-                  color: 'var(--text-primary)',
-                  outline: 'none',
-                  boxSizing: 'border-box',
-                }}
-              />
-              {passwordError && (
-                <p className="text-xs mt-1.5" style={{ color: '#ef4444' }}>
-                  Incorrect password
-                </p>
-              )}
-              <button
-                type="submit"
-                className="w-full mt-3 text-xs font-medium uppercase tracking-wide"
-                style={{
-                  padding: '10px 0',
-                  background: 'linear-gradient(135deg, var(--color-gold-dark), var(--color-gold))',
-                  color: 'var(--bg-warm-white)',
-                  border: 'none',
-                  borderRadius: 50,
-                  cursor: 'pointer',
-                  letterSpacing: '0.06em',
-                }}
-              >
-                Unlock
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
 
       <BottomNav />
 

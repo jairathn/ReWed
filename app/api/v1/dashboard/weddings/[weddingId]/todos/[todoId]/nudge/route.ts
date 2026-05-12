@@ -30,7 +30,7 @@ export async function POST(
        FROM todos t
        LEFT JOIN vendors v ON v.id = t.assigned_to_vendor_id
        JOIN weddings w ON w.id = t.wedding_id
-       WHERE t.id = $1 AND t.wedding_id = $2`,
+       WHERE t.id = $1 AND t.wedding_id = $2 AND t.soft_deleted_at IS NULL`,
       [todoId, weddingId]
     );
     if (result.rows.length === 0) throw new AppError('WEDDING_NOT_FOUND');

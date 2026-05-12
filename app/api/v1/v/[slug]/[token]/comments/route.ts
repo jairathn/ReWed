@@ -39,7 +39,7 @@ export async function POST(
         `SELECT te.id, te.event_date, te.event_name, te.time_label, te.action
          FROM timeline_entries te
          JOIN timeline_entry_vendors tev ON tev.timeline_entry_id = te.id
-         WHERE te.id = $1 AND te.wedding_id = $2 AND tev.vendor_id = $3`,
+         WHERE te.id = $1 AND te.wedding_id = $2 AND tev.vendor_id = $3 AND te.soft_deleted_at IS NULL`,
         [d.timeline_entry_id, ctx.wedding.id, ctx.vendor.id]
       );
       if (check.rows.length > 0) {

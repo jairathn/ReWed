@@ -64,7 +64,7 @@ export async function GET(
     const weddingId = weddingResult.rows[0].id;
 
     const guestsResult = await pool.query(
-      `SELECT id, first_name, last_name FROM guests WHERE wedding_id = $1`,
+      `SELECT id, first_name, last_name FROM guests WHERE wedding_id = $1 AND soft_deleted_at IS NULL`,
       [weddingId]
     );
 

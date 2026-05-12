@@ -26,7 +26,7 @@ const patchSchema = z.object({
 async function ensureVendorOwned(weddingId: string, vendorId: string) {
   const pool = getPool();
   const row = await pool.query(
-    `SELECT id FROM vendors WHERE id = $1 AND wedding_id = $2`,
+    `SELECT id FROM vendors WHERE id = $1 AND wedding_id = $2 AND soft_deleted_at IS NULL`,
     [vendorId, weddingId]
   );
   if (row.rows.length === 0) throw new AppError('WEDDING_NOT_FOUND');
@@ -77,7 +77,7 @@ export async function PATCH(
 
     const pool = getPool();
     const result = await pool.query(
-      `UPDATE vendors SET ${updates.join(', ')} WHERE id = $${i} RETURNING access_token`,
+      `UPDATE vendors SET ${updates.join(', ')} WHERE id = $${i} AND soft_deleted_at IS NULL RETURNING access_token`,
       values
     );
     return Response.json({
@@ -98,7 +98,7 @@ export async function DELETE(
     await ensureVendorOwned(weddingId, vendorId);
 
     const pool = getPool();
-    await pool.query(`DELETE FROM vendors WHERE id = $1`, [vendorId]);
+    await pool.query(`UPDATE vendors SET soft_deleted_at = NOW() WHERE id = $1 AND soft_deleted_at IS NULL`, [vendorId]);
     return Response.json({ data: { id: vendorId } });
   } catch (error) {
     return handleApiError(error);

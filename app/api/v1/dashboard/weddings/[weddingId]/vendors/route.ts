@@ -42,7 +42,7 @@ export async function GET(
               v.deposit_status, v.notes, v.access_token, v.created_at, v.updated_at,
               (SELECT COUNT(*)::int FROM timeline_entry_vendors tev WHERE tev.vendor_id = v.id) AS entry_count
        FROM vendors v
-       WHERE v.wedding_id = $1
+       WHERE v.wedding_id = $1 AND v.soft_deleted_at IS NULL
        ORDER BY v.category NULLS LAST, v.name ASC`,
       [weddingId]
     );

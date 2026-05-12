@@ -227,10 +227,18 @@ export async function POST(
     await verifyWeddingOwnership(coupleId, weddingId);
 
     const body = await request.json();
-    const { csv_text, step, column_mapping } = body as {
+    const { csv_text, step, column_mapping, assume_all_attending } = body as {
       csv_text: string;
       step: 'preview' | 'import';
       column_mapping?: ColumnMapping;
+      /**
+       * If true, every imported row defaults to rsvp='attending' UNLESS the
+       * mapped rsvp column explicitly says declined. Off by default so a
+       * contact-list import doesn't silently flip 400 guests to attending —
+       * which is the bug we shipped this fix for. The UI surfaces this as a
+       * single opt-in checkbox at the top of the import preview.
+       */
+      assume_all_attending?: boolean;
     };
 
     if (!csv_text || typeof csv_text !== 'string') {
@@ -347,16 +355,27 @@ export async function POST(
           const country = getCell(row, mapping.country) || null;
           const relationship = getCell(row, mapping.relationship) || null;
 
-          // Determine RSVP: use rsvp_status column, or infer from "Total Definitely Invited"
+          // Determine RSVP. The old behaviour was:
+          //   1) rsvp_status column → normalize
+          //   2) else if Total Definitely Invited > 0 → 'attending'
+          //   3) else 'pending'
+          // (2) silently flipped every imported guest who was on the invite
+          // list to "attending" — every Zola export hit this because Zola
+          // ships a Total Definitely Invited column. The audit caught it.
+          //
+          // New behaviour:
+          //   1) rsvp_status column → normalize (real RSVP data wins)
+          //   2) else if caller explicitly opted in to assume_all_attending → 'attending'
+          //   3) else 'pending'
+          // Defaulting to pending is the only safe default for a contact-list
+          // import; couples can opt in to mass-attending via the UI checkbox
+          // when the import really is "everyone has already RSVP'd yes."
           let rsvp: 'pending' | 'attending' | 'declined' = 'pending';
           const rsvpVal = getCell(row, mapping.rsvp_status);
           if (rsvpVal) {
             rsvp = normalizeRsvp(rsvpVal);
-          } else {
-            const defInvited = getCell(row, mapping.total_definitely_invited);
-            if (defInvited && parseInt(defInvited, 10) > 0) {
-              rsvp = 'attending';
-            }
+          } else if (assume_all_attending) {
+            rsvp = 'attending';
           }
 
           // Generate a party_id (UUID) to link all members from this row

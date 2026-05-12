@@ -43,7 +43,7 @@ export async function GET(
     const companionNames = new Map<string, string>();
     if (allCompanionIds.size > 0) {
       const namesResult = await pool.query(
-        'SELECT id, display_name FROM guests WHERE id = ANY($1)',
+        'SELECT id, display_name FROM guests WHERE id = ANY($1) AND soft_deleted_at IS NULL',
         [Array.from(allCompanionIds)]
       );
       for (const row of namesResult.rows) {

@@ -245,7 +245,7 @@ export default function KnowledgePage({ params }: { params: Promise<{ weddingId:
               type="text"
               value={plannerName}
               onChange={(e) => setPlannerName(e.target.value)}
-              placeholder="Evelina Aasberg"
+              placeholder="Wedding planner name"
               style={inputStyle}
             />
           </div>
@@ -255,7 +255,7 @@ export default function KnowledgePage({ params }: { params: Promise<{ weddingId:
               type="email"
               value={plannerEmail}
               onChange={(e) => setPlannerEmail(e.target.value)}
-              placeholder="evelina@eyaweddings.com"
+              placeholder="planner@email.com"
               style={inputStyle}
             />
           </div>

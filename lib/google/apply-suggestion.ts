@@ -76,7 +76,7 @@ export async function applySuggestion(pool: Pg, s: SuggestionRow): Promise<strin
     if (!match) throw new Error('Suggestion is missing todo_match');
     const todo = await pool.query(
       `SELECT id FROM todos
-       WHERE wedding_id = $1 AND status = 'open' AND title ILIKE $2
+       WHERE wedding_id = $1 AND status = 'open' AND title ILIKE $2 AND soft_deleted_at IS NULL
        ORDER BY created_at DESC LIMIT 1`,
       [s.wedding_id, `%${match}%`]
     );

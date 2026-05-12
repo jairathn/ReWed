@@ -2,6 +2,7 @@
 
 import { useState, useEffect, use, useCallback, useMemo } from 'react';
 import Link from 'next/link';
+import UndoToast from '@/components/ui/UndoToast';
 import { vendorColor } from '@/lib/utils/vendor-color';
 
 interface Vendor {
@@ -52,6 +53,8 @@ export default function VendorsPage({
   const [plannerForm, setPlannerForm] = useState({ name: '', email: '' });
   const [plannerSaving, setPlannerSaving] = useState(false);
   const [plannerLastLink, setPlannerLastLink] = useState<string | null>(null);
+  const [plannerError, setPlannerError] = useState('');
+  const [plannerFlash, setPlannerFlash] = useState('');
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
 
@@ -131,11 +134,26 @@ export default function VendorsPage({
     await load();
   };
 
-  const deleteVendor = async (id: string) => {
-    if (!confirm('Delete this vendor? Their timeline links will be removed.')) return;
-    await fetch(`/api/v1/dashboard/weddings/${weddingId}/vendors/${id}`, {
+  // Undo-toast state for vendor delete. Soft-deleted server-side immediately;
+  // restore endpoint reverses it during the toast window.
+  const [pendingDelete, setPendingDelete] = useState<{ id: string; name: string } | null>(null);
+
+  const deleteVendor = async (vendor: Vendor) => {
+    setVendors((prev) => prev.filter((v) => v.id !== vendor.id));
+    setPendingDelete({ id: vendor.id, name: vendor.name });
+    await fetch(`/api/v1/dashboard/weddings/${weddingId}/vendors/${vendor.id}`, {
       method: 'DELETE',
     });
+  };
+
+  const undoDelete = async () => {
+    if (!pendingDelete) return;
+    await fetch(`/api/v1/dashboard/weddings/${weddingId}/restore`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ kind: 'vendor', id: pendingDelete.id }),
+    });
+    setPendingDelete(null);
     await load();
   };
 
@@ -161,7 +179,19 @@ export default function VendorsPage({
   };
 
   const grantPlanner = async () => {
-    if (!plannerForm.email.trim()) return;
+    const email = plannerForm.email.trim();
+    setPlannerError('');
+    setPlannerFlash('');
+    if (!email) {
+      setPlannerError('Enter the planner’s email address.');
+      return;
+    }
+    // Minimal email check — catches the most common typo classes without
+    // false-rejecting unusual-but-valid addresses. Server validates again.
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setPlannerError('That doesn’t look like a valid email. We send the magic link there.');
+      return;
+    }
     setPlannerSaving(true);
     setPlannerLastLink(null);
     try {
@@ -169,17 +199,18 @@ export default function VendorsPage({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          email: plannerForm.email.trim(),
+          email,
           name: plannerForm.name.trim() || undefined,
         }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error?.message || 'Failed to grant');
+      setPlannerFlash(`Magic link sent to ${email}. They’ll appear under Active planners once they sign in.`);
       setPlannerForm({ name: '', email: '' });
       setPlannerLastLink(data.data?.magic_link || null);
       await load();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to grant');
+      setPlannerError(err instanceof Error ? err.message : 'Failed to grant');
     } finally {
       setPlannerSaving(false);
     }
@@ -326,8 +357,15 @@ export default function VendorsPage({
             type="email"
             placeholder="planner@email.com"
             value={plannerForm.email}
-            onChange={(e) => setPlannerForm({ ...plannerForm, email: e.target.value })}
-            style={inputStyle}
+            onChange={(e) => {
+              setPlannerForm({ ...plannerForm, email: e.target.value });
+              if (plannerError) setPlannerError('');
+            }}
+            style={{
+              ...inputStyle,
+              borderColor: plannerError ? 'var(--color-terracotta)' : (inputStyle.borderColor as string | undefined) ?? undefined,
+            }}
+            aria-invalid={!!plannerError}
           />
           <button
             onClick={grantPlanner}
@@ -337,6 +375,27 @@ export default function VendorsPage({
             {plannerSaving ? 'Sending…' : 'Grant access'}
           </button>
         </div>
+        {plannerError && (
+          <p style={{ fontSize: 12, color: 'var(--color-terracotta)', fontFamily: 'var(--font-body)', margin: '-4px 0 10px' }}>
+            {plannerError}
+          </p>
+        )}
+        {plannerFlash && !plannerError && (
+          <p
+            style={{
+              fontSize: 12,
+              color: 'var(--color-olive)',
+              background: 'rgba(122,139,92,0.10)',
+              border: '1px solid rgba(122,139,92,0.25)',
+              borderRadius: 8,
+              padding: '8px 10px',
+              margin: '0 0 10px',
+              fontFamily: 'var(--font-body)',
+            }}
+          >
+            {plannerFlash}
+          </p>
+        )}
         {plannerLastLink && (
           <p style={{ fontSize: 12, color: 'var(--text-secondary)', fontFamily: 'var(--font-body)', margin: '0 0 12px' }}>
             Magic link sent. Or share directly:{' '}
@@ -600,7 +659,7 @@ export default function VendorsPage({
                     Edit
                   </button>
                   <button
-                    onClick={() => deleteVendor(v.id)}
+                    onClick={() => deleteVendor(v)}
                     style={{ ...secondaryButtonStyle, color: 'var(--color-terracotta)' }}
                   >
                     Delete
@@ -626,6 +685,13 @@ export default function VendorsPage({
           onCancel={() => { setEditing(null); setError(''); }}
         />
       )}
+
+      <UndoToast
+        open={pendingDelete !== null}
+        message={pendingDelete ? `Removed ${pendingDelete.name}` : ''}
+        onUndo={undoDelete}
+        onTimeout={() => setPendingDelete(null)}
+      />
     </div>
   );
 }
@@ -678,7 +744,7 @@ function VendorModal({
             type="text"
             value={vendor.name || ''}
             onChange={(e) => onChange({ ...vendor, name: e.target.value })}
-            placeholder="Jas Johal"
+            placeholder="Vendor or contact name"
             style={inputStyle}
           />
         </div>
@@ -711,7 +777,7 @@ function VendorModal({
             type="email"
             value={vendor.email || ''}
             onChange={(e) => onChange({ ...vendor, email: e.target.value })}
-            placeholder="jas@example.com"
+            placeholder="name@email.com"
             style={inputStyle}
           />
         </div>
@@ -722,7 +788,7 @@ function VendorModal({
             type="tel"
             value={vendor.phone || ''}
             onChange={(e) => onChange({ ...vendor, phone: e.target.value })}
-            placeholder="+34 622 48 92 76"
+            placeholder="+CC ### ### ###"
             style={inputStyle}
           />
           <p style={{ fontSize: 11, color: 'var(--text-tertiary)', margin: '4px 0 0', fontFamily: 'var(--font-body)' }}>

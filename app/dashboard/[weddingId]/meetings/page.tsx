@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, use, useCallback } from 'react';
+import UndoToast from '@/components/ui/UndoToast';
 import { formatWeekdayShort, formatShortDate } from '@/lib/utils/date-format';
 import { vendorColor } from '@/lib/utils/vendor-color';
 
@@ -136,12 +137,28 @@ export default function MeetingsPage({
     }
   };
 
-  const deleteMeeting = async (id: string) => {
-    if (!confirm('Delete this meeting and its to-dos?')) return;
+  // Local state for the undo toast on meeting delete.
+  const [pendingDelete, setPendingDelete] = useState<{ id: string; title: string } | null>(null);
+
+  const deleteMeeting = async (id: string, title: string) => {
+    // Soft-delete server-side; the toast lets the user reverse within 8s,
+    // and the janitor hard-removes after 30 days.
+    setOpenMeetingId(null);
+    setMeetings((prev) => prev.filter((m) => m.id !== id));
+    setPendingDelete({ id, title });
     await fetch(`/api/v1/dashboard/weddings/${weddingId}/meetings/${id}`, {
       method: 'DELETE',
     });
-    setOpenMeetingId(null);
+  };
+
+  const undoDelete = async () => {
+    if (!pendingDelete) return;
+    await fetch(`/api/v1/dashboard/weddings/${weddingId}/restore`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ kind: 'meeting', id: pendingDelete.id }),
+    });
+    setPendingDelete(null);
     await load();
   };
 
@@ -355,7 +372,7 @@ export default function MeetingsPage({
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 6 }}>
               <h2 style={{ ...modalHeading, marginBottom: 0 }}>{openMeeting.meeting.title}</h2>
               <button
-                onClick={() => deleteMeeting(openMeeting.meeting.id)}
+                onClick={() => deleteMeeting(openMeeting.meeting.id, openMeeting.meeting.title)}
                 style={{ ...secondary, color: 'var(--color-terracotta)', padding: '6px 12px', fontSize: 12 }}
               >
                 Delete
@@ -504,6 +521,13 @@ export default function MeetingsPage({
           </div>
         </div>
       )}
+
+      <UndoToast
+        open={pendingDelete !== null}
+        message={pendingDelete ? `Deleted "${pendingDelete.title.slice(0, 60)}"` : ''}
+        onUndo={undoDelete}
+        onTimeout={() => setPendingDelete(null)}
+      />
     </div>
   );
 }
