@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, use } from 'react';
 import dynamic from 'next/dynamic';
 import PasswordConfirmDialog from '@/components/ui/PasswordConfirmDialog';
 import { useFeatureFlag } from '@/lib/hooks/useFeatureFlag';
+import { RichText } from '@/lib/rich-text/RichText';
 
 // Lazy-load the Tiptap editor — it's a ~200kb chunk and only needed on
 // Manage pages that author rich content. Keeps the rest of the dashboard
@@ -15,6 +16,7 @@ interface FaqEntry {
   question: string;
   answer: string;
   source: 'manual' | 'zola_import' | 'generated';
+  content_format: 'plain' | 'rich';
   created_at: string;
 }
 
@@ -612,9 +614,9 @@ export default function FaqPage({ params }: { params: Promise<{ weddingId: strin
                           <p style={{ fontSize: 14, fontWeight: 500, color: 'var(--text-primary)', margin: '0 0 6px' }}>
                             {entry.question}
                           </p>
-                          <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5, whiteSpace: 'pre-line' }}>
-                            {entry.answer}
-                          </p>
+                          <div style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                            <RichText value={entry.answer} format={entry.content_format} />
+                          </div>
                           <span
                             style={{
                               fontSize: 10,
