@@ -502,6 +502,7 @@ export default function DashboardHomePage() {
               boxShadow: '0 4px 16px rgba(198,163,85,0.25)',
               transition: 'all 0.15s',
             }}
+            prefetch={false}
           >
             <svg
               width="16"
@@ -613,6 +614,7 @@ export default function DashboardHomePage() {
                         boxShadow: '0 2px 8px rgba(198,163,85,0.2)',
                         transition: 'all 0.15s',
                       }}
+                      prefetch={false}
                     >
                       Manage
                     </Link>
@@ -630,6 +632,7 @@ export default function DashboardHomePage() {
                         textDecoration: 'none',
                         transition: 'all 0.15s',
                       }}
+                      prefetch={false}
                     >
                       Guest App
                     </Link>
@@ -710,6 +713,7 @@ export default function DashboardHomePage() {
               textDecoration: 'none',
               boxShadow: '0 4px 16px rgba(198,163,85,0.25)',
             }}
+            prefetch={false}
           >
             Create Your First Wedding
           </Link>

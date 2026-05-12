@@ -132,6 +132,7 @@ export default function WeddingManageLayout({
               textDecoration: 'none',
               display: 'block',
             }}
+            prefetch={false}
           >
             <h1
               style={{
@@ -164,6 +165,7 @@ export default function WeddingManageLayout({
                 marginBottom: 12,
                 fontFamily: 'var(--font-body)',
               }}
+              prefetch={false}
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="15 18 9 12 15 6" />
@@ -345,6 +347,7 @@ export default function WeddingManageLayout({
                 textDecoration: 'none',
                 transition: 'all 0.15s',
               }}
+              prefetch={false}
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6" />

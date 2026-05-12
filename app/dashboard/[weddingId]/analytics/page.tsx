@@ -167,6 +167,7 @@ export default function AnalyticsPage({ params }: { params: Promise<{ weddingId:
                   padding: '2px 0',
                   cursor: 'pointer',
                 }}
+                prefetch={false}
               >
                 <div style={{
                   width: 20,
