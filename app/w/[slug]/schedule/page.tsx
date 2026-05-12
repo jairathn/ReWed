@@ -450,9 +450,12 @@ export default async function SchedulePage({
                           {event.style_guide_urls.length > 0 ? 'Style guide' : 'What to wear'}
                         </p>
                         {event.dress_code && (
-                          <p style={{ fontSize: 13, color: 'var(--text-primary)', lineHeight: 1.6, whiteSpace: 'pre-line' }}>
-                            {event.dress_code}
-                          </p>
+                          <div style={{ fontSize: 13, color: 'var(--text-primary)', lineHeight: 1.6 }}>
+                            <RichText
+                              value={event.dress_code}
+                              format={event.content_format ?? 'plain'}
+                            />
+                          </div>
                         )}
 
                         {/* Style guide photos */}

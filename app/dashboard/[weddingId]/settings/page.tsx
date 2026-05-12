@@ -650,12 +650,22 @@ export default function SettingsPage({ params }: { params: Promise<{ weddingId: 
 
           <div style={{ marginBottom: 16 }}>
             <label style={labelStyle}>Dress Code</label>
-            <textarea
-              style={{ ...inputStyle, minHeight: 60, resize: 'vertical' }}
-              value={dressCode}
-              onChange={(e) => setDressCode(e.target.value)}
-              placeholder="e.g., Black tie, or a longer note about what to wear..."
-            />
+            {richEnabled ? (
+              <RichTextEditor
+                value={dressCode}
+                onChange={setDressCode}
+                weddingId={weddingId}
+                placeholder="e.g., Black tie, or a longer note about what to wear..."
+                minHeight={100}
+              />
+            ) : (
+              <textarea
+                style={{ ...inputStyle, minHeight: 60, resize: 'vertical' }}
+                value={dressCode}
+                onChange={(e) => setDressCode(e.target.value)}
+                placeholder="e.g., Black tie, or a longer note about what to wear..."
+              />
+            )}
           </div>
 
           <div style={{ marginBottom: 16 }}>
@@ -680,12 +690,22 @@ export default function SettingsPage({ params }: { params: Promise<{ weddingId: 
 
           <div style={{ marginBottom: 20 }}>
             <label style={labelStyle}>Logistics / Notes</label>
-            <textarea
-              style={{ ...inputStyle, minHeight: 60, resize: 'vertical' }}
-              value={logistics}
-              onChange={(e) => setLogistics(e.target.value)}
-              placeholder="Parking info, shuttle details, etc."
-            />
+            {richEnabled ? (
+              <RichTextEditor
+                value={logistics}
+                onChange={setLogistics}
+                weddingId={weddingId}
+                placeholder="Parking info, shuttle details, etc."
+                minHeight={100}
+              />
+            ) : (
+              <textarea
+                style={{ ...inputStyle, minHeight: 60, resize: 'vertical' }}
+                value={logistics}
+                onChange={(e) => setLogistics(e.target.value)}
+                placeholder="Parking info, shuttle details, etc."
+              />
+            )}
           </div>
 
           {/* Style Guide Images — only shown when editing an existing event */}

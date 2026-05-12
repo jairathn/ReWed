@@ -34,7 +34,7 @@ export async function GET(
 
     const pool = getPool();
     const result = await pool.query(
-      `SELECT id, question, answer, source, created_at
+      `SELECT id, question, answer, source, content_format, created_at
        FROM faq_entries WHERE wedding_id = $1
        ORDER BY created_at`,
       [weddingId]
@@ -82,7 +82,7 @@ export async function POST(
       const result = await pool.query(
         `INSERT INTO faq_entries (wedding_id, question, answer, source)
          VALUES ${placeholders.join(', ')}
-         RETURNING id, question, answer, source, created_at`,
+         RETURNING id, question, answer, source, content_format, created_at`,
         values
       );
 
