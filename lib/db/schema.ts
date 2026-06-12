@@ -335,3 +335,17 @@ export interface MemoirMessage {
   created_at: Date;
   updated_at: Date;
 }
+
+export interface SmsMessage {
+  id: string;
+  wedding_id: string;
+  body: string;
+  audience: 'all' | 'attending' | 'pending' | 'declined' | 'group' | 'selected';
+  group_labels: string[] | null;
+  recipient_count: number;
+  sent_count: number;
+  failed_count: number;
+  skipped_bad_phone: number;
+  errors: Array<{ name: string; phone: string; error: string }> | null;
+  created_at: Date;
+}

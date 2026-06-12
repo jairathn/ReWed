@@ -55,6 +55,7 @@ const envSchema = z.object({
   TWILIO_ACCOUNT_SID: optionalStr,
   TWILIO_AUTH_TOKEN: optionalStr,
   TWILIO_PHONE_NUMBER: optionalStr,
+  TWILIO_MESSAGING_SERVICE_SID: optionalStr,
 
   // Cache
   UPSTASH_REDIS_URL: optionalUrl,
@@ -114,6 +115,7 @@ function getEnv(): Env {
       TWILIO_ACCOUNT_SID: process.env.TWILIO_ACCOUNT_SID || undefined,
       TWILIO_AUTH_TOKEN: process.env.TWILIO_AUTH_TOKEN || undefined,
       TWILIO_PHONE_NUMBER: process.env.TWILIO_PHONE_NUMBER || undefined,
+      TWILIO_MESSAGING_SERVICE_SID: process.env.TWILIO_MESSAGING_SERVICE_SID || undefined,
       UPSTASH_REDIS_URL: process.env.UPSTASH_REDIS_URL || undefined,
       UPSTASH_REDIS_TOKEN: process.env.UPSTASH_REDIS_TOKEN || undefined,
       NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
