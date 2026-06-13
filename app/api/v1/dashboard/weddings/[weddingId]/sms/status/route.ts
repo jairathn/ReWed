@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server';
 import { handleApiError } from '@/lib/errors';
 import { getPool } from '@/lib/db/client';
 import { getCoupleId, verifyWeddingOwnership } from '@/lib/dashboard-auth';
-import { isTwilioConfigured } from '@/lib/messaging/twilio-client';
+import { isTwilioConfigured, validateTwilioCredentials } from '@/lib/messaging/twilio-client';
 import { normalizePhone } from '@/lib/messaging/normalize-phone';
 import { env } from '@/lib/env';
 
@@ -70,8 +70,17 @@ export async function GET(
       // table missing — ignore
     }
 
+    // Validate the credentials so the banner reflects reality, not just the
+    // presence of env vars. Only worth the round-trip if env vars are set.
+    const configured = isTwilioConfigured();
+    const credCheck = configured
+      ? await validateTwilioCredentials()
+      : { valid: false as boolean | null, error: null };
+
     return Response.json({
-      configured: isTwilioConfigured(),
+      configured,
+      credentials_valid: credCheck.valid,
+      credentials_error: credCheck.error,
       from_number: env.TWILIO_MESSAGING_SERVICE_SID
         ? null // messaging service picks the number per-send
         : env.TWILIO_PHONE_NUMBER || null,
