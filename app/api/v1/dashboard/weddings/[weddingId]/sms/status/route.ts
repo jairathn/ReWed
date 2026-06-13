@@ -2,7 +2,11 @@ import { NextRequest } from 'next/server';
 import { handleApiError } from '@/lib/errors';
 import { getPool } from '@/lib/db/client';
 import { getCoupleId, verifyWeddingOwnership } from '@/lib/dashboard-auth';
-import { isTwilioConfigured, validateTwilioCredentials } from '@/lib/messaging/twilio-client';
+import {
+  isTwilioConfigured,
+  canScheduleSms,
+  validateTwilioCredentials,
+} from '@/lib/messaging/twilio-client';
 import { normalizePhone } from '@/lib/messaging/normalize-phone';
 import { env } from '@/lib/env';
 
@@ -32,6 +36,12 @@ export async function GET(
        WHERE wedding_id = $1 AND soft_deleted_at IS NULL`,
       [weddingId]
     );
+
+    const wedding = await pool.query(
+      `SELECT timezone FROM weddings WHERE id = $1`,
+      [weddingId]
+    );
+    const timezone: string = wedding.rows[0]?.timezone || 'America/New_York';
 
     const counts = { total: 0, with_phone: 0, attending: 0, pending: 0, declined: 0 };
     const groupCounts = new Map<string, number>();
@@ -70,6 +80,23 @@ export async function GET(
       // table missing — ignore
     }
 
+    // Pending scheduled broadcasts (source of truth is our table, not Twilio).
+    // Best-effort: the table arrives in migration 027.
+    let scheduled: unknown[] = [];
+    try {
+      const sched = await pool.query(
+        `SELECT id, body, audience, group_labels, recipient_count, send_at,
+                skipped_bad_phone, created_at
+         FROM sms_scheduled
+         WHERE wedding_id = $1 AND status = 'scheduled'
+         ORDER BY send_at ASC`,
+        [weddingId]
+      );
+      scheduled = sched.rows;
+    } catch {
+      // table missing — ignore
+    }
+
     // Validate the credentials so the banner reflects reality, not just the
     // presence of env vars. Only worth the round-trip if env vars are set.
     const configured = isTwilioConfigured();
@@ -85,9 +112,12 @@ export async function GET(
         ? null // messaging service picks the number per-send
         : env.TWILIO_PHONE_NUMBER || null,
       uses_messaging_service: !!env.TWILIO_MESSAGING_SERVICE_SID,
+      can_schedule: canScheduleSms(),
+      timezone,
       counts,
       groups,
       recent,
+      scheduled,
     });
   } catch (error) {
     return handleApiError(error);
