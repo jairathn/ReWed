@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect, useCallback, use } from 'react';
+import { useState, useEffect, useCallback, useRef, use } from 'react';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import UndoToast from '@/components/ui/UndoToast';
+import { normalizePhone } from '@/lib/messaging/normalize-phone';
 
 interface Guest {
   id: string;
@@ -143,6 +144,12 @@ export default function GuestsPage({ params }: { params: Promise<{ weddingId: st
   // import (audit C-3). When the couple really is importing a list of
   // confirmed yes-RSVPs, they flip this on before committing.
   const [assumeAllAttending, setAssumeAllAttending] = useState(false);
+
+  // Phone-export toast. Pure UI state; opens for ~3s after a successful
+  // copy, dismisses itself. Ref tracks the timer so a second click while
+  // the first toast is still up resets the timer instead of leaking it.
+  const [copyToast, setCopyToast] = useState<string | null>(null);
+  const copyToastTimer = useRef<number | null>(null);
 
   const fetchGuests = useCallback(async () => {
     try {
@@ -816,6 +823,49 @@ export default function GuestsPage({ params }: { params: Promise<{ weddingId: st
   const visibleGuests =
     rsvpFilter === 'all' ? guests : guests.filter((g) => g.rsvp_status === rsvpFilter);
 
+  // Phone-number export breakdown for the "Copy phones" action. Compute
+  // every render — cost is O(n) over visibleGuests with no allocations
+  // worth memoizing.
+  const phoneBreakdown = (() => {
+    const ok: { e164: string }[] = [];
+    const missing: string[] = [];
+    const malformed: string[] = [];
+    const seen = new Set<string>();
+    for (const g of visibleGuests) {
+      const r = normalizePhone(g.phone);
+      if (r.ok && r.e164) {
+        if (seen.has(r.e164)) continue;
+        seen.add(r.e164);
+        ok.push({ e164: r.e164 });
+      } else if (r.reason === 'empty') {
+        missing.push(g.display_name);
+      } else {
+        malformed.push(g.display_name);
+      }
+    }
+    return { ok, missing, malformed };
+  })();
+
+  const handleCopyPhones = async () => {
+    if (phoneBreakdown.ok.length === 0) return;
+    const list = phoneBreakdown.ok.map((p) => p.e164).join(', ');
+    try {
+      await navigator.clipboard.writeText(list);
+    } catch {
+      // Older browsers / insecure contexts (HTTP) may reject. Surface a
+      // generic failure instead of letting the click look like it worked.
+      setCopyToast('Could not copy — your browser blocked clipboard access.');
+      return;
+    }
+    setCopyToast(
+      `${phoneBreakdown.ok.length} number${phoneBreakdown.ok.length === 1 ? '' : 's'} copied. Paste in WhatsApp → New Group → Add Participants.`
+    );
+    if (copyToastTimer.current !== null) {
+      window.clearTimeout(copyToastTimer.current);
+    }
+    copyToastTimer.current = window.setTimeout(() => setCopyToast(null), 3500);
+  };
+
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
@@ -895,6 +945,47 @@ export default function GuestsPage({ params }: { params: Promise<{ weddingId: st
             </button>
           </span>
         )}
+        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+          {(phoneBreakdown.missing.length > 0 || phoneBreakdown.malformed.length > 0) && (
+            <span
+              style={{ fontSize: 11, color: 'var(--text-tertiary)', fontFamily: 'var(--font-body)' }}
+              title={[
+                phoneBreakdown.missing.length > 0 && `Missing phone:\n${phoneBreakdown.missing.join('\n')}`,
+                phoneBreakdown.malformed.length > 0 && `Malformed phone:\n${phoneBreakdown.malformed.join('\n')}`,
+              ]
+                .filter(Boolean)
+                .join('\n\n')}
+            >
+              {phoneBreakdown.ok.length} with phone
+              {phoneBreakdown.missing.length > 0 && ` · ${phoneBreakdown.missing.length} missing`}
+              {phoneBreakdown.malformed.length > 0 && ` · ${phoneBreakdown.malformed.length} malformed`}
+            </span>
+          )}
+          <button
+            type="button"
+            onClick={handleCopyPhones}
+            disabled={phoneBreakdown.ok.length === 0}
+            style={{
+              fontSize: 13,
+              padding: '8px 14px',
+              borderRadius: 10,
+              border: '1px solid var(--border-light)',
+              background: 'var(--bg-pure-white)',
+              color: phoneBreakdown.ok.length === 0 ? 'var(--text-tertiary)' : 'var(--text-primary)',
+              cursor: phoneBreakdown.ok.length === 0 ? 'not-allowed' : 'pointer',
+              fontFamily: 'var(--font-body)',
+              fontWeight: 500,
+              opacity: phoneBreakdown.ok.length === 0 ? 0.6 : 1,
+            }}
+            title={
+              phoneBreakdown.ok.length === 0
+                ? 'No guests with valid phone numbers in this view'
+                : `Copies ${phoneBreakdown.ok.length} number${phoneBreakdown.ok.length === 1 ? '' : 's'} as a comma-separated list, ready to paste into WhatsApp's New Group → Add Participants box.`
+            }
+          >
+            Copy phones for WhatsApp
+          </button>
+        </div>
       </div>
 
       {loading && (
@@ -1116,6 +1207,31 @@ export default function GuestsPage({ params }: { params: Promise<{ weddingId: st
         onUndo={undoSingleDelete}
         onTimeout={() => setPendingDelete(null)}
       />
+
+      {copyToast && (
+        <div
+          role="status"
+          aria-live="polite"
+          style={{
+            position: 'fixed',
+            bottom: 'calc(env(safe-area-inset-bottom, 0px) + 24px)',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 95,
+            padding: '12px 18px',
+            borderRadius: 999,
+            background: 'rgba(27, 28, 26, 0.92)',
+            color: '#FDFBF7',
+            fontFamily: 'var(--font-body)',
+            fontSize: 14,
+            maxWidth: 'calc(100vw - 32px)',
+            boxShadow: '0 12px 32px rgba(0,0,0,0.25)',
+            backdropFilter: 'blur(12px)',
+          }}
+        >
+          {copyToast}
+        </div>
+      )}
 
     </div>
   );
