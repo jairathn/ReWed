@@ -17,6 +17,8 @@ interface GuestPickerItem {
 
 interface SmsStatus {
   configured: boolean;
+  credentials_valid: boolean | null;
+  credentials_error: string | null;
   from_number: string | null;
   uses_messaging_service: boolean;
   counts: {
@@ -160,8 +162,14 @@ export default function MessagesPage({ params }: { params: Promise<{ weddingId: 
   const seg = countSegments(body);
   const estCost = audienceCount * seg.segments * EST_COST_PER_SEGMENT;
 
+  const credsRejected = status?.configured === true && status.credentials_valid === false;
+
   const canSend =
-    !!status?.configured && !sending && body.trim().length > 0 && audienceCount > 0;
+    !!status?.configured &&
+    !credsRejected &&
+    !sending &&
+    body.trim().length > 0 &&
+    audienceCount > 0;
 
   const audienceDescription =
     audience === 'custom'
@@ -278,8 +286,36 @@ TWILIO_PHONE_NUMBER=+18445551234`}
         </div>
       )}
 
-      {/* Configured — show from number */}
-      {status?.configured && (
+      {/* Configured but Twilio rejected the credentials */}
+      {credsRejected && (
+        <div
+          style={{
+            padding: 16,
+            borderRadius: 14,
+            background: 'rgba(196,112,75,0.06)',
+            border: '1px solid rgba(196,112,75,0.25)',
+            marginBottom: 24,
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: 12,
+          }}
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-terracotta)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 2 }}>
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" y1="8" x2="12" y2="12" />
+            <line x1="12" y1="16" x2="12.01" y2="16" />
+          </svg>
+          <div style={{ fontSize: 13, color: 'var(--text-secondary)', fontFamily: 'var(--font-body)', lineHeight: 1.5 }}>
+            <strong style={{ color: 'var(--text-primary)' }}>Twilio rejected your credentials.</strong>{' '}
+            {status?.credentials_error || 'Check TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN.'} Sending is
+            disabled until this is fixed in your environment (Vercel → Settings → Environment Variables),
+            then redeploy.
+          </div>
+        </div>
+      )}
+
+      {/* Configured and credentials accepted — show from number */}
+      {status?.configured && !credsRejected && (
         <div
           style={{
             padding: 16,
@@ -441,8 +477,8 @@ TWILIO_PHONE_NUMBER=+18445551234`}
             >
               ⚠ {status.counts.total - status.counts.with_phone} of {status.counts.total} guest
               {status.counts.total - status.counts.with_phone === 1 ? ' has' : 's have'} no usable
-              phone on file (missing number or no country code) and will be skipped. Fix them on
-              the Guests page.
+              phone on file (no number, or one we couldn&apos;t read) and will be skipped. Numbers
+              without a country code are assumed US (+1); fix any others on the Guests page.
             </div>
           )}
         </div>

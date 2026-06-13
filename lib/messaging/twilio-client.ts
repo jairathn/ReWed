@@ -35,12 +35,60 @@ export interface SendSmsResult {
 // Friendlier text for the Twilio error codes a wedding couple is most
 // likely to hit, keyed by https://www.twilio.com/docs/api/errors
 const ERROR_HINTS: Record<number, string> = {
+  20003: 'Twilio rejected the account credentials — check TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN in your environment',
   21211: 'Invalid phone number',
   21408: 'SMS not enabled for this region on your Twilio account',
   21610: 'This guest replied STOP and carriers block further texts to them',
   21614: 'Not a mobile number (landline?)',
   30032: 'Toll-free number not yet verified — finish verification in the Twilio console',
 };
+
+/**
+ * Cheaply check whether the configured credentials actually work, by fetching
+ * the Account resource. Returns:
+ *   valid: true  — Twilio accepted the SID + token
+ *   valid: false — Twilio rejected them (error explains why)
+ *   valid: null  — couldn't reach Twilio (network/timeout) — unknown, don't
+ *                  cry wolf in the UI on a transient blip
+ *
+ * This backs the "configured" banner so it reflects reality, not just the
+ * presence of env vars.
+ */
+export async function validateTwilioCredentials(): Promise<{
+  valid: boolean | null;
+  error: string | null;
+}> {
+  if (!isTwilioConfigured()) return { valid: false, error: 'Twilio is not configured' };
+
+  const accountSid = env.TWILIO_ACCOUNT_SID!;
+  try {
+    const res = await fetch(
+      `https://api.twilio.com/2010-04-01/Accounts/${accountSid}.json`,
+      {
+        headers: {
+          Authorization:
+            'Basic ' +
+            Buffer.from(`${accountSid}:${env.TWILIO_AUTH_TOKEN}`).toString('base64'),
+        },
+        signal: AbortSignal.timeout(5000),
+      }
+    );
+    if (res.ok) return { valid: true, error: null };
+
+    const data = await res.json().catch(() => null);
+    const code: number | undefined = data?.code;
+    const hint = code !== undefined ? ERROR_HINTS[code] : undefined;
+    return {
+      valid: false,
+      error: hint || data?.message || `Twilio returned HTTP ${res.status}`,
+    };
+  } catch (err) {
+    return {
+      valid: null,
+      error: err instanceof Error ? err.message : 'Could not reach Twilio',
+    };
+  }
+}
 
 /**
  * Send a single SMS. Returns { sid, error } — never throws so batch
