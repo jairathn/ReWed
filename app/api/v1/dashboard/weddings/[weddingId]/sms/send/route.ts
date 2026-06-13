@@ -4,7 +4,7 @@ import { handleApiError, AppError } from '@/lib/errors';
 import { getPool } from '@/lib/db/client';
 import { getCoupleId, verifyWeddingOwnership } from '@/lib/dashboard-auth';
 import { isTwilioConfigured, sendSms } from '@/lib/messaging/twilio-client';
-import { normalizePhone } from '@/lib/messaging/normalize-phone';
+import { resolveRecipients } from '@/lib/messaging/recipients';
 
 const sendSchema = z.object({
   // 1600 chars is Twilio's hard cap on Body (10 concatenated segments)
@@ -15,13 +15,6 @@ const sendSchema = z.object({
   group_labels: z.array(z.string().min(1)).optional(),
   guest_ids: z.array(z.string().uuid()).optional(),
 });
-
-interface GuestRow {
-  id: string;
-  first_name: string;
-  last_name: string;
-  phone: string;
-}
 
 /**
  * POST /api/v1/dashboard/weddings/[weddingId]/sms/send
@@ -50,54 +43,7 @@ export async function POST(
     const parsed = sendSchema.parse(await request.json());
     const pool = getPool();
 
-    const baseSelect = `
-      SELECT id, first_name, last_name, phone
-      FROM guests
-      WHERE wedding_id = $1 AND phone IS NOT NULL AND phone != '' AND soft_deleted_at IS NULL`;
-
-    let guestsResult;
-    if (parsed.audience === 'selected') {
-      if (!parsed.guest_ids || parsed.guest_ids.length === 0) {
-        throw new AppError('VALIDATION_ERROR', 'No guests selected');
-      }
-      guestsResult = await pool.query(`${baseSelect} AND id = ANY($2::uuid[])`, [
-        weddingId,
-        parsed.guest_ids,
-      ]);
-    } else if (parsed.audience === 'group') {
-      if (!parsed.group_labels || parsed.group_labels.length === 0) {
-        throw new AppError('VALIDATION_ERROR', 'No groups selected');
-      }
-      guestsResult = await pool.query(`${baseSelect} AND group_label = ANY($2::text[])`, [
-        weddingId,
-        parsed.group_labels,
-      ]);
-    } else if (parsed.audience === 'all') {
-      guestsResult = await pool.query(baseSelect, [weddingId]);
-    } else {
-      guestsResult = await pool.query(`${baseSelect} AND rsvp_status = $2`, [
-        weddingId,
-        parsed.audience,
-      ]);
-    }
-
-    const guests: GuestRow[] = guestsResult.rows;
-
-    // Normalize + dedupe: one text per phone number
-    const seen = new Set<string>();
-    const recipients: Array<{ name: string; phone: string }> = [];
-    let skippedBadPhone = 0;
-
-    for (const g of guests) {
-      const norm = normalizePhone(g.phone);
-      if (!norm.ok) {
-        skippedBadPhone += 1;
-        continue;
-      }
-      if (seen.has(norm.e164!)) continue;
-      seen.add(norm.e164!);
-      recipients.push({ name: `${g.first_name} ${g.last_name}`.trim(), phone: norm.e164! });
-    }
+    const { recipients, skippedBadPhone } = await resolveRecipients(pool, weddingId, parsed);
 
     if (recipients.length === 0) {
       return Response.json({

@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef, use } from 'react';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import UndoToast from '@/components/ui/UndoToast';
 import { normalizePhone } from '@/lib/messaging/normalize-phone';
+import { auditPhone } from '@/lib/messaging/phone-audit';
 
 interface Guest {
   id: string;
@@ -846,6 +847,15 @@ export default function GuestsPage({ params }: { params: Promise<{ weddingId: st
     return { ok, missing, malformed };
   })();
 
+  // International-number audit: numbers typed without a country code that got
+  // the +1 default but whose area code isn't a real US/Canada one — almost
+  // always a foreign number (e.g. a 10-digit Indian mobile) texting to nowhere.
+  // Audits the whole list, not just the filtered view — it's a data-quality
+  // check, not a per-view export.
+  const flaggedNumbers = guests
+    .map((g) => ({ guest: g, audit: auditPhone(g.phone) }))
+    .filter((x) => x.audit.suspicious);
+
   const handleCopyPhones = async () => {
     if (phoneBreakdown.ok.length === 0) return;
     const list = phoneBreakdown.ok.map((p) => p.e164).join(', ');
@@ -922,6 +932,51 @@ export default function GuestsPage({ params }: { params: Promise<{ weddingId: st
             active={rsvpFilter === 'declined'}
             onClick={() => setRsvpFilter('declined')}
           />
+        </div>
+      )}
+
+      {/* International-number review */}
+      {flaggedNumbers.length > 0 && (
+        <div
+          style={{
+            marginBottom: 16,
+            padding: '14px 16px',
+            borderRadius: 12,
+            background: 'rgba(218,175,53,0.08)',
+            border: '1px solid rgba(218,175,53,0.30)',
+          }}
+        >
+          <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: 'var(--color-gold-dark)', fontFamily: 'var(--font-body)' }}>
+            Review {flaggedNumbers.length} phone number{flaggedNumbers.length === 1 ? '' : 's'}
+          </p>
+          <p style={{ margin: '4px 0 10px', fontSize: 12, lineHeight: 1.5, color: 'var(--text-secondary)', fontFamily: 'var(--font-body)' }}>
+            {flaggedNumbers.length === 1 ? 'This number was' : 'These numbers were'} entered without a
+            country code and assumed US (+1), but {flaggedNumbers.length === 1 ? "the area code isn't" : "their area codes aren't"} a
+            real US/Canada one — likely an international guest. Texts won&apos;t reach them until you add
+            the right country code (e.g. <code>+91</code> for India). Click to fix:
+          </p>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+            {flaggedNumbers.map(({ guest, audit }) => (
+              <button
+                key={guest.id}
+                onClick={() => startEdit(guest)}
+                style={{
+                  padding: '6px 12px',
+                  borderRadius: 999,
+                  border: '1px solid rgba(218,175,53,0.45)',
+                  background: 'var(--bg-pure-white)',
+                  color: 'var(--text-primary)',
+                  fontSize: 12,
+                  fontFamily: 'var(--font-body)',
+                  cursor: 'pointer',
+                }}
+                title={`Currently sending to ${audit.e164} — edit to add the correct country code`}
+              >
+                {guest.display_name}
+                <span style={{ color: 'var(--text-tertiary)', marginLeft: 6 }}>{guest.phone}</span>
+              </button>
+            ))}
+          </div>
         </div>
       )}
 

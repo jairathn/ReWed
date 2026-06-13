@@ -3,8 +3,26 @@
 import { useState, useEffect, use } from 'react';
 import { countSegments } from '@/lib/messaging/segments';
 import { normalizePhone } from '@/lib/messaging/normalize-phone';
+import {
+  zonedWallClockToUtc,
+  utcToZonedWallClock,
+  formatInTimeZone,
+} from '@/lib/messaging/timezone';
+import { validateSendAt } from '@/lib/messaging/schedule-window';
 
 type Audience = 'all' | 'attending' | 'pending' | 'declined' | 'group' | 'custom';
+type Mode = 'send' | 'schedule';
+
+interface ScheduledText {
+  id: string;
+  body: string;
+  audience: string;
+  group_labels: string[] | null;
+  recipient_count: number;
+  send_at: string;
+  skipped_bad_phone: number;
+  created_at: string;
+}
 
 interface GuestPickerItem {
   id: string;
@@ -21,6 +39,8 @@ interface SmsStatus {
   credentials_error: string | null;
   from_number: string | null;
   uses_messaging_service: boolean;
+  can_schedule: boolean;
+  timezone: string;
   counts: {
     total: number;
     with_phone: number;
@@ -40,6 +60,7 @@ interface SmsStatus {
     skipped_bad_phone: number;
     created_at: string;
   }>;
+  scheduled: ScheduledText[];
 }
 
 interface SendResult {
@@ -68,6 +89,12 @@ export default function MessagesPage({ params }: { params: Promise<{ weddingId: 
   const [result, setResult] = useState<SendResult | null>(null);
   const [sendError, setSendError] = useState('');
   const [confirmOpen, setConfirmOpen] = useState(false);
+
+  // Send-now vs schedule-for-later
+  const [mode, setMode] = useState<Mode>('send');
+  const [scheduleLocal, setScheduleLocal] = useState(''); // datetime-local wall clock
+  const [scheduleMsg, setScheduleMsg] = useState<string | null>(null);
+  const [cancelingId, setCancelingId] = useState<string | null>(null);
 
   // Custom audience state
   const [selectedGuestIds, setSelectedGuestIds] = useState<Set<string>>(new Set());
@@ -207,6 +234,87 @@ export default function MessagesPage({ params }: { params: Promise<{ weddingId: 
     } finally {
       setSending(false);
       setConfirmOpen(false);
+    }
+  };
+
+  const tz = status?.timezone || 'America/New_York';
+
+  // Default the picker to the next quarter-hour at least ~16 min out, so it
+  // clears Twilio's 15-minute floor with margin. Rounding the UTC instant to a
+  // 15-min boundary lands on a clean :00/:15/:30/:45 in any standard zone.
+  const enterScheduleMode = () => {
+    setMode('schedule');
+    if (!scheduleLocal) {
+      const q = 15 * 60 * 1000;
+      const target = new Date(Math.ceil((Date.now() + 16 * 60 * 1000) / q) * q);
+      setScheduleLocal(utcToZonedWallClock(target, tz));
+    }
+  };
+
+  const scheduledUtc = scheduleLocal ? zonedWallClockToUtc(scheduleLocal, tz) : null;
+  const scheduleCheck = scheduledUtc ? validateSendAt(scheduledUtc.toISOString()) : null;
+  const scheduleValid = mode === 'schedule' ? !!scheduleCheck?.ok : true;
+
+  const canSchedule =
+    !!status?.can_schedule &&
+    !sending &&
+    body.trim().length > 0 &&
+    audienceCount > 0 &&
+    scheduleValid;
+
+  const handleSchedule = async () => {
+    if (!scheduledUtc) return;
+    setSending(true);
+    setSendError('');
+    setScheduleMsg(null);
+    try {
+      const res = await fetch(`/api/v1/dashboard/weddings/${weddingId}/sms/schedule`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          body: body.trim(),
+          audience: audience === 'custom' ? 'selected' : audience,
+          group_labels: audience === 'group' ? Array.from(selectedGroups) : undefined,
+          guest_ids: audience === 'custom' ? Array.from(selectedGuestIds) : undefined,
+          send_at: scheduledUtc.toISOString(),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setSendError(data?.error?.message || data?.message || 'Failed to schedule');
+      } else if (!data.scheduled) {
+        setSendError(data.message || 'Nothing was scheduled.');
+      } else {
+        setScheduleMsg(
+          `Scheduled for ${data.scheduled} guest${data.scheduled === 1 ? '' : 's'} on ${formatInTimeZone(
+            new Date(data.send_at),
+            tz
+          )}.${data.skipped ? ` ${data.skipped} skipped (bad phone).` : ''}`
+        );
+        setBody('');
+        setMode('send');
+        loadStatus();
+      }
+    } catch (err) {
+      setSendError(err instanceof Error ? err.message : 'Failed to schedule');
+    } finally {
+      setSending(false);
+      setConfirmOpen(false);
+    }
+  };
+
+  const handleCancelScheduled = async (id: string) => {
+    setCancelingId(id);
+    try {
+      const res = await fetch(
+        `/api/v1/dashboard/weddings/${weddingId}/sms/scheduled/${id}`,
+        { method: 'DELETE' }
+      );
+      if (res.ok) loadStatus();
+    } catch {
+      // leave it in the list; user can retry
+    } finally {
+      setCancelingId(null);
     }
   };
 
@@ -524,31 +632,128 @@ TWILIO_PHONE_NUMBER=+18445551234`}
           </div>
         </div>
 
-        {/* Send */}
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, paddingTop: 8, borderTop: '1px solid var(--border-light)' }}>
-          <button
-            onClick={() => setConfirmOpen(true)}
-            disabled={!canSend}
-            style={{
-              padding: '12px 28px',
-              borderRadius: 12,
-              border: 'none',
-              background: canSend
-                ? 'linear-gradient(135deg, var(--color-gold-dark), var(--color-gold))'
-                : 'var(--border-light)',
-              color: canSend ? '#FDFBF7' : 'var(--text-tertiary)',
-              fontSize: 14,
-              fontWeight: 500,
-              fontFamily: 'var(--font-body)',
-              cursor: canSend ? 'pointer' : 'not-allowed',
-              boxShadow: canSend ? '0 2px 8px rgba(198,163,85,0.25)' : 'none',
-              transition: 'all 0.15s',
-            }}
-          >
-            {sending ? 'Sending…' : `Text ${audienceCount} guest${audienceCount === 1 ? '' : 's'}`}
-          </button>
+        {/* Send / Schedule */}
+        <div style={{ paddingTop: 8, borderTop: '1px solid var(--border-light)' }}>
+          {/* Mode toggle — only when a Messaging Service is configured */}
+          {status?.can_schedule && (
+            <div style={{ display: 'inline-flex', padding: 3, borderRadius: 10, background: 'var(--bg-soft-cream)', marginBottom: 16 }}>
+              {(['send', 'schedule'] as const).map((m) => {
+                const active = mode === m;
+                return (
+                  <button
+                    key={m}
+                    onClick={() => (m === 'schedule' ? enterScheduleMode() : setMode('send'))}
+                    style={{
+                      padding: '7px 16px',
+                      borderRadius: 8,
+                      border: 'none',
+                      background: active ? 'var(--bg-pure-white)' : 'transparent',
+                      color: active ? 'var(--text-primary)' : 'var(--text-tertiary)',
+                      fontSize: 13,
+                      fontWeight: active ? 600 : 400,
+                      fontFamily: 'var(--font-body)',
+                      cursor: 'pointer',
+                      boxShadow: active ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
+                      transition: 'all 0.15s',
+                    }}
+                  >
+                    {m === 'send' ? 'Send now' : 'Schedule'}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Schedule picker */}
+          {mode === 'schedule' && status?.can_schedule && (
+            <div style={{ marginBottom: 16 }}>
+              <label style={labelStyle}>Send at ({tz.replace(/_/g, ' ')})</label>
+              <input
+                type="datetime-local"
+                value={scheduleLocal}
+                min={utcToZonedWallClock(new Date(Date.now() + 15 * 60 * 1000), tz)}
+                onChange={(e) => setScheduleLocal(e.target.value)}
+                style={{ ...inputStyle, maxWidth: 280 }}
+              />
+              {scheduledUtc && scheduleCheck && !scheduleCheck.ok && (
+                <p style={{ margin: '6px 0 0', fontSize: 12, color: 'var(--color-terracotta)', fontFamily: 'var(--font-body)' }}>
+                  {scheduleCheck.error}
+                </p>
+              )}
+              <div
+                style={{
+                  margin: '12px 0 0',
+                  padding: '10px 14px',
+                  borderRadius: 10,
+                  background: 'rgba(43,95,138,0.05)',
+                  border: '1px solid rgba(43,95,138,0.15)',
+                  fontSize: 12,
+                  lineHeight: 1.55,
+                  color: 'var(--text-secondary)',
+                  fontFamily: 'var(--font-body)',
+                }}
+              >
+                The recipient list is locked when you schedule. If you add guests or fix
+                numbers afterward, cancel this scheduled text and reschedule to include them.
+              </div>
+            </div>
+          )}
+
+          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+            {(() => {
+              const ready = mode === 'send' ? canSend : canSchedule;
+              return (
+                <button
+                  onClick={() => setConfirmOpen(true)}
+                  disabled={!ready}
+                  style={{
+                    padding: '12px 28px',
+                    borderRadius: 12,
+                    border: 'none',
+                    background: ready
+                      ? 'linear-gradient(135deg, var(--color-gold-dark), var(--color-gold))'
+                      : 'var(--border-light)',
+                    color: ready ? '#FDFBF7' : 'var(--text-tertiary)',
+                    fontSize: 14,
+                    fontWeight: 500,
+                    fontFamily: 'var(--font-body)',
+                    cursor: ready ? 'pointer' : 'not-allowed',
+                    boxShadow: ready ? '0 2px 8px rgba(198,163,85,0.25)' : 'none',
+                    transition: 'all 0.15s',
+                  }}
+                >
+                  {sending
+                    ? mode === 'send'
+                      ? 'Sending…'
+                      : 'Scheduling…'
+                    : mode === 'send'
+                    ? `Text ${audienceCount} guest${audienceCount === 1 ? '' : 's'}`
+                    : `Schedule for ${audienceCount} guest${audienceCount === 1 ? '' : 's'}`}
+                </button>
+              );
+            })()}
+          </div>
         </div>
       </div>
+
+      {/* Schedule success banner */}
+      {scheduleMsg && (
+        <div
+          style={{
+            marginTop: 20,
+            padding: 16,
+            borderRadius: 14,
+            background: 'rgba(122,139,92,0.06)',
+            border: '1px solid rgba(122,139,92,0.15)',
+            fontSize: 14,
+            color: 'var(--text-primary)',
+            fontFamily: 'var(--font-body)',
+            fontWeight: 500,
+          }}
+        >
+          {scheduleMsg}
+        </div>
+      )}
 
       {/* Result banner */}
       {result && (
@@ -594,6 +799,67 @@ TWILIO_PHONE_NUMBER=+18445551234`}
           }}
         >
           {sendError}
+        </div>
+      )}
+
+      {/* Scheduled texts */}
+      {(status?.scheduled.length ?? 0) > 0 && (
+        <div style={{ marginTop: 32 }}>
+          <p style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--text-tertiary)', margin: '0 0 10px', fontFamily: 'var(--font-body)' }}>
+            Scheduled texts
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {status!.scheduled.map((m) => (
+              <div
+                key={m.id}
+                style={{
+                  padding: '14px 16px',
+                  borderRadius: 12,
+                  background: 'var(--bg-pure-white)',
+                  border: '1px solid rgba(43,95,138,0.25)',
+                  display: 'flex',
+                  gap: 14,
+                  alignItems: 'flex-start',
+                }}
+              >
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{ margin: 0, fontSize: 13, color: 'var(--text-primary)', fontFamily: 'var(--font-body)', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
+                    {m.body.length > 220 ? m.body.slice(0, 220) + '…' : m.body}
+                  </p>
+                  <p style={{ margin: '8px 0 0', fontSize: 11, color: 'var(--color-mediterranean-blue)', fontFamily: 'var(--font-body)', fontWeight: 600 }}>
+                    ⏰ {formatInTimeZone(new Date(m.send_at), tz)}
+                    <span style={{ color: 'var(--text-tertiary)', fontWeight: 400 }}>
+                      {' · '}
+                      {m.audience === 'group' && m.group_labels?.length
+                        ? m.group_labels.join(', ')
+                        : m.audience}
+                      {' · '}
+                      {m.recipient_count} recipient{m.recipient_count === 1 ? '' : 's'}
+                    </span>
+                  </p>
+                </div>
+                <button
+                  onClick={() => handleCancelScheduled(m.id)}
+                  disabled={cancelingId === m.id}
+                  style={{
+                    flexShrink: 0,
+                    padding: '7px 14px',
+                    borderRadius: 9,
+                    border: '1px solid var(--border-light)',
+                    background: 'var(--bg-pure-white)',
+                    color: 'var(--color-terracotta)',
+                    fontSize: 12,
+                    fontWeight: 500,
+                    fontFamily: 'var(--font-body)',
+                    cursor: cancelingId === m.id ? 'default' : 'pointer',
+                    opacity: cancelingId === m.id ? 0.6 : 1,
+                  }}
+                >
+                  {cancelingId === m.id ? 'Canceling…' : 'Cancel'}
+                </button>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
@@ -847,12 +1113,26 @@ TWILIO_PHONE_NUMBER=+18445551234`}
             }}
           >
             <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 500, margin: '0 0 10px', color: 'var(--text-primary)' }}>
-              Text {audienceCount} guest{audienceCount === 1 ? '' : 's'}?
+              {mode === 'send' ? 'Text' : 'Schedule for'} {audienceCount} guest{audienceCount === 1 ? '' : 's'}?
             </h3>
             <p style={{ fontSize: 14, color: 'var(--text-secondary)', margin: '0 0 8px', fontFamily: 'var(--font-body)', lineHeight: 1.55 }}>
-              This will send the message below to{' '}
-              <strong style={{ color: 'var(--text-primary)' }}>{audienceDescription}</strong>.
-              Texts cannot be unsent.
+              {mode === 'send' ? (
+                <>
+                  This will send the message below to{' '}
+                  <strong style={{ color: 'var(--text-primary)' }}>{audienceDescription}</strong>.
+                  Texts cannot be unsent.
+                </>
+              ) : (
+                <>
+                  This will queue the message below for{' '}
+                  <strong style={{ color: 'var(--text-primary)' }}>{audienceDescription}</strong>,
+                  sending{' '}
+                  <strong style={{ color: 'var(--text-primary)' }}>
+                    {scheduledUtc ? formatInTimeZone(scheduledUtc, tz) : ''}
+                  </strong>
+                  . You can cancel it any time before then.
+                </>
+              )}
             </p>
             <p
               style={{
@@ -889,7 +1169,7 @@ TWILIO_PHONE_NUMBER=+18445551234`}
                 Cancel
               </button>
               <button
-                onClick={handleSend}
+                onClick={mode === 'send' ? handleSend : handleSchedule}
                 disabled={sending}
                 style={{
                   padding: '10px 24px',
@@ -904,7 +1184,13 @@ TWILIO_PHONE_NUMBER=+18445551234`}
                   opacity: sending ? 0.7 : 1,
                 }}
               >
-                {sending ? 'Sending…' : 'Send texts'}
+                {sending
+                  ? mode === 'send'
+                    ? 'Sending…'
+                    : 'Scheduling…'
+                  : mode === 'send'
+                  ? 'Send texts'
+                  : 'Schedule texts'}
               </button>
             </div>
           </div>

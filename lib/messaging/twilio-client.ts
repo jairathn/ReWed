@@ -27,6 +27,15 @@ export function isTwilioConfigured(): boolean {
   );
 }
 
+/**
+ * Scheduling is only possible through a Messaging Service — Twilio requires
+ * MessagingServiceSid (not a plain From number) for ScheduleType=fixed. So the
+ * Schedule UI is gated on this being configured, separately from send-now.
+ */
+export function canScheduleSms(): boolean {
+  return isTwilioConfigured() && !!env.TWILIO_MESSAGING_SERVICE_SID;
+}
+
 export interface SendSmsResult {
   sid: string | null;
   error: string | null;
@@ -137,5 +146,94 @@ export async function sendSms(opts: { to: string; body: string }): Promise<SendS
       sid: null,
       error: err instanceof Error ? err.message : 'Unknown error sending SMS',
     };
+  }
+}
+
+/**
+ * Schedule a single SMS for future delivery via Twilio (ScheduleType=fixed).
+ * Requires a Messaging Service — see canScheduleSms(). `sendAt` is an absolute
+ * instant; Twilio wants it as ISO-8601 (UTC) and enforces the 15-min/35-day
+ * window itself, on top of our own validation. Returns { sid, error } and
+ * never throws, matching sendSms so batch schedulers continue on partials.
+ */
+export async function scheduleSms(opts: {
+  to: string;
+  body: string;
+  sendAt: Date;
+}): Promise<SendSmsResult> {
+  if (!canScheduleSms()) {
+    return { sid: null, error: 'Scheduling requires a Twilio Messaging Service' };
+  }
+
+  const accountSid = env.TWILIO_ACCOUNT_SID!;
+  const params = new URLSearchParams({
+    To: opts.to,
+    Body: opts.body,
+    MessagingServiceSid: env.TWILIO_MESSAGING_SERVICE_SID!,
+    ScheduleType: 'fixed',
+    SendAt: opts.sendAt.toISOString(),
+  });
+
+  try {
+    const res = await fetch(
+      `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`,
+      {
+        method: 'POST',
+        headers: {
+          Authorization:
+            'Basic ' +
+            Buffer.from(`${accountSid}:${env.TWILIO_AUTH_TOKEN}`).toString('base64'),
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: params.toString(),
+      }
+    );
+
+    const data = await res.json().catch(() => null);
+    if (!res.ok) {
+      const code: number | undefined = data?.code;
+      const hint = code !== undefined ? ERROR_HINTS[code] : undefined;
+      return {
+        sid: null,
+        error: hint || data?.message || `Twilio returned HTTP ${res.status}`,
+      };
+    }
+    return { sid: data?.sid || null, error: null };
+  } catch (err) {
+    return {
+      sid: null,
+      error: err instanceof Error ? err.message : 'Unknown error scheduling SMS',
+    };
+  }
+}
+
+/**
+ * Cancel a scheduled message by SID (POST Status=canceled). Works only while
+ * the message is still 'scheduled' — once Twilio hands it to the carrier it
+ * can't be recalled. Returns an error string on failure, null on success.
+ */
+export async function cancelScheduledSms(messageSid: string): Promise<string | null> {
+  if (!isTwilioConfigured()) return 'Twilio is not configured';
+
+  const accountSid = env.TWILIO_ACCOUNT_SID!;
+  try {
+    const res = await fetch(
+      `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages/${messageSid}.json`,
+      {
+        method: 'POST',
+        headers: {
+          Authorization:
+            'Basic ' +
+            Buffer.from(`${accountSid}:${env.TWILIO_AUTH_TOKEN}`).toString('base64'),
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({ Status: 'canceled' }).toString(),
+      }
+    );
+    if (res.ok) return null;
+    const data = await res.json().catch(() => null);
+    return data?.message || `Twilio returned HTTP ${res.status}`;
+  } catch (err) {
+    return err instanceof Error ? err.message : 'Unknown error canceling SMS';
   }
 }
